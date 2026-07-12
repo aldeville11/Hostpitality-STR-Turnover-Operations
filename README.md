@@ -1,22 +1,27 @@
-# Hostpitality — Phase 1 Foundation
+# Hostpitality — Phase 1 Foundation + Phase 2 Onboarding
 
 AI-powered turnover operations for short-term rental cleaning teams and managers.
 
-## Phase 1 scope
+## Current scope
 
-Foundation only:
+### Phase 1 — Foundation
+- Next.js App Router + Prisma/SQLite
+- Session auth, RBAC, audit logs, job scaffold
+- App shell with placeholder business screens
 
-- Next.js App Router + TypeScript + Tailwind
-- Prisma + SQLite
-- Session auth (login / signup)
-- RBAC helpers (server-side)
-- Audit logging
-- Background job scaffold
-- App shell (sidebar, topbar, UI primitives)
-- Placeholder routes for all main sections
-- Root redirect to onboarding or dashboard based on auth + setup state
+### Phase 2 — Onboarding
+Multi-step first-run setup with persisted progress:
 
-Business screens (dashboard metrics, turnover workflows, SOP editors, etc.) are intentionally deferred.
+1. Company
+2. Properties
+3. Calendars (optional, skippable)
+4. SOPs
+5. SOW templates
+6. Vendors
+7. Review
+8. Activate first turnover workflow
+
+Progress is stored on `Company.onboardingStep` + `Company.onboardingProgress` and can be resumed anytime.
 
 ## Quick start
 
@@ -26,33 +31,9 @@ npm run db:setup
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+- Demo (already onboarded): `manager@hostpitality.app` / `demo1234`
+- New workspace: `/signup` → guided onboarding → `/dashboard`
 
-### Demo login
+## Onboarding routes
 
-- Email: `manager@hostpitality.app`
-- Password: `demo1234`
-
-### New accounts
-
-Use `/signup` to create a company, then complete onboarding by adding a first property.
-
-## Key files
-
-| Area | Path |
-|------|------|
-| Schema | `prisma/schema.prisma` |
-| DB client | `src/lib/db.ts` |
-| Auth | `src/lib/auth.ts` |
-| RBAC | `src/lib/rbac.ts` |
-| Audit | `src/lib/audit.ts` |
-| Jobs | `src/lib/jobs.ts` |
-| Shell | `src/components/sidebar.tsx`, `src/components/topbar.tsx` |
-
-## Background jobs
-
-```bash
-curl -X POST http://localhost:3000/api/jobs/process
-```
-
-Scaffolded job types: `turnover.remind`, `turnover.overdue_check`, `notification.dispatch`
+`/onboarding`, `/onboarding/company`, `/onboarding/properties`, `/onboarding/calendars`, `/onboarding/sops`, `/onboarding/sows`, `/onboarding/vendors`, `/onboarding/review`, `/onboarding/finish`

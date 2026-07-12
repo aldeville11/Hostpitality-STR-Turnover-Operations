@@ -24,7 +24,7 @@ export async function loginAction(formData: FormData) {
   }
 
   const user = result.user!;
-  if (!user.companyId) redirect("/onboarding");
+  if (!user.companyId) redirect("/signup");
 
   const company = await prisma.company.findUnique({ where: { id: user.companyId } });
   if (!company?.onboardedAt) redirect("/onboarding");
@@ -79,6 +79,8 @@ export async function signupAction(formData: FormData) {
     data: {
       name: parsed.data.companyName.trim(),
       slug,
+      onboardingStep: "company",
+      onboardingProgress: JSON.stringify({}),
       users: {
         create: {
           email,
@@ -111,56 +113,7 @@ export async function signupAction(formData: FormData) {
   });
 
   await createSession(user.id);
-  redirect("/onboarding");
-}
-
-export async function completeOnboardingAction(formData: FormData) {
-  const user = await requireUser({ permission: "onboarding:run" });
-  if (!user.companyId) return { error: "No company linked to this account." };
-
-  const propertyName = String(formData.get("propertyName") || "").trim();
-  const unitCode = String(formData.get("unitCode") || "").trim();
-  const address = String(formData.get("address") || "").trim();
-  const city = String(formData.get("city") || "").trim() || "Unknown";
-  const state = String(formData.get("state") || "").trim() || "NA";
-
-  if (!propertyName || !unitCode || !address) {
-    return { error: "Property name, unit code, and address are required." };
-  }
-
-  const property = await prisma.property.create({
-    data: {
-      companyId: user.companyId,
-      name: propertyName,
-      unitCode,
-      address,
-      city,
-      state,
-    },
-  });
-
-  await writeAuditLog({
-    companyId: user.companyId,
-    userId: user.id,
-    action: "property.created",
-    entityType: "Property",
-    entityId: property.id,
-  });
-
-  await prisma.company.update({
-    where: { id: user.companyId },
-    data: { onboardedAt: new Date() },
-  });
-
-  await writeAuditLog({
-    companyId: user.companyId,
-    userId: user.id,
-    action: "onboarding.completed",
-    entityType: "Company",
-    entityId: user.companyId,
-  });
-
-  redirect("/dashboard");
+  redirect("/onboarding/company");
 }
 
 export async function processJobsAction() {

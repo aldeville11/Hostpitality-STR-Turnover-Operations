@@ -21,12 +21,25 @@ async function main() {
 
   const passwordHash = await bcrypt.hash("demo1234", 10);
 
+  const progress = {
+    company: "complete",
+    properties: "complete",
+    calendars: "complete",
+    sops: "complete",
+    sows: "complete",
+    vendors: "complete",
+    review: "complete",
+    finish: "complete",
+  };
+
   const company = await prisma.company.create({
     data: {
       name: "Pacific Stay Ops",
       slug: "pacific-stay-ops",
       timezone: "America/Los_Angeles",
       onboardedAt: new Date(),
+      onboardingStep: "finish",
+      onboardingProgress: JSON.stringify(progress),
     },
   });
 
@@ -60,6 +73,8 @@ async function main() {
       state: "CA",
       bedrooms: 2,
       bathrooms: 2,
+      calendarUrl: "https://calendar.example.com/hvl-101.ics",
+      bookingSource: "airbnb",
     },
   });
 
@@ -77,7 +92,7 @@ async function main() {
     data: {
       companyId: company.id,
       name: "Standard Turnover SOP",
-      description: "Foundation playbook placeholder",
+      description: "Foundation playbook",
       contentJson: JSON.stringify([
         { section: "Pre-turnover prep", title: "Gather supplies" },
         { section: "Completion sign-off", title: "Sign off" },
@@ -98,24 +113,14 @@ async function main() {
     data: {
       companyId: company.id,
       userId: manager.id,
-      action: "company.onboarded",
+      action: "onboarding.completed",
       entityType: "Company",
       entityId: company.id,
       metadata: JSON.stringify({ propertyId: property.id }),
     },
   });
 
-  await prisma.backgroundJob.create({
-    data: {
-      companyId: company.id,
-      type: "turnover.overdue_check",
-      status: "PENDING",
-      runAt: new Date(),
-      payloadJson: "{}",
-    },
-  });
-
-  console.log("Seeded Hostpitality Phase 1 foundation data");
+  console.log("Seeded Hostpitality demo data (onboarded workspace)");
   console.log("Login: manager@hostpitality.app / demo1234");
 }
 
