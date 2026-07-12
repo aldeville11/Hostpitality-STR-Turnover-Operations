@@ -1,39 +1,49 @@
 import Link from "next/link";
-import { Badge } from "@/components/ui";
+import { Badge, EmptyState, ModuleCard, StatusBadge } from "@/components/ui";
 import type { DashboardData } from "@/lib/dashboard";
-import { severityTone } from "@/lib/dashboard";
 import { formatDateTime, statusLabel } from "@/lib/utils";
+import { mapIssueSeverity, mapIssueStatus } from "@/lib/status-map";
 
 export function OpenIssues({ issues }: { issues: DashboardData["openIssues"] }) {
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-          Open issues
-        </h2>
-        <div className="flex items-center gap-2">
+    <ModuleCard
+      title="Open issues"
+      description="Active defects and guest-impacting items across the portfolio."
+      actions={
+        <>
           <Badge tone={issues.length ? "warning" : "success"}>{issues.length}</Badge>
-          <Link href="/issues" className="text-sm text-[var(--accent)] hover:underline">
-            All
+          <Link
+            href="/issues"
+            className="text-sm font-semibold text-[var(--accent-strong)] hover:underline"
+          >
+            View all
           </Link>
-        </div>
-      </div>
-
+        </>
+      }
+    >
       {issues.length === 0 ? (
-        <p className="text-sm text-[var(--muted)]">
-          No unresolved damage, missing items, or QA failures. Field escalations will appear here.
-        </p>
-      ) : (
-        <div className="space-y-2">
-          {issues.map((issue) => (
+        <EmptyState
+          title="No open issues"
+          description="Unresolved damage, missing items, and QA failures will appear here when reported."
+          action={
             <Link
-              key={issue.id}
-              href={`/issues/${issue.id}`}
-              className="block rounded-xl border border-[var(--border)] px-3 py-3 transition hover:border-[var(--accent)]/40"
+              href="/issues"
+              className="text-sm font-semibold text-[var(--accent-strong)] hover:underline"
             >
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <p className="font-medium">{issue.title}</p>
+              Open issues →
+            </Link>
+          }
+        />
+      ) : (
+        <ul className="divide-y divide-[var(--border)]">
+          {issues.map((issue) => (
+            <li key={issue.id}>
+              <Link
+                href={`/issues/${issue.id}`}
+                className="flex min-h-11 flex-wrap items-start justify-between gap-3 py-3 transition-colors hover:bg-[var(--surface-raised)]"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-[var(--text-primary)]">{issue.title}</p>
                   <p className="mt-0.5 text-xs text-[var(--muted)]">
                     {issue.turnover?.property
                       ? `${issue.turnover.property.name} · ${issue.turnover.property.unitCode}`
@@ -41,18 +51,24 @@ export function OpenIssues({ issues }: { issues: DashboardData["openIssues"] }) 
                     {" · "}
                     {formatDateTime(issue.createdAt)}
                   </p>
+                  <p className="mt-1 line-clamp-2 text-sm text-[var(--text-secondary)]">
+                    {issue.description}
+                  </p>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  <Badge tone={severityTone(issue.severity)}>{issue.severity}</Badge>
-                  <Badge>{statusLabel(issue.status)}</Badge>
+                  <StatusBadge status={mapIssueSeverity(issue.severity)}>
+                    {issue.severity}
+                  </StatusBadge>
+                  <StatusBadge status={mapIssueStatus(issue.status)}>
+                    {statusLabel(issue.status)}
+                  </StatusBadge>
                   <Badge tone="neutral">{issue.category}</Badge>
                 </div>
-              </div>
-              <p className="mt-2 line-clamp-2 text-sm text-[var(--muted)]">{issue.description}</p>
-            </Link>
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
-    </section>
+    </ModuleCard>
   );
 }

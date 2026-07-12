@@ -1,58 +1,62 @@
-import { Badge } from "@/components/ui";
+import Link from "next/link";
+import { EmptyState, ModuleCard, StatusBadge } from "@/components/ui";
 import type { DashboardData } from "@/lib/dashboard";
 import { formatDateTime, statusLabel } from "@/lib/utils";
+import { mapTurnoverStatus } from "@/lib/status-map";
 
 export function OverdueJobs({ jobs }: { jobs: DashboardData["overdue"] }) {
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-          Overdue jobs
-        </h2>
-        <Badge tone={jobs.length ? "danger" : "success"}>{jobs.length}</Badge>
-      </div>
-
+    <ModuleCard
+      title="Overdue jobs"
+      description="Turnovers past deadline or marked overdue — highest operational risk."
+      actions={
+        <StatusBadge status={jobs.length ? "failed" : "healthy"}>
+          {jobs.length ? `${jobs.length} at risk` : "Clear"}
+        </StatusBadge>
+      }
+    >
       {jobs.length === 0 ? (
-        <p className="text-sm text-[var(--muted)]">
-          No missed deadlines. All active turnovers are still inside their SLA window.
-        </p>
+        <EmptyState
+          title="No overdue jobs"
+          description="All active turnovers are still inside their SLA window."
+        />
       ) : (
-        <div className="space-y-2">
+        <ul className="space-y-2">
           {jobs.map((job) => (
-            <div
-              key={job.id}
-              className="rounded-xl border border-rose-200 bg-rose-50/50 px-3 py-3"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <p className="font-medium">
-                    {job.property.name} · {job.property.unitCode}
-                  </p>
-                  <p className="text-xs text-[var(--muted)]">
-                    Deadline {formatDateTime(job.deadlineAt)} ·{" "}
-                    {job.vendor?.name ?? "No cleaner assigned"}
-                  </p>
+            <li key={job.id}>
+              <Link
+                href={`/turnovers/${job.id}`}
+                className="block rounded-[var(--radius-md)] border border-[var(--danger)]/25 bg-[var(--danger-soft)]/50 px-3 py-3 transition hover:border-[var(--danger)]/40"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="font-medium text-[var(--text-primary)]">
+                      {job.property.name} · {job.property.unitCode}
+                    </p>
+                    <p className="text-xs text-[var(--muted)]">
+                      Deadline {formatDateTime(job.deadlineAt)} ·{" "}
+                      {job.vendor?.name ?? "No cleaner assigned"}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    <StatusBadge status={mapTurnoverStatus(job.status)}>
+                      {statusLabel(job.status)}
+                    </StatusBadge>
+                    <StatusBadge status={job.isEscalated ? "at_risk" : "pending"}>
+                      {job.isEscalated ? "Escalated" : "Not escalated"}
+                    </StatusBadge>
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
-                  <Badge tone="danger">{statusLabel(job.status)}</Badge>
-                  <Badge tone={job.isEscalated ? "warning" : "neutral"}>
-                    {job.isEscalated ? "Escalated" : "Not escalated"}
-                  </Badge>
-                </div>
-              </div>
-              {job.issues.length > 0 ? (
-                <p className="mt-2 text-xs text-rose-800">
-                  Risk: {job.issues.length} open issue(s) tied to this turnover.
+                <p className="mt-2 text-xs text-[var(--danger)]">
+                  {job.issues.length > 0
+                    ? `Risk: ${job.issues.length} open issue(s) tied to this turnover.`
+                    : "Risk: guest arrival may be blocked if this window slips further."}
                 </p>
-              ) : (
-                <p className="mt-2 text-xs text-rose-800">
-                  Risk: guest arrival may be blocked if this window slips further.
-                </p>
-              )}
-            </div>
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
-    </section>
+    </ModuleCard>
   );
 }

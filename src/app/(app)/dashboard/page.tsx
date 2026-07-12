@@ -18,7 +18,7 @@ export default async function DashboardPage() {
   const data = await getDashboardData(user.companyId);
 
   return (
-    <div>
+    <div className="space-y-6">
       <PageHeader
         title="Dashboard"
         description={`Operational command center for ${user.company?.name ?? "your company"} — today’s turnovers, risk, and field status.`}
@@ -26,7 +26,7 @@ export default async function DashboardPage() {
 
       <SummaryCards summary={data.summary} />
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-2">
+      <div className="grid gap-6 xl:grid-cols-2">
         <TodaysTurnovers turnovers={data.todaysTurnovers} />
         <OverdueJobs jobs={data.overdue} />
         <CleanerAssignments assignments={data.assignments} />
