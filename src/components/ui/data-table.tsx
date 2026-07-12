@@ -64,12 +64,26 @@ export function DataTable<T extends { id: string }>({
               {columns.map((col) => {
                 const active = sortKey === col.id;
                 return (
-                  <th key={col.id} className={cn("whitespace-nowrap px-3 py-2.5", col.className)}>
+                  <th
+                    key={col.id}
+                    scope="col"
+                    aria-sort={
+                      col.sortable && active
+                        ? sortDir === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : col.sortable
+                          ? "none"
+                          : undefined
+                    }
+                    className={cn("whitespace-nowrap px-3 py-2.5", col.className)}
+                  >
                     {col.sortable && onSort ? (
                       <button
                         type="button"
-                        className="inline-flex items-center gap-1 hover:text-[var(--text-primary)]"
+                        className="inline-flex min-h-11 items-center gap-1 rounded-sm hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)]"
                         onClick={() => onSort(col.id)}
+                        aria-label={`Sort by ${col.header}`}
                       >
                         {col.header}
                         <span className="text-[10px] opacity-70" aria-hidden>

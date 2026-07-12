@@ -56,14 +56,23 @@ export function ListFilterBar({
           );
         }
         if (field.type === "select") {
+          const selectId = `filter-${field.name}`;
           return (
             <div key={field.name} className="min-w-[140px]">
               {field.label ? (
-                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
+                <label
+                  htmlFor={selectId}
+                  className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]"
+                >
                   {field.label}
                 </label>
               ) : null}
-              <Select name={field.name} defaultValue={field.defaultValue ?? ""}>
+              <Select
+                id={selectId}
+                name={field.name}
+                defaultValue={field.defaultValue ?? ""}
+                aria-label={field.label ?? field.emptyLabel}
+              >
                 <option value="">{field.emptyLabel}</option>
                 {field.options.map((o) => (
                   <option key={o.value} value={o.value}>
@@ -75,14 +84,24 @@ export function ListFilterBar({
           );
         }
         if (field.type === "date") {
+          const dateId = `filter-${field.name}`;
           return (
             <div key={field.name} className="min-w-[140px]">
               {field.label ? (
-                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
+                <label
+                  htmlFor={dateId}
+                  className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]"
+                >
                   {field.label}
                 </label>
               ) : null}
-              <Input type="date" name={field.name} defaultValue={field.defaultValue ?? ""} />
+              <Input
+                id={dateId}
+                type="date"
+                name={field.name}
+                defaultValue={field.defaultValue ?? ""}
+                aria-label={field.label ?? field.name}
+              />
             </div>
           );
         }
@@ -107,7 +126,7 @@ export function ListFilterBar({
       </Button>
       <Link
         href={resetHref}
-        className="inline-flex min-h-8 items-center rounded-[var(--radius-md)] border border-[var(--border)] px-2.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-2)]"
+        className="inline-flex min-h-8 items-center rounded-[var(--radius-md)] border border-[var(--border)] px-2.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)]"
       >
         Reset
       </Link>
