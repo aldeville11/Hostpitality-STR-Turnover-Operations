@@ -33,13 +33,13 @@ export default async function SopsPage({
   const canManage = can(user.role, "sops:manage");
 
   return (
-    <div>
+    <div className="space-y-4">
       <PageHeader
         title="SOPs"
         description="Property playbooks that define room-by-room turnover execution — the checklist source for cleaning jobs."
       />
       <div className="grid gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2">
+        <div className="min-w-0 xl:col-span-2">
           <SopList sops={sops} filters={filters} properties={properties} />
         </div>
         {canManage ? (

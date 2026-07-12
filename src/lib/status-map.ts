@@ -97,3 +97,33 @@ export function mapInventoryStock(quantity: number, reorderLevel: number): Opera
   if (quantity <= reorderLevel) return "warning";
   return "healthy";
 }
+
+export function mapSopStatus(status: string): OperationalStatus {
+  switch (status) {
+    case "PUBLISHED":
+      return "healthy";
+    case "DRAFT":
+      return "pending";
+    case "ARCHIVED":
+      return "disconnected";
+    default:
+      return "pending";
+  }
+}
+
+export function mapSowStatus(status: string): OperationalStatus {
+  switch (status) {
+    case "ACTIVE":
+      return "healthy";
+    case "APPROVED":
+      return "confirmed";
+    case "PENDING_REVIEW":
+      return "needs_review";
+    case "DRAFT":
+      return "pending";
+    case "ARCHIVED":
+      return "disconnected";
+    default:
+      return "pending";
+  }
+}

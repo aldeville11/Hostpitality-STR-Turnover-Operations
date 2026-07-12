@@ -36,13 +36,13 @@ export default async function SowsPage({
   ]);
 
   return (
-    <div>
+    <div className="space-y-4">
       <PageHeader
         title="SOW Templates"
         description="Service scope templates that define what a turnover includes, optional add-ons, photo proof, SLAs, and approval gates."
       />
       <div className="grid gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2">
+        <div className="min-w-0 xl:col-span-2">
           <SowList sows={sows} filters={filters} properties={properties} />
         </div>
         {can(user.role, "sow:manage") ? (
