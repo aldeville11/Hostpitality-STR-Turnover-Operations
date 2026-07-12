@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 async function main() {
   const company =
     (await prisma.company.findFirst({
-      where: { slug: "pacific-stay" },
+      where: { slug: "pacific-stay-ops" },
       select: { id: true, name: true, slug: true },
     })) ??
     (await prisma.company.findFirst({
