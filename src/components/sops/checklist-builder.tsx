@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { Button } from "@/components/ui";
 import { StepGroup } from "@/components/sops/step-group";
 import {
@@ -28,6 +29,8 @@ export function ChecklistBuilder({
   readOnly?: boolean;
   onChange: (doc: SopDocument) => void;
 }) {
+  const stepSeq = useRef(0);
+
   function updateSection(id: string, next: SopSection) {
     onChange({
       ...document,
@@ -74,7 +77,7 @@ export function ChecklistBuilder({
           room,
           steps: [
             {
-              id: `step_${Math.random().toString(36).slice(2, 10)}`,
+              id: `step_${++stepSeq.current}_${document.sections.length}`,
               title: kind === "restock" ? "Restock item to par" : "New task",
               instructions: "",
               requiresPhoto: kind === "signoff" || kind === "room",

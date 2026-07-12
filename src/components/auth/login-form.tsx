@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { Sparkles } from "lucide-react";
 import { Button, Input, Label } from "@/components/ui";
+import { BrandMark } from "@/components/brand";
 import { loginAction } from "@/lib/actions";
 
 export function LoginForm() {
@@ -11,16 +11,15 @@ export function LoginForm() {
   const [pending, startTransition] = useTransition();
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-[var(--bg)] px-4">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,#99f6e4_0%,transparent_35%),radial-gradient(circle_at_80%_0%,#bae6fd_0%,transparent_30%)]" />
-      <div className="relative w-full max-w-md rounded-2xl border border-[var(--border)] bg-white/90 p-6 shadow-sm backdrop-blur">
-        <div className="mb-6 flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)] text-white">
-            <Sparkles className="h-4 w-4" />
-          </span>
+    <div className="relative flex min-h-screen items-center justify-center bg-[var(--background)] px-4">
+      <div className="relative w-full max-w-md rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow-sm)]">
+        <div className="mb-6 flex items-center gap-3">
+          <BrandMark />
           <div>
-            <p className="font-[family-name:var(--font-display)] text-lg font-semibold">Hostpitality</p>
-            <p className="text-xs text-[var(--muted)]">Sign in to your ops workspace</p>
+            <p className="font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--text-primary)]">
+              Hostpitality
+            </p>
+            <p className="text-xs text-[var(--text-secondary)]">Property Operations Platform</p>
           </div>
         </div>
 
@@ -56,7 +55,7 @@ export function LoginForm() {
               autoComplete="current-password"
             />
           </div>
-          {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+          {error ? <p className="text-sm text-[var(--danger)]">{error}</p> : null}
           <Button type="submit" className="w-full" disabled={pending}>
             {pending ? "Signing in…" : "Sign in"}
           </Button>

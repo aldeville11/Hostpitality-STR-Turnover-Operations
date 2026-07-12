@@ -1,36 +1,47 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { PageHeader, Badge } from "@/components/ui";
 import { buildLaunchChecklist } from "@/lib/launch";
+import { LaunchPageHeader } from "@/components/launch/launch-page-header";
+import { ExecutiveReadinessSummary } from "@/components/launch/executive-summary";
 import { LaunchChecklist } from "@/components/launch/launch-checklist";
 import { SmokeTestResults } from "@/components/launch/smoke-test-results";
 import { PerformancePanel } from "@/components/launch/performance-panel";
 import { DataIntegrityPanel } from "@/components/launch/data-integrity-panel";
 import { ObservabilityPanel } from "@/components/launch/observability-panel";
+import {
+  formatValidatedAt,
+  presentLaunchGates,
+  presentReadinessSummary,
+} from "@/components/launch/launch-presentation";
 
 export default async function LaunchPage() {
   const user = await requireUser({ permission: "settings:manage" });
   if (!user.companyId) redirect("/onboarding");
 
   const checklist = await buildLaunchChecklist(user.companyId);
+  const validatedAt = new Date().toISOString();
+  const summary = presentReadinessSummary(checklist);
+  const gates = presentLaunchGates(checklist);
+  const openBlockers = gates
+    .filter((g) => g.status === "failed" || g.status === "blocked")
+    .map((g) => g.name);
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Launch readiness"
-        description="Validate data integrity, run smoke tests, and review operational health before shipping."
-        actions={
-          <Badge tone={checklist.ready ? "success" : "warning"}>
-            {checklist.ready ? "Ship-ready" : "Needs attention"}
-          </Badge>
-        }
+      <LaunchPageHeader
+        ready={checklist.ready}
+        scorePct={summary.score}
+        validatedAtLabel={formatValidatedAt(validatedAt)}
+        ownerName={user.name}
       />
 
-      <LaunchChecklist
-        items={checklist.items}
-        ready={checklist.ready}
-        score={checklist.score}
+      <ExecutiveReadinessSummary
+        summary={summary}
+        validatedAtLabel={formatValidatedAt(validatedAt)}
+        openBlockers={openBlockers}
       />
+
+      <LaunchChecklist items={checklist.items} />
 
       <div className="grid gap-6 xl:grid-cols-2">
         <DataIntegrityPanel checks={checklist.integrity} />

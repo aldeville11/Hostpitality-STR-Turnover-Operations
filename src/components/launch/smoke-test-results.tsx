@@ -3,8 +3,7 @@
 import { useState, useTransition } from "react";
 import type { SmokeTestResult } from "@/lib/launch";
 import { runSmokeTestsAction } from "@/lib/launch-actions";
-import { Badge, Button } from "@/components/ui";
-import { LaunchPanel } from "@/components/launch/launch-panel";
+import { Button, EmptyState, ModuleCard, StatusBadge } from "@/components/ui";
 
 export function SmokeTestResults({ initial }: { initial: SmokeTestResult[] }) {
   const [results, setResults] = useState(initial);
@@ -36,48 +35,58 @@ export function SmokeTestResults({ initial }: { initial: SmokeTestResult[] }) {
     });
   }
 
+  const failed = results.filter((r) => !r.ok).length;
+
   return (
-    <LaunchPanel
+    <ModuleCard
       title="Smoke tests"
-      description="Core flow checks — company, properties, SOP/SOW, turnovers, integrations, jobs."
+      description="Core flow verification for company, properties, templates, turnovers, integrations, and jobs."
       actions={
         <Button type="button" variant="secondary" size="sm" disabled={pending} onClick={rerun}>
           {pending ? "Running…" : "Re-run suite"}
         </Button>
       }
     >
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <StatusBadge status={failed ? "failed" : "passed"}>
+          {failed ? `${failed} failed` : "All passed"}
+        </StatusBadge>
+        <span className="text-xs text-[var(--muted)]">{results.length} checks</span>
+      </div>
       {message ? (
-        <p className="rounded-lg border border-[var(--border)] bg-[var(--canvas)] px-3 py-2 text-sm text-[var(--ink)]">
+        <p className="mb-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--canvas)] px-3 py-2 text-sm">
           {message}
         </p>
       ) : null}
       {results.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-[var(--border)] px-4 py-6 text-center text-sm text-[var(--muted)]">
-          No smoke results yet. Run the suite to verify core flows.
-        </p>
+        <EmptyState
+          title="No smoke results yet"
+          description="Run the suite to verify core operational flows before production enablement."
+          action={
+            <Button type="button" size="sm" disabled={pending} onClick={rerun}>
+              Run suite
+            </Button>
+          }
+        />
       ) : (
         <ul className="space-y-2">
           {results.map((r) => (
             <li
               key={r.id}
-              className={`rounded-xl border px-4 py-3 ${
-                r.ok
-                  ? "border-emerald-200 bg-emerald-50/80 text-emerald-950"
-                  : "border-rose-200 bg-rose-50/80 text-rose-950"
-              }`}
+              className="flex flex-wrap items-start justify-between gap-2 rounded-[var(--radius-md)] border border-[var(--border)] px-3 py-2.5"
             >
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold">{r.name}</p>
-                <Badge tone={r.ok ? "success" : "danger"}>
-                  {r.ok ? "Pass" : "Fail"}
-                  {r.ms ? ` · ${r.ms}ms` : ""}
-                </Badge>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-[var(--text-primary)]">{r.name}</p>
+                <p className="text-xs text-[var(--text-secondary)]">{r.detail}</p>
               </div>
-              <p className="mt-1 text-xs opacity-90">{r.detail}</p>
+              <StatusBadge status={r.ok ? "passed" : "failed"}>
+                {r.ok ? "Passed" : "Failed"}
+                {r.ms ? ` · ${r.ms}ms` : ""}
+              </StatusBadge>
             </li>
           ))}
         </ul>
       )}
-    </LaunchPanel>
+    </ModuleCard>
   );
 }

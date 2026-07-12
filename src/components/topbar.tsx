@@ -1,9 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { Menu, Sparkles } from "lucide-react";
+import { Bell, Menu } from "lucide-react";
 import { ROLE_LABELS, type Role } from "@/lib/rbac";
 import { logoutAction } from "@/lib/actions";
+import { BrandLockup } from "@/components/brand";
+import { StatusBadge } from "@/components/ui/status";
 
 export function Topbar({
   user,
@@ -13,34 +14,51 @@ export function Topbar({
   onMenuClick: () => void;
 }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--border)]/80 bg-[var(--surface)]/85 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-[1400px] items-center justify-between gap-3 px-4">
-        <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-sm">
+      <div className="flex h-14 items-center justify-between gap-3 px-3 lg:px-4">
+        <div className="flex min-w-0 items-center gap-3">
           <button
-            className="rounded-lg p-2 text-[var(--muted)] hover:bg-[var(--surface-2)] lg:hidden"
+            className="rounded-[var(--radius-md)] p-2 text-[var(--text-secondary)] hover:bg-[var(--surface-2)] lg:hidden"
             onClick={onMenuClick}
             aria-label="Open menu"
           >
             <Menu className="h-5 w-5" />
           </button>
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)] text-white shadow-sm">
-              <Sparkles className="h-4 w-4" />
-            </span>
-            <span className="font-[family-name:var(--font-display)] text-lg font-semibold tracking-tight">
-              Hostpitality
-            </span>
-          </Link>
+          <div className="lg:hidden">
+            <BrandLockup compact />
+          </div>
+          <div className="hidden min-w-0 lg:block">
+            <p className="truncate text-[13px] font-semibold text-[var(--text-primary)]">
+              {user.companyName}
+            </p>
+            <p className="truncate text-[11px] text-[var(--muted)]">
+              Portfolio · All operating regions
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-3 text-sm">
+
+        <div className="flex items-center gap-2 sm:gap-3">
+          <StatusBadge status="healthy" className="hidden sm:inline-flex">
+            Env · Dev
+          </StatusBadge>
+          <button
+            type="button"
+            className="relative rounded-[var(--radius-md)] border border-[var(--border)] p-2 text-[var(--text-secondary)] hover:bg-[var(--surface-2)]"
+            aria-label="Notifications"
+            title="Notifications"
+          >
+            <Bell className="h-4 w-4" />
+          </button>
           <div className="hidden text-right sm:block">
-            <p className="font-medium leading-tight">{user.name}</p>
-            <p className="text-xs text-[var(--muted)]">
-              {ROLE_LABELS[user.role as Role] ?? user.role} · {user.companyName}
+            <p className="text-[13px] font-medium leading-tight text-[var(--text-primary)]">
+              {user.name}
+            </p>
+            <p className="text-[11px] text-[var(--muted)]">
+              {ROLE_LABELS[user.role as Role] ?? user.role}
             </p>
           </div>
           <form action={logoutAction}>
-            <button className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-medium text-[var(--muted)] hover:bg-[var(--surface-2)]">
+            <button className="rounded-[var(--radius-md)] border border-[var(--border)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-2)]">
               Sign out
             </button>
           </form>

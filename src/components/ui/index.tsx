@@ -19,17 +19,19 @@ export function Button({
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50",
-        size === "sm" && "px-2.5 py-1.5 text-xs",
+        "inline-flex min-h-9 items-center justify-center gap-2 rounded-[var(--radius-md)] font-medium transition-[background,border,opacity,transform] duration-[var(--transition)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus)] disabled:cursor-not-allowed disabled:opacity-50 active:translate-y-px",
+        size === "sm" && "min-h-8 px-2.5 py-1.5 text-xs",
         size === "md" && "px-3.5 py-2 text-sm",
-        size === "lg" && "px-5 py-2.5 text-base",
-        variant === "primary" && "bg-[var(--accent)] text-white hover:bg-[var(--accent-strong)]",
-        variant === "secondary" && "bg-[var(--surface-2)] text-[var(--ink)] hover:bg-[var(--border)]",
+        size === "lg" && "min-h-11 px-5 py-2.5 text-base",
+        variant === "primary" &&
+          "bg-[var(--accent)] text-white hover:bg-[var(--accent-strong)]",
+        variant === "secondary" &&
+          "bg-[var(--surface-2)] text-[var(--text-primary)] hover:bg-[var(--border)]",
         variant === "outline" &&
-          "border border-[var(--border)] bg-transparent text-[var(--ink)] hover:bg-[var(--surface-2)]",
+          "border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text-primary)] hover:bg-[var(--surface-raised)]",
         variant === "ghost" &&
-          "bg-transparent text-[var(--muted)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]",
-        variant === "danger" && "bg-rose-600 text-white hover:bg-rose-700",
+          "bg-transparent text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]",
+        variant === "danger" && "bg-[var(--danger)] text-white hover:bg-rose-800",
         className
       )}
       {...props}
@@ -41,7 +43,7 @@ export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElem
   return (
     <input
       className={cn(
-        "w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--ink)] placeholder:text-[var(--muted)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20",
+        "w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--muted)] transition-[border,box-shadow] duration-[var(--transition)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)]/20 disabled:bg-[var(--surface-2)] disabled:opacity-70",
         className
       )}
       {...props}
@@ -53,7 +55,7 @@ export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTex
   return (
     <textarea
       className={cn(
-        "w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--ink)] placeholder:text-[var(--muted)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20",
+        "w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--muted)] transition-[border,box-shadow] duration-[var(--transition)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)]/20 disabled:bg-[var(--surface-2)] disabled:opacity-70",
         className
       )}
       {...props}
@@ -65,7 +67,7 @@ export function Select({ className, children, ...props }: SelectHTMLAttributes<H
   return (
     <select
       className={cn(
-        "w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--ink)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20",
+        "w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] transition-[border,box-shadow] duration-[var(--transition)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--focus)]/20 disabled:bg-[var(--surface-2)] disabled:opacity-70",
         className
       )}
       {...props}
@@ -75,14 +77,28 @@ export function Select({ className, children, ...props }: SelectHTMLAttributes<H
   );
 }
 
-export function Label({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {
+export function Label({
+  children,
+  htmlFor,
+  hint,
+  required,
+}: {
+  children: ReactNode;
+  htmlFor?: string;
+  hint?: string;
+  required?: boolean;
+}) {
   return (
-    <label
-      htmlFor={htmlFor}
-      className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[var(--muted)]"
-    >
-      {children}
-    </label>
+    <div className="mb-1.5">
+      <label
+        htmlFor={htmlFor}
+        className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-secondary)]"
+      >
+        {children}
+        {required ? <span className="ml-0.5 text-[var(--danger)]">*</span> : null}
+      </label>
+      {hint ? <p className="mt-0.5 text-xs text-[var(--muted)]">{hint}</p> : null}
+    </div>
   );
 }
 
@@ -96,13 +112,18 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium",
-        tone === "neutral" && "bg-slate-100 text-slate-700",
-        tone === "success" && "bg-emerald-50 text-emerald-700",
-        tone === "warning" && "bg-amber-50 text-amber-800",
-        tone === "danger" && "bg-rose-50 text-rose-700",
-        tone === "info" && "bg-sky-50 text-sky-700",
-        tone === "accent" && "bg-teal-50 text-teal-800"
+        "inline-flex items-center rounded-[var(--radius-sm)] border px-2 py-0.5 text-xs font-medium",
+        tone === "neutral" &&
+          "border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-secondary)]",
+        tone === "success" &&
+          "border-emerald-200/80 bg-[var(--success-soft)] text-[var(--success)]",
+        tone === "warning" &&
+          "border-amber-200/80 bg-[var(--warning-soft)] text-[var(--warning)]",
+        tone === "danger" &&
+          "border-rose-200/80 bg-[var(--danger-soft)] text-[var(--danger)]",
+        tone === "info" && "border-sky-200/80 bg-[var(--info-soft)] text-[var(--info)]",
+        tone === "accent" &&
+          "border-teal-200/80 bg-[var(--accent-soft)] text-[var(--accent-strong)]"
       )}
     >
       {children}
@@ -114,20 +135,27 @@ export function PageHeader({
   title,
   description,
   actions,
+  meta,
 }: {
   title: string;
   description?: string;
   actions?: ReactNode;
+  meta?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight text-[var(--ink)] md:text-3xl">
+    <div className="mb-6 flex flex-col gap-4 border-b border-[var(--border)] pb-5 sm:flex-row sm:items-end sm:justify-between">
+      <div className="min-w-0 space-y-2">
+        <h1 className="font-[family-name:var(--font-display)] text-[1.75rem] font-semibold leading-tight tracking-tight text-[var(--text-primary)] md:text-[2rem]">
           {title}
         </h1>
-        {description ? <p className="mt-1 max-w-2xl text-sm text-[var(--muted)]">{description}</p> : null}
+        {description ? (
+          <p className="max-w-3xl text-[14.5px] leading-relaxed text-[var(--text-secondary)]">
+            {description}
+          </p>
+        ) : null}
+        {meta ? <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--muted)]">{meta}</div> : null}
       </div>
-      {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+      {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
     </div>
   );
 }
@@ -140,14 +168,11 @@ export function PlaceholderPanel({
   description: string;
 }) {
   return (
-    <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)]/70 px-6 py-14 text-center">
-      <p className="font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--ink)]">
+    <div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--border)] bg-[var(--surface)] px-6 py-14 text-center">
+      <p className="font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--text-primary)]">
         {title}
       </p>
-      <p className="mx-auto mt-2 max-w-md text-sm text-[var(--muted)]">{description}</p>
-      <p className="mt-4 text-xs font-medium uppercase tracking-wide text-[var(--accent)]">
-        Coming in a later phase
-      </p>
+      <p className="mx-auto mt-2 max-w-md text-sm text-[var(--text-secondary)]">{description}</p>
     </div>
   );
 }
@@ -156,18 +181,89 @@ export function Stat({
   label,
   value,
   hint,
+  emphasis,
 }: {
   label: string;
   value: string | number;
   hint?: string;
+  emphasis?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)]/80 p-4 backdrop-blur">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">{label}</p>
-      <p className="mt-2 font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--ink)]">
+    <div
+      className={cn(
+        "rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-4",
+        emphasis && "border-[var(--accent)]/30 bg-[var(--accent-soft)]/40"
+      )}
+    >
+      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
+        {label}
+      </p>
+      <p
+        className={cn(
+          "mt-2 font-[family-name:var(--font-display)] font-semibold tabular-nums text-[var(--text-primary)]",
+          emphasis ? "text-3xl" : "text-2xl"
+        )}
+      >
         {value}
       </p>
       {hint ? <p className="mt-1 text-xs text-[var(--muted)]">{hint}</p> : null}
     </div>
   );
 }
+
+export function EmptyState({
+  title,
+  description,
+  action,
+}: {
+  title: string;
+  description: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="rounded-[var(--radius-md)] border border-dashed border-[var(--border)] bg-[var(--surface-raised)] px-5 py-8 text-center">
+      <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
+      <p className="mx-auto mt-1.5 max-w-md text-sm text-[var(--text-secondary)]">{description}</p>
+      {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
+    </div>
+  );
+}
+
+export function ModuleCard({
+  title,
+  description,
+  actions,
+  children,
+  className,
+}: {
+  title: string;
+  description?: string;
+  actions?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section
+      className={cn(
+        "rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-sm)]",
+        className
+      )}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--border)] px-5 py-4">
+        <div className="min-w-0">
+          <h2 className="font-[family-name:var(--font-display)] text-base font-semibold text-[var(--text-primary)] md:text-lg">
+            {title}
+          </h2>
+          {description ? (
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">{description}</p>
+          ) : null}
+        </div>
+        {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+      </div>
+      <div className="px-5 py-4">{children}</div>
+    </section>
+  );
+}
+
+export { StatusBadge, statusLabel, statusTone } from "./status";
+export type { OperationalStatus } from "./status";

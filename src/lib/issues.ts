@@ -570,7 +570,7 @@ export async function assignIssue(input: {
   if (input.assigneeVendorId && !vendor) throw new Error("Assignee not found");
 
   let ownerName = issue.ownerName;
-  let ownerUserId = input.ownerUserId !== undefined ? input.ownerUserId : issue.ownerUserId;
+  const ownerUserId = input.ownerUserId !== undefined ? input.ownerUserId : issue.ownerUserId;
   if (input.ownerUserId) {
     const owner = await prisma.user.findFirst({
       where: { id: input.ownerUserId, companyId: input.companyId },
