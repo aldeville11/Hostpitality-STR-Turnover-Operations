@@ -151,3 +151,23 @@ export function PlaceholderPanel({
     </div>
   );
 }
+
+export function Stat({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string | number;
+  hint?: string;
+}) {
+  return (
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)]/80 p-4 backdrop-blur">
+      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">{label}</p>
+      <p className="mt-2 font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--ink)]">
+        {value}
+      </p>
+      {hint ? <p className="mt-1 text-xs text-[var(--muted)]">{hint}</p> : null}
+    </div>
+  );
+}

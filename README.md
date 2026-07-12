@@ -1,27 +1,12 @@
-# Hostpitality — Phase 1 Foundation + Phase 2 Onboarding
+# Hostpitality
 
 AI-powered turnover operations for short-term rental cleaning teams and managers.
 
-## Current scope
+## Phases shipped
 
-### Phase 1 — Foundation
-- Next.js App Router + Prisma/SQLite
-- Session auth, RBAC, audit logs, job scaffold
-- App shell with placeholder business screens
-
-### Phase 2 — Onboarding
-Multi-step first-run setup with persisted progress:
-
-1. Company
-2. Properties
-3. Calendars (optional, skippable)
-4. SOPs
-5. SOW templates
-6. Vendors
-7. Review
-8. Activate first turnover workflow
-
-Progress is stored on `Company.onboardingStep` + `Company.onboardingProgress` and can be resumed anytime.
+1. **Foundation** — auth, RBAC, audit logs, jobs scaffold, app shell
+2. **Onboarding** — multi-step setup with save/resume and activation
+3. **Dashboard** — operational command center from live DB state
 
 ## Quick start
 
@@ -31,9 +16,15 @@ npm run db:setup
 npm run dev
 ```
 
-- Demo (already onboarded): `manager@hostpitality.app` / `demo1234`
-- New workspace: `/signup` → guided onboarding → `/dashboard`
+Demo login: `manager@hostpitality.app` / `demo1234`
 
-## Onboarding routes
+## Dashboard sections
 
-`/onboarding`, `/onboarding/company`, `/onboarding/properties`, `/onboarding/calendars`, `/onboarding/sops`, `/onboarding/sows`, `/onboarding/vendors`, `/onboarding/review`, `/onboarding/finish`
+- Today’s turnovers
+- Overdue jobs
+- Cleaner assignments / workload
+- Open issues
+- Photo verification status
+- Inventory alerts
+- Completion rate
+- Owner notifications sent

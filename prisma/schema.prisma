@@ -149,20 +149,26 @@ model Sow {
 }
 
 model Turnover {
-  id          String   @id @default(cuid())
-  companyId   String
-  propertyId  String
-  bookingId   String?  @unique
-  sopId       String?
-  sowId       String?
-  vendorId    String?
-  status      String   @default("SCHEDULED")
-  windowStart DateTime
-  windowEnd   DateTime
-  deadlineAt  DateTime
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String    @id @default(cuid())
+  companyId       String
+  propertyId      String
+  bookingId       String?   @unique
+  sopId           String?
+  sowId           String?
+  vendorId        String?
+  status          String    @default("SCHEDULED")
+  priority        String    @default("NORMAL")
+  windowStart     DateTime
+  windowEnd       DateTime
+  deadlineAt      DateTime
+  photosRequired  Int       @default(4)
+  photosUploaded  Int       @default(0)
+  photosVerified  Int       @default(0)
+  ownerNotifiedAt DateTime?
+  escalatedAt     DateTime?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   property Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)

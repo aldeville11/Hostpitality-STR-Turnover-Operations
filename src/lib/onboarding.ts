@@ -220,9 +220,13 @@ export async function activateWorkspace(input: {
         sowId: sow.id,
         vendorId: vendor.id,
         status: "SCHEDULED",
+        priority: "NORMAL",
         windowStart,
         windowEnd,
         deadlineAt: windowEnd,
+        photosRequired: 4,
+        photosUploaded: 0,
+        photosVerified: 0,
         notes: "Created during onboarding activation",
       },
     });
