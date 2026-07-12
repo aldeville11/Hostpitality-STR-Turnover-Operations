@@ -63,49 +63,6 @@ async function main() {
     },
   });
 
-  const propertyA = await prisma.property.create({
-    data: {
-      companyId: company.id,
-      name: "Harbor View Loft",
-      unitCode: "HVL-101",
-      address: "120 Pier Street",
-      city: "Santa Barbara",
-      state: "CA",
-      bedrooms: 2,
-      bathrooms: 2,
-      calendarUrl: "https://calendar.example.com/hvl-101.ics",
-      bookingSource: "airbnb",
-    },
-  });
-
-  const propertyB = await prisma.property.create({
-    data: {
-      companyId: company.id,
-      name: "Canyon Cottage",
-      unitCode: "CC-12",
-      address: "88 Mesa Road",
-      city: "Ojai",
-      state: "CA",
-      bedrooms: 1,
-      bathrooms: 1,
-      bookingSource: "vrbo",
-    },
-  });
-
-  const propertyC = await prisma.property.create({
-    data: {
-      companyId: company.id,
-      name: "Seaside Studio",
-      unitCode: "SS-3",
-      address: "14 Ocean Ave",
-      city: "Santa Barbara",
-      state: "CA",
-      bedrooms: 0,
-      bathrooms: 1,
-      bookingSource: "direct",
-    },
-  });
-
   const jordan = await prisma.vendor.create({
     data: {
       companyId: company.id,
@@ -141,6 +98,7 @@ async function main() {
       description: "Foundation playbook",
       contentJson: JSON.stringify([
         { section: "Pre-turnover prep", title: "Gather supplies" },
+        { section: "Room-by-room", title: "Clean kitchen and baths" },
         { section: "Completion sign-off", title: "Sign off" },
       ]),
     },
@@ -151,7 +109,89 @@ async function main() {
       companyId: company.id,
       name: "Standard SOW",
       standardScope: "Full clean, linen change, restock, photo proof.",
+      addOnsJson: JSON.stringify(["Pet hair treatment", "Rush turnover"]),
       slaMinutes: 240,
+    },
+  });
+
+  const photoReqs = JSON.stringify([
+    { label: "Kitchen after clean", required: true },
+    { label: "Bathroom after clean", required: true },
+    { label: "Bedroom staged", required: true },
+    { label: "Final living room", required: true },
+  ]);
+  const restock = JSON.stringify([
+    { name: "Toilet paper", quantity: 4, unit: "rolls" },
+    { name: "Paper towels", quantity: 2, unit: "rolls" },
+    { name: "Dishwasher pods", quantity: 4, unit: "pods" },
+  ]);
+
+  const propertyA = await prisma.property.create({
+    data: {
+      companyId: company.id,
+      name: "Harbor View Loft",
+      unitCode: "HVL-101",
+      address: "120 Pier Street",
+      city: "Santa Barbara",
+      state: "CA",
+      unitType: "apartment",
+      bedrooms: 2,
+      bathrooms: 2,
+      maxGuests: 4,
+      calendarUrl: "https://calendar.example.com/hvl-101.ics",
+      bookingSource: "airbnb",
+      calendarStatus: "synced",
+      calendarSyncedAt: new Date(),
+      sopId: sop.id,
+      sowId: sow.id,
+      defaultVendorId: jordan.id,
+      photoRequirementsJson: photoReqs,
+      restockDefaultsJson: restock,
+      accessNotes: "Lockbox on porch rail. Code in vault.",
+      turnoverBufferMins: 90,
+      sameDayTurnover: true,
+    },
+  });
+
+  const propertyB = await prisma.property.create({
+    data: {
+      companyId: company.id,
+      name: "Canyon Cottage",
+      unitCode: "CC-12",
+      address: "88 Mesa Road",
+      city: "Ojai",
+      state: "CA",
+      unitType: "cabin",
+      bedrooms: 1,
+      bathrooms: 1,
+      maxGuests: 2,
+      bookingSource: "vrbo",
+      calendarStatus: "pending",
+      sopId: sop.id,
+      sowId: sow.id,
+      defaultVendorId: sam.id,
+      photoRequirementsJson: photoReqs,
+      restockDefaultsJson: restock,
+      accessNotes: "Keypad on side door.",
+    },
+  });
+
+  const propertyC = await prisma.property.create({
+    data: {
+      companyId: company.id,
+      name: "Seaside Studio",
+      unitCode: "SS-3",
+      address: "14 Ocean Ave",
+      city: "Santa Barbara",
+      state: "CA",
+      unitType: "studio",
+      bedrooms: 0,
+      bathrooms: 1,
+      maxGuests: 2,
+      bookingSource: "direct",
+      calendarStatus: "not_connected",
+      photoRequirementsJson: photoReqs,
+      restockDefaultsJson: restock,
     },
   });
 

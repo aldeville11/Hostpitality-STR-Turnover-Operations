@@ -59,26 +59,41 @@ model Session {
 }
 
 model Property {
-  id          String   @id @default(cuid())
-  companyId   String
-  name        String
-  unitCode    String
-  address     String
-  city        String
-  state       String
-  bedrooms    Int      @default(1)
-  bathrooms   Float    @default(1)
-  calendarUrl String?
-  bookingSource String @default("manual")
-  active      Boolean  @default(true)
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                   String    @id @default(cuid())
+  companyId            String
+  name                 String
+  unitCode             String
+  address              String
+  city                 String
+  state                String
+  unitType             String    @default("apartment")
+  bedrooms             Int       @default(1)
+  bathrooms            Float     @default(1)
+  maxGuests            Int       @default(2)
+  calendarUrl          String?
+  bookingSource        String    @default("manual")
+  calendarSyncedAt     DateTime?
+  calendarStatus       String    @default("not_connected")
+  sopId                String?
+  sowId                String?
+  defaultVendorId      String?
+  photoRequirementsJson String   @default("[]")
+  restockDefaultsJson  String    @default("[]")
+  accessNotes          String?
+  turnoverBufferMins   Int       @default(60)
+  sameDayTurnover      Boolean   @default(true)
+  active               Boolean   @default(true)
+  notes                String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
-  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  bookings  Booking[]
-  turnovers Turnover[]
-  inventory InventoryItem[]
+  company       Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  sop           Sop?            @relation(fields: [sopId], references: [id])
+  sow           Sow?            @relation(fields: [sowId], references: [id])
+  defaultVendor Vendor?         @relation("PropertyDefaultVendor", fields: [defaultVendorId], references: [id])
+  bookings      Booking[]
+  turnovers     Turnover[]
+  inventory     InventoryItem[]
 
   @@unique([companyId, unitCode])
 }
@@ -95,8 +110,9 @@ model Vendor {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  company     Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  assignments Turnover[]
+  company            Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assignments        Turnover[]
+  defaultProperties  Property[] @relation("PropertyDefaultVendor")
 
   @@unique([companyId, email])
 }
@@ -128,8 +144,9 @@ model Sop {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  turnovers Turnover[]
+  company    Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  properties Property[]
+  turnovers  Turnover[]
 }
 
 model Sow {
@@ -144,8 +161,9 @@ model Sow {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  turnovers Turnover[]
+  company    Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  properties Property[]
+  turnovers  Turnover[]
 }
 
 model Turnover {

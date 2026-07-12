@@ -98,6 +98,17 @@ export async function addPropertyStepAction(formData: FormData) {
       state,
       bedrooms,
       bathrooms,
+      photoRequirementsJson: JSON.stringify([
+        { label: "Kitchen after clean", required: true },
+        { label: "Bathroom after clean", required: true },
+        { label: "Bedroom staged", required: true },
+        { label: "Final living room", required: true },
+      ]),
+      restockDefaultsJson: JSON.stringify([
+        { name: "Toilet paper", quantity: 4, unit: "rolls" },
+        { name: "Paper towels", quantity: 2, unit: "rolls" },
+        { name: "Dishwasher pods", quantity: 4, unit: "pods" },
+      ]),
     },
   });
 
