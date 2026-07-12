@@ -1,0 +1,1 @@
+# Hostpitality-STR-Turnover-Operations
