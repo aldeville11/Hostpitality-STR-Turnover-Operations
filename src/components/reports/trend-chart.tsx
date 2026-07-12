@@ -1,4 +1,5 @@
 import type { TrendPoint } from "@/lib/reports";
+import { EmptyState, ModuleCard } from "@/components/ui";
 
 export function TrendChart({
   title,
@@ -18,23 +19,18 @@ export function TrendChart({
   const max = Math.max(1, ...points.map((p) => Math.max(p.value, p.secondary ?? 0)));
   const hasData = points.some((p) => p.value > 0 || (p.secondary ?? 0) > 0);
 
-  // Downsample for readability when many days
   const display =
     points.length > 21
-      ? points.filter((_, i) => i % Math.ceil(points.length / 14) === 0 || i === points.length - 1)
+      ? points.filter(
+          (_, i) => i % Math.ceil(points.length / 14) === 0 || i === points.length - 1
+        )
       : points;
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-            {title}
-          </h2>
-          {description ? (
-            <p className="mt-1 text-sm text-[var(--muted)]">{description}</p>
-          ) : null}
-        </div>
+    <ModuleCard
+      title={title}
+      description={description}
+      actions={
         <div className="flex flex-wrap gap-3 text-xs text-[var(--muted)]">
           <span className="inline-flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-sm bg-[var(--accent)]" />
@@ -47,12 +43,12 @@ export function TrendChart({
             </span>
           ) : null}
         </div>
-      </div>
-
+      }
+    >
       {!hasData ? (
-        <p className="mt-8 text-center text-sm text-[var(--muted)]">{emptyMessage}</p>
+        <EmptyState title="No trend data" description={emptyMessage} />
       ) : (
-        <div className="mt-6 flex h-44 items-end gap-1.5 sm:gap-2">
+        <div className="flex h-44 items-end gap-1.5 sm:gap-2">
           {display.map((point) => {
             const h1 = Math.max(2, Math.round((point.value / max) * 100));
             const h2 = Math.max(
@@ -87,6 +83,6 @@ export function TrendChart({
           })}
         </div>
       )}
-    </section>
+    </ModuleCard>
   );
 }

@@ -4,12 +4,15 @@ import { requireUser } from "@/lib/auth";
 import { PageHeader } from "@/components/ui";
 import { ExportPanel } from "@/components/reports/export-panel";
 import { ReportFiltersBar } from "@/components/reports/report-filters";
+import { ReportCatalog } from "@/components/reports/report-catalog";
 import { PropertyReportView } from "@/components/reports/property-report";
 import { QaReport } from "@/components/reports/qa-report";
 import { CleanerReportView } from "@/components/reports/cleaner-report";
 import { ReportDashboard } from "@/components/reports/report-dashboard";
 import {
+  REPORT_VIEW_DESCRIPTIONS,
   REPORT_VIEW_LABELS,
+  formatReportPeriod,
   getCleanerReport,
   getPropertyReport,
   getQaIssueReport,
@@ -62,26 +65,45 @@ export default async function ReportDetailPage({
   ];
 
   let body: ReactNode = null;
+  let range: { from: Date | string; to: Date | string } = {
+    from: filters.from ?? "",
+    to: filters.to ?? "",
+  };
+
   if (view === "property") {
     const data = await getPropertyReport(user.companyId, filters);
+    range = data.range;
     body = <PropertyReportView data={data} />;
   } else if (view === "qa") {
     const data = await getQaIssueReport(user.companyId, filters);
+    range = data.range;
     body = <QaReport data={data} />;
   } else if (view === "cleaners") {
     const data = await getCleanerReport(user.companyId, filters);
+    range = data.range;
     body = <CleanerReportView data={data} />;
   } else {
     const data = await getReportingDashboard(user.companyId, filters);
+    range = data.range;
     body = <ReportDashboard data={data} />;
   }
+
+  const period = formatReportPeriod(range.from, range.to);
 
   return (
     <div className="space-y-6">
       <PageHeader
         title={REPORT_VIEW_LABELS[view]}
-        description="Filterable operational report with CSV export."
+        description={REPORT_VIEW_DESCRIPTIONS[view]}
+        meta={
+          <>
+            <span>Reporting period · {period}</span>
+            <span>CSV export available</span>
+          </>
+        }
       />
+
+      <ReportCatalog activeView={view} filters={filters} range={range} />
 
       <ReportFiltersBar
         view={view}

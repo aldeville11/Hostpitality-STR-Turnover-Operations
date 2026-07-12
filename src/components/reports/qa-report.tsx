@@ -1,10 +1,16 @@
-import { Badge } from "@/components/ui";
+import { Badge, EmptyState, ModuleCard, StatusBadge } from "@/components/ui";
 import { MetricCard } from "@/components/reports/metric-card";
 import { TrendChart } from "@/components/reports/trend-chart";
 import type { QaIssueReport } from "@/lib/reports";
+import { mapIssueSeverity } from "@/lib/status-map";
+import { statusLabel } from "@/lib/utils";
 
 export function QaReport({ data }: { data: QaIssueReport }) {
   const { summary } = data;
+  const hasIssues =
+    data.bySeverity.length > 0 ||
+    data.byCategory.length > 0 ||
+    data.recurringIssues.length > 0;
 
   return (
     <div className="space-y-6">
@@ -48,21 +54,21 @@ export function QaReport({ data }: { data: QaIssueReport }) {
       />
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-            Top failure categories
-          </h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            Failed checklist items and photo proofs.
-          </p>
+        <ModuleCard
+          title="Top failure categories"
+          description="Failed checklist items and photo proofs."
+        >
           {data.topFailureCategories.length === 0 ? (
-            <p className="mt-4 text-sm text-[var(--muted)]">No failures in range.</p>
+            <EmptyState
+              title="No failures in range"
+              description="QA failures will appear here when checklist or photo items fail."
+            />
           ) : (
-            <ul className="mt-4 space-y-2">
+            <ul className="space-y-2">
               {data.topFailureCategories.map((f) => (
                 <li
                   key={f.label}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] px-3 py-2 text-sm"
+                  className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--border)] px-3 py-2 text-sm"
                 >
                   <span className="min-w-0 truncate">{f.label}</span>
                   <Badge tone="warning">{f.count}</Badge>
@@ -70,23 +76,23 @@ export function QaReport({ data }: { data: QaIssueReport }) {
               ))}
             </ul>
           )}
-        </section>
+        </ModuleCard>
 
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-            Recurring issues
-          </h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            Same title/category appearing more than once.
-          </p>
+        <ModuleCard
+          title="Recurring issues"
+          description="Same title/category appearing more than once."
+        >
           {data.recurringIssues.length === 0 ? (
-            <p className="mt-4 text-sm text-[var(--muted)]">No recurring issues detected.</p>
+            <EmptyState
+              title="No recurring issues"
+              description="Repeated titles and categories will surface here when they occur."
+            />
           ) : (
-            <ul className="mt-4 space-y-2">
+            <ul className="space-y-2">
               {data.recurringIssues.map((r) => (
                 <li
                   key={`${r.category}-${r.title}`}
-                  className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm"
+                  className="rounded-[var(--radius-md)] border border-[var(--border)] px-3 py-2 text-sm"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-medium">{r.title}</p>
@@ -97,19 +103,32 @@ export function QaReport({ data }: { data: QaIssueReport }) {
               ))}
             </ul>
           )}
-        </section>
+        </ModuleCard>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2">
-        <Breakdown
-          title="Issues by severity"
-          rows={data.bySeverity.map((r) => ({ label: r.severity, count: r.count }))}
-        />
-        <Breakdown
-          title="Issues by category"
-          rows={data.byCategory.map((r) => ({ label: r.category, count: r.count }))}
-        />
-      </div>
+      {hasIssues ? (
+        <div className="grid gap-6 sm:grid-cols-2">
+          {data.bySeverity.length > 0 ? (
+            <Breakdown
+              title="Issues by severity"
+              rows={data.bySeverity.map((r) => ({
+                label: r.severity,
+                count: r.count,
+                status: mapIssueSeverity(r.severity),
+              }))}
+            />
+          ) : null}
+          {data.byCategory.length > 0 ? (
+            <Breakdown
+              title="Issues by category"
+              rows={data.byCategory.map((r) => ({
+                label: r.category,
+                count: r.count,
+              }))}
+            />
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -119,32 +138,31 @@ function Breakdown({
   rows,
 }: {
   title: string;
-  rows: Array<{ label: string; count: number }>;
+  rows: Array<{ label: string; count: number; status?: ReturnType<typeof mapIssueSeverity> }>;
 }) {
   const max = Math.max(1, ...rows.map((r) => r.count));
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-      <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">{title}</h2>
-      {rows.length === 0 ? (
-        <p className="mt-4 text-sm text-[var(--muted)]">No data</p>
-      ) : (
-        <ul className="mt-4 space-y-3">
-          {rows.map((r) => (
-            <li key={r.label}>
-              <div className="mb-1 flex justify-between text-sm">
+    <ModuleCard title={title}>
+      <ul className="space-y-3">
+        {rows.map((r) => (
+          <li key={r.label}>
+            <div className="mb-1 flex items-center justify-between gap-2 text-sm">
+              {r.status ? (
+                <StatusBadge status={r.status}>{statusLabel(r.label)}</StatusBadge>
+              ) : (
                 <span>{r.label}</span>
-                <span className="tabular-nums text-[var(--muted)]">{r.count}</span>
-              </div>
-              <div className="h-2 rounded-full bg-[var(--surface-2)]">
-                <div
-                  className="h-2 rounded-full bg-[var(--accent)]/80"
-                  style={{ width: `${Math.max(6, (r.count / max) * 100)}%` }}
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
+              )}
+              <span className="tabular-nums text-[var(--muted)]">{r.count}</span>
+            </div>
+            <div className="h-2 rounded-full bg-[var(--surface-2)]">
+              <div
+                className="h-2 rounded-full bg-[var(--accent)]/80"
+                style={{ width: `${Math.max(6, (r.count / max) * 100)}%` }}
+              />
+            </div>
+          </li>
+        ))}
+      </ul>
+    </ModuleCard>
   );
 }

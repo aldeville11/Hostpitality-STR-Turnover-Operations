@@ -7,7 +7,7 @@ import {
   setIntegrationEnabledAction,
   syncIntegrationAction,
 } from "@/lib/integration-actions";
-import { Button, Input } from "@/components/ui";
+import { Button, DetailSection, Input, Label } from "@/components/ui";
 
 export function ConnectionPanel({
   integrationId,
@@ -30,7 +30,12 @@ export function ConnectionPanel({
 
   const connected = status === "CONNECTED" || status === "SYNCING" || status === "ERROR";
 
-  function run(action: () => Promise<{ error?: string; stats?: { created: number; updated: number; skipped: number } } | void>) {
+  function run(
+    action: () => Promise<
+      | { error?: string; stats?: { created: number; updated: number; skipped: number } }
+      | void
+    >
+  ) {
     setError(null);
     setMessage(null);
     startTransition(async () => {
@@ -51,19 +56,15 @@ export function ConnectionPanel({
   }
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-      <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-        Connection
-      </h2>
-      <p className="mt-1 text-sm text-[var(--muted)]">
-        Connect, reconnect, enable/disable, and run a sync for this {category.toLowerCase()}{" "}
-        integration.
-      </p>
-
-      <div className="mt-4 space-y-3">
+    <DetailSection
+      title="Connection"
+      description={`Connect, reconnect, enable/disable, and run a sync for this ${category.toLowerCase()} integration.`}
+    >
+      <div className="space-y-3">
         <div>
-          <label className="mb-1.5 block text-sm font-medium">External account</label>
+          <Label htmlFor="external-account">External account</Label>
           <Input
+            id="external-account"
             value={account}
             onChange={(e) => setAccount(e.target.value)}
             placeholder="ops@example.com"
@@ -117,9 +118,9 @@ export function ConnectionPanel({
           </Button>
         </div>
 
-        {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
-        {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+        {message ? <p className="text-sm text-[var(--success)]">{message}</p> : null}
+        {error ? <p className="text-sm text-[var(--danger)]">{error}</p> : null}
       </div>
-    </section>
+    </DetailSection>
   );
 }

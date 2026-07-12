@@ -1,5 +1,7 @@
-import { Badge } from "@/components/ui";
-import { formatSyncTime, integrationStatusTone } from "@/lib/integrations";
+import { DetailFactGrid, DetailSection, StatusBadge } from "@/components/ui";
+import { formatSyncTime } from "@/lib/integrations";
+import { mapIntegrationStatus } from "@/lib/status-map";
+import { statusLabel } from "@/lib/utils";
 
 export function SyncStatus({
   status,
@@ -17,36 +19,35 @@ export function SyncStatus({
   externalAccount: string | null;
 }) {
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-      <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-        Sync status
-      </h2>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Badge tone={integrationStatusTone(status)}>{status}</Badge>
-        <Badge tone={enabled ? "success" : "warning"}>
-          {enabled ? "Enabled" : "Disabled"}
-        </Badge>
-      </div>
-      <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-        <div>
-          <dt className="text-xs uppercase tracking-wide text-[var(--muted)]">Account</dt>
-          <dd className="font-medium">{externalAccount ?? "Not connected"}</dd>
+    <DetailSection
+      title="Sync & health"
+      description="Connection state, last sync times, and the most recent error."
+      actions={
+        <div className="flex flex-wrap gap-2">
+          <StatusBadge status={mapIntegrationStatus(status)}>
+            {statusLabel(status)}
+          </StatusBadge>
+          <StatusBadge status={enabled ? "healthy" : "degraded"}>
+            {enabled ? "Enabled" : "Disabled"}
+          </StatusBadge>
         </div>
-        <div>
-          <dt className="text-xs uppercase tracking-wide text-[var(--muted)]">Last sync</dt>
-          <dd className="font-medium">{formatSyncTime(lastSyncAt)}</dd>
-        </div>
-        <div>
-          <dt className="text-xs uppercase tracking-wide text-[var(--muted)]">Last success</dt>
-          <dd className="font-medium">{formatSyncTime(lastSuccessAt)}</dd>
-        </div>
-        <div>
-          <dt className="text-xs uppercase tracking-wide text-[var(--muted)]">Last error</dt>
-          <dd className={lastError ? "font-medium text-rose-700" : "font-medium"}>
-            {lastError ?? "None"}
-          </dd>
-        </div>
-      </dl>
-    </section>
+      }
+    >
+      <DetailFactGrid
+        items={[
+          { label: "Account", value: externalAccount ?? "Not connected" },
+          { label: "Last sync", value: formatSyncTime(lastSyncAt) },
+          { label: "Last success", value: formatSyncTime(lastSuccessAt) },
+          {
+            label: "Last error",
+            value: lastError ? (
+              <span className="text-[var(--danger)]">{lastError}</span>
+            ) : (
+              "None"
+            ),
+          },
+        ]}
+      />
+    </DetailSection>
   );
 }

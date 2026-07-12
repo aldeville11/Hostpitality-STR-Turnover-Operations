@@ -14,7 +14,15 @@ export default async function IntegrationsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Integrations"
-        description="Connect booking channels, calendars, messaging, and file storage. Sync state stays observable."
+        description="Systems management for booking channels, calendars, messaging, and file storage. Connection state and sync health stay observable."
+        meta={
+          <>
+            <span>{integrations.length} systems</span>
+            <span>
+              {integrations.filter((i) => i.status === "CONNECTED" && i.enabled).length} connected
+            </span>
+          </>
+        }
       />
       <IntegrationList integrations={integrations} />
     </div>

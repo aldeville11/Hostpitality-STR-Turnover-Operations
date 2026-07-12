@@ -2,13 +2,16 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { PageHeader } from "@/components/ui";
 import { ReportDashboard } from "@/components/reports/report-dashboard";
+import { ReportCatalog } from "@/components/reports/report-catalog";
 import { ExportPanel } from "@/components/reports/export-panel";
 import { ReportFiltersBar } from "@/components/reports/report-filters";
 import {
+  formatReportPeriod,
   getReportDataset,
   getReportFilterOptions,
   getReportingDashboard,
   parseReportFilters,
+  REPORT_VIEW_DESCRIPTIONS,
 } from "@/lib/reports";
 import { statusLabel } from "@/lib/utils";
 
@@ -28,12 +31,22 @@ export default async function ReportsPage({
     getReportDataset(user.companyId, "overview", filters),
   ]);
 
+  const period = formatReportPeriod(data.range.from, data.range.to);
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Reporting"
-        description="Company-wide operational visibility across turnovers, QA, issues, and cleaners."
+        description={REPORT_VIEW_DESCRIPTIONS.overview}
+        meta={
+          <>
+            <span>Reporting period · {period}</span>
+            <span>CSV export available</span>
+          </>
+        }
       />
+
+      <ReportCatalog activeView="overview" filters={filters} range={data.range} />
 
       <ReportFiltersBar
         view="overview"

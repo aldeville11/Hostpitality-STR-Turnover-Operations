@@ -1,8 +1,14 @@
 import Link from "next/link";
-import { Badge } from "@/components/ui";
+import { Badge, EmptyState, ModuleCard, StatusBadge } from "@/components/ui";
 import { MetricCard } from "@/components/reports/metric-card";
 import { TrendChart } from "@/components/reports/trend-chart";
 import type { CleanerReport } from "@/lib/reports";
+
+function reworkStatus(rate: number) {
+  if (rate > 20) return "warning" as const;
+  if (rate > 10) return "at_risk" as const;
+  return "healthy" as const;
+}
 
 export function CleanerReportView({ data }: { data: CleanerReport }) {
   const { summary, cleaners, workloadTrend } = data;
@@ -36,20 +42,19 @@ export function CleanerReportView({ data }: { data: CleanerReport }) {
         primaryLabel="Assignments"
       />
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-          Cleaner performance
-        </h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          Workload, completion, rework, and SLA adherence for the filtered range.
-        </p>
-
+      <ModuleCard
+        title="Cleaner performance"
+        description="Workload, completion, rework, and SLA adherence for the filtered range."
+      >
         {cleaners.length === 0 ? (
-          <p className="mt-4 text-sm text-[var(--muted)]">No cleaners match filters.</p>
+          <EmptyState
+            title="No cleaners match filters"
+            description="Adjust the cleaner or property filter to review workforce performance."
+          />
         ) : (
-          <div className="mt-4 overflow-x-auto">
+          <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-sm">
-              <thead className="text-xs uppercase tracking-wide text-[var(--muted)]">
+              <thead className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
                 <tr className="border-b border-[var(--border)]">
                   <th className="py-2 pr-3 font-semibold">Cleaner</th>
                   <th className="py-2 pr-3 font-semibold">Workload</th>
@@ -65,7 +70,7 @@ export function CleanerReportView({ data }: { data: CleanerReport }) {
                     <td className="py-2.5 pr-3">
                       <Link
                         href={`/cleaners/${c.id}`}
-                        className="font-medium hover:underline"
+                        className="font-medium text-[var(--accent-strong)] hover:underline"
                       >
                         {c.name}
                       </Link>
@@ -84,9 +89,9 @@ export function CleanerReportView({ data }: { data: CleanerReport }) {
                     </td>
                     <td className="py-2.5 pr-3">
                       {c.workload ? (
-                        <Badge tone={c.reworkRate > 20 ? "warning" : "neutral"}>
+                        <StatusBadge status={reworkStatus(c.reworkRate)}>
                           {c.reworkRate}%
-                        </Badge>
+                        </StatusBadge>
                       ) : (
                         "—"
                       )}
@@ -94,14 +99,18 @@ export function CleanerReportView({ data }: { data: CleanerReport }) {
                     <td className="py-2.5 pr-3 tabular-nums">
                       {c.completed ? `${c.slaAdherence}%` : "—"}
                     </td>
-                    <td className="py-2.5 tabular-nums">{c.utilization}%</td>
+                    <td className="py-2.5">
+                      <Badge tone={c.utilization >= 90 ? "warning" : "neutral"}>
+                        {c.utilization}%
+                      </Badge>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
-      </section>
+      </ModuleCard>
     </div>
   );
 }

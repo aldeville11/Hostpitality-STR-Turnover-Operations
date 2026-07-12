@@ -127,3 +127,41 @@ export function mapSowStatus(status: string): OperationalStatus {
       return "pending";
   }
 }
+
+/** Map Integration.status onto operational language. */
+export function mapIntegrationStatus(status: string): OperationalStatus {
+  switch (status) {
+    case "CONNECTED":
+      return "connected";
+    case "SYNCING":
+      return "running";
+    case "ERROR":
+      return "error";
+    case "DISABLED":
+      return "degraded";
+    case "DISCONNECTED":
+      return "disconnected";
+    default:
+      return "disconnected";
+  }
+}
+
+/** Sync / webhook event outcome → operational status. */
+export function mapSyncEventStatus(status: string): OperationalStatus {
+  switch (status) {
+    case "SUCCESS":
+    case "PROCESSED":
+      return "complete";
+    case "FAILED":
+      return "failed";
+    case "IGNORED":
+      return "warning";
+    case "RECEIVED":
+    case "PENDING":
+      return "pending";
+    case "RUNNING":
+      return "running";
+    default:
+      return "pending";
+  }
+}

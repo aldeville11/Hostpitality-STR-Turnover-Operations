@@ -2,16 +2,20 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { can } from "@/lib/rbac";
-import { PageHeader, Badge } from "@/components/ui";
+import {
+  Badge,
+  DetailSection,
+  EmptyState,
+  PageHeader,
+  StatusBadge,
+} from "@/components/ui";
 import { ConnectionPanel } from "@/components/integrations/connection-panel";
 import { SyncStatus } from "@/components/integrations/sync-status";
 import { WebhookLog } from "@/components/integrations/webhook-log";
 import { FileLinkPanel } from "@/components/integrations/file-link-panel";
-import {
-  formatSyncTime,
-  getIntegrationDetail,
-  integrationStatusTone,
-} from "@/lib/integrations";
+import { formatSyncTime, getIntegrationDetail } from "@/lib/integrations";
+import { mapIntegrationStatus } from "@/lib/status-map";
+import { statusLabel } from "@/lib/utils";
 
 export default async function IntegrationDetailPage({
   params,
@@ -34,27 +38,34 @@ export default async function IntegrationDetailPage({
         title={integration.name}
         description={
           integration.catalog?.description ??
-          `${integration.category} integration · ${integration.provider}`
+          `${statusLabel(integration.category)} integration · ${integration.provider}`
+        }
+        meta={
+          <>
+            <span>{statusLabel(integration.category)}</span>
+            <span>{integration.provider}</span>
+            <span>Last sync {formatSyncTime(integration.lastSyncAt)}</span>
+          </>
         }
         actions={
           <Link
             href="/integrations"
-            className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm font-medium hover:bg-[var(--surface-2)]"
+            className="inline-flex min-h-9 items-center justify-center rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface)] px-3.5 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-raised)]"
           >
-            All integrations
+            All systems
           </Link>
         }
       />
 
       <div className="flex flex-wrap items-center gap-2">
-        <Badge tone={integrationStatusTone(integration.status)}>{integration.status}</Badge>
-        <Badge tone="neutral">{integration.category}</Badge>
+        <StatusBadge status={mapIntegrationStatus(integration.status)}>
+          {statusLabel(integration.status)}
+        </StatusBadge>
+        <Badge tone="neutral">{statusLabel(integration.category)}</Badge>
         <Badge tone="info">{integration.provider}</Badge>
-        {integration.enabled ? (
-          <Badge tone="success">Enabled</Badge>
-        ) : (
-          <Badge tone="warning">Disabled</Badge>
-        )}
+        <StatusBadge status={integration.enabled ? "healthy" : "degraded"}>
+          {integration.enabled ? "Enabled" : "Disabled"}
+        </StatusBadge>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.2fr_1fr]">
@@ -77,22 +88,21 @@ export default async function IntegrationDetailPage({
           />
 
           {integration.category === "CALENDAR" ? (
-            <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-              <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-                Imported calendar events
-              </h2>
-              <p className="mt-1 text-sm text-[var(--muted)]">
-                Shown alongside turnover scheduling. Checkout-window events reuse existing bookings
-                to avoid duplicate turnovers.
-              </p>
+            <DetailSection
+              title="Imported calendar events"
+              description="Shown alongside turnover scheduling. Checkout-window events reuse existing bookings to avoid duplicate turnovers."
+            >
               {integration.calendarEvents.length === 0 ? (
-                <p className="mt-4 text-sm text-[var(--muted)]">No imported events yet.</p>
+                <EmptyState
+                  title="No imported events yet"
+                  description="Connect and sync this calendar to import events."
+                />
               ) : (
-                <ul className="mt-4 space-y-2">
+                <ul className="space-y-2">
                   {integration.calendarEvents.map((event) => (
                     <li
                       key={event.id}
-                      className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm"
+                      className="rounded-[var(--radius-md)] border border-[var(--border)] px-3 py-2 text-sm"
                     >
                       <p className="font-medium">{event.title}</p>
                       <p className="text-xs text-[var(--muted)]">
@@ -105,7 +115,7 @@ export default async function IntegrationDetailPage({
                   ))}
                 </ul>
               )}
-            </section>
+            </DetailSection>
           ) : null}
 
           {integration.category === "STORAGE" ? (
@@ -124,29 +134,36 @@ export default async function IntegrationDetailPage({
         </div>
 
         <div className="space-y-6">
-          <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-            <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-              Property mapping
-            </h2>
-            <p className="mt-1 text-sm text-[var(--muted)]">
-              Sync uses active properties and unit codes to normalize inbound reservations.
-            </p>
-            <ul className="mt-4 space-y-2">
-              {properties.map((p) => (
-                <li
-                  key={p.id}
-                  className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm"
-                >
-                  <Link href={`/properties/${p.id}`} className="font-medium hover:underline">
-                    {p.name}
-                  </Link>
-                  <p className="text-xs text-[var(--muted)]">
-                    {p.unitCode} · source {p.bookingSource} · calendar {p.calendarStatus}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </section>
+          <DetailSection
+            title="Property mapping"
+            description="Sync uses active properties and unit codes to normalize inbound reservations."
+          >
+            {properties.length === 0 ? (
+              <EmptyState
+                title="No active properties"
+                description="Add properties so inbound reservations can be mapped by unit code."
+              />
+            ) : (
+              <ul className="space-y-2">
+                {properties.map((p) => (
+                  <li
+                    key={p.id}
+                    className="rounded-[var(--radius-md)] border border-[var(--border)] px-3 py-2 text-sm"
+                  >
+                    <Link
+                      href={`/properties/${p.id}`}
+                      className="font-medium text-[var(--accent-strong)] hover:underline"
+                    >
+                      {p.name}
+                    </Link>
+                    <p className="text-xs text-[var(--muted)]">
+                      {p.unitCode} · source {p.bookingSource} · calendar {p.calendarStatus}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </DetailSection>
 
           {integration.category !== "STORAGE" && integration.storedFiles.length > 0 ? (
             <FileLinkPanel files={integration.storedFiles} canManage={false} />

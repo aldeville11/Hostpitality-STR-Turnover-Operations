@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Badge } from "@/components/ui";
+import { EmptyState, ModuleCard, StatusBadge } from "@/components/ui";
 import { MetricCard } from "@/components/reports/metric-card";
 import { TrendChart } from "@/components/reports/trend-chart";
 import type { ReportingDashboard } from "@/lib/reports";
+import { mapTurnoverStatus } from "@/lib/status-map";
 import { statusLabel } from "@/lib/utils";
 
 export function ReportDashboard({ data }: { data: ReportingDashboard }) {
@@ -21,7 +22,13 @@ export function ReportDashboard({ data }: { data: ReportingDashboard }) {
           label="On-time completion"
           value={summary.completedCount ? `${summary.onTimeRate}%` : "—"}
           hint={`${summary.onTimeCount} of ${summary.completedCount}`}
-          tone={summary.onTimeRate >= 80 ? "success" : summary.onTimeRate >= 50 ? "warning" : "danger"}
+          tone={
+            summary.onTimeRate >= 80
+              ? "success"
+              : summary.onTimeRate >= 50
+                ? "warning"
+                : "danger"
+          }
         />
         <MetricCard
           label="QA pass rate"
@@ -51,21 +58,27 @@ export function ReportDashboard({ data }: { data: ReportingDashboard }) {
       />
 
       <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-              By property
-            </h2>
-            <Link href="/reports/property" className="text-sm text-[var(--accent)] hover:underline">
-              Full property report
+        <ModuleCard
+          title="By property"
+          description="Volume, on-time rate, and issue rate for the period."
+          actions={
+            <Link
+              href="/reports/property"
+              className="text-sm font-semibold text-[var(--accent-strong)] hover:underline"
+            >
+              Full property report →
             </Link>
-          </div>
+          }
+        >
           {byProperty.length === 0 ? (
-            <p className="mt-4 text-sm text-[var(--muted)]">No turnovers in this range.</p>
+            <EmptyState
+              title="No turnovers in this range"
+              description="Adjust the reporting period or property filter to see property performance."
+            />
           ) : (
-            <div className="mt-4 overflow-x-auto">
+            <div className="overflow-x-auto">
               <table className="w-full min-w-[520px] text-left text-sm">
-                <thead className="text-xs uppercase tracking-wide text-[var(--muted)]">
+                <thead className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
                   <tr className="border-b border-[var(--border)]">
                     <th className="py-2 pr-3 font-semibold">Property</th>
                     <th className="py-2 pr-3 font-semibold">Volume</th>
@@ -79,7 +92,7 @@ export function ReportDashboard({ data }: { data: ReportingDashboard }) {
                       <td className="py-2.5 pr-3">
                         <Link
                           href={`/properties/${p.id}`}
-                          className="font-medium hover:underline"
+                          className="font-medium text-[var(--accent-strong)] hover:underline"
                         >
                           {p.name}
                         </Link>
@@ -96,29 +109,27 @@ export function ReportDashboard({ data }: { data: ReportingDashboard }) {
               </table>
             </div>
           )}
-        </section>
+        </ModuleCard>
 
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-            Status mix
-          </h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">Turnovers in the selected range.</p>
-          <ul className="mt-4 space-y-2">
-            {statusBreakdown.length === 0 ? (
-              <li className="text-sm text-[var(--muted)]">No data</li>
-            ) : (
-              statusBreakdown.map((row) => (
+        <ModuleCard title="Status mix" description="Turnovers in the selected range.">
+          {statusBreakdown.length === 0 ? (
+            <EmptyState title="No data" description="No turnovers match the current filters." />
+          ) : (
+            <ul className="space-y-2">
+              {statusBreakdown.map((row) => (
                 <li
                   key={row.status}
-                  className="flex items-center justify-between gap-2 rounded-xl border border-[var(--border)] px-3 py-2 text-sm"
+                  className="flex items-center justify-between gap-2 rounded-[var(--radius-md)] border border-[var(--border)] px-3 py-2 text-sm"
                 >
-                  <Badge tone="neutral">{statusLabel(row.status)}</Badge>
+                  <StatusBadge status={mapTurnoverStatus(row.status)}>
+                    {statusLabel(row.status)}
+                  </StatusBadge>
                   <span className="tabular-nums font-medium">{row.count}</span>
                 </li>
-              ))
-            )}
-          </ul>
-        </section>
+              ))}
+            </ul>
+          )}
+        </ModuleCard>
       </div>
     </div>
   );

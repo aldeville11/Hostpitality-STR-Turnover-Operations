@@ -11,6 +11,40 @@ export const REPORT_VIEW_LABELS: Record<ReportView, string> = {
   cleaners: "Cleaner performance",
 };
 
+export const REPORT_VIEW_DESCRIPTIONS: Record<ReportView, string> = {
+  overview: "Company-wide turnover volume, on-time completion, QA pass rate, and cleaner utilization.",
+  property: "Per-property volume, on-time rate, issue rate, QA failures, and restock signals.",
+  qa: "Inspection outcomes, rework and reinspection rates, failure categories, and issue mix.",
+  cleaners: "Cleaner workload, completion, rework, SLA adherence, and utilization.",
+};
+
+export type ReportCategory = "operations" | "quality" | "workforce";
+
+export const REPORT_VIEW_CATEGORIES: Record<ReportView, ReportCategory> = {
+  overview: "operations",
+  property: "operations",
+  qa: "quality",
+  cleaners: "workforce",
+};
+
+export const REPORT_CATEGORY_LABELS: Record<ReportCategory, string> = {
+  operations: "Operations",
+  quality: "Quality",
+  workforce: "Workforce",
+};
+
+export function formatReportPeriod(from: Date | string, to: Date | string) {
+  const fmt = (d: Date | string) => {
+    const date = typeof d === "string" ? new Date(d) : d;
+    return date.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+  return `${fmt(from)} – ${fmt(to)}`;
+}
+
 export type ReportFilters = {
   from?: string;
   to?: string;
