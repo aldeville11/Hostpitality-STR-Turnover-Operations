@@ -3,12 +3,19 @@
 import { useState, useTransition } from "react";
 import type { LaunchCheck } from "@/lib/launch";
 import { repairIntegrityAction } from "@/lib/launch-actions";
-import { Button } from "@/components/ui";
+import { Badge, Button } from "@/components/ui";
+import { LaunchPanel } from "@/components/launch/launch-panel";
 
 const SEV: Record<LaunchCheck["severity"], string> = {
   ok: "border-emerald-200 bg-emerald-50 text-emerald-900",
   warn: "border-amber-200 bg-amber-50 text-amber-950",
   fail: "border-rose-200 bg-rose-50 text-rose-950",
+};
+
+const SEV_TONE: Record<LaunchCheck["severity"], "success" | "warning" | "danger"> = {
+  ok: "success",
+  warn: "warning",
+  fail: "danger",
 };
 
 export function DataIntegrityPanel({ checks }: { checks: LaunchCheck[] }) {
@@ -29,21 +36,15 @@ export function DataIntegrityPanel({ checks }: { checks: LaunchCheck[] }) {
   const repairable = checks.some((c) => c.repairable && c.severity !== "ok");
 
   return (
-    <section className="space-y-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="font-[family-name:var(--font-display)] text-xl text-[var(--ink)]">
-            Data integrity
-          </h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            Relationship and schema checks across properties, bookings, turnovers, SOPs, SOWs, QA,
-            and issues. Repair applies migration-safe defaults and backfills.
-          </p>
-        </div>
+    <LaunchPanel
+      title="Data integrity"
+      description="Relationship and schema checks across properties, bookings, turnovers, SOPs, SOWs, QA, and issues. Repair applies migration-safe defaults and backfills."
+      actions={
         <Button type="button" size="sm" disabled={pending} onClick={repair}>
           {pending ? "Repairing…" : "Repair & backfill"}
         </Button>
-      </div>
+      }
+    >
       <p className="text-xs text-[var(--muted)]">
         {fails} fail · {warns} warn · {checks.length} checks
         {repairable ? " · some items are repairable" : ""}
@@ -65,17 +66,17 @@ export function DataIntegrityPanel({ checks }: { checks: LaunchCheck[] }) {
           <li key={c.id} className={`rounded-xl border px-4 py-3 ${SEV[c.severity]}`}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm font-semibold">{c.title}</p>
-              <span className="text-[10px] font-bold uppercase tracking-[0.14em]">
+              <Badge tone={SEV_TONE[c.severity]}>
                 {c.severity}
                 {typeof c.count === "number" ? ` · ${c.count}` : ""}
                 {c.repairable ? " · repairable" : ""}
-              </span>
+              </Badge>
             </div>
             <p className="mt-1 text-xs opacity-90">{c.detail}</p>
             <p className="mt-1 text-[10px] uppercase tracking-[0.12em] opacity-70">{c.area}</p>
           </li>
         ))}
       </ul>
-    </section>
+    </LaunchPanel>
   );
 }

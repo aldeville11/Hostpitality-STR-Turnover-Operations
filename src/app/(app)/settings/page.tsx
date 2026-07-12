@@ -81,7 +81,7 @@ export default async function SettingsPage() {
             href="/launch"
             className="text-sm font-medium text-[var(--accent-strong)] hover:underline"
           >
-            Open launch checklist →
+            Open launch readiness →
           </Link>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

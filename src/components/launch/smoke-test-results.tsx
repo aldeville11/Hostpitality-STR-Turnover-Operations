@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import type { SmokeTestResult } from "@/lib/launch";
 import { runSmokeTestsAction } from "@/lib/launch-actions";
-import { Button } from "@/components/ui";
+import { Badge, Button } from "@/components/ui";
+import { LaunchPanel } from "@/components/launch/launch-panel";
 
 export function SmokeTestResults({ initial }: { initial: SmokeTestResult[] }) {
   const [results, setResults] = useState(initial);
@@ -36,20 +37,15 @@ export function SmokeTestResults({ initial }: { initial: SmokeTestResult[] }) {
   }
 
   return (
-    <section className="space-y-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="font-[family-name:var(--font-display)] text-xl text-[var(--ink)]">
-            Smoke tests
-          </h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            Core flow checks — company, properties, SOP/SOW, turnovers, integrations, jobs.
-          </p>
-        </div>
+    <LaunchPanel
+      title="Smoke tests"
+      description="Core flow checks — company, properties, SOP/SOW, turnovers, integrations, jobs."
+      actions={
         <Button type="button" variant="secondary" size="sm" disabled={pending} onClick={rerun}>
           {pending ? "Running…" : "Re-run suite"}
         </Button>
-      </div>
+      }
+    >
       {message ? (
         <p className="rounded-lg border border-[var(--border)] bg-[var(--canvas)] px-3 py-2 text-sm text-[var(--ink)]">
           {message}
@@ -72,16 +68,16 @@ export function SmokeTestResults({ initial }: { initial: SmokeTestResult[] }) {
             >
               <div className="flex items-center justify-between gap-2">
                 <p className="text-sm font-semibold">{r.name}</p>
-                <span className="text-[10px] font-bold uppercase tracking-[0.14em]">
+                <Badge tone={r.ok ? "success" : "danger"}>
                   {r.ok ? "Pass" : "Fail"}
                   {r.ms ? ` · ${r.ms}ms` : ""}
-                </span>
+                </Badge>
               </div>
               <p className="mt-1 text-xs opacity-90">{r.detail}</p>
             </li>
           ))}
         </ul>
       )}
-    </section>
+    </LaunchPanel>
   );
 }

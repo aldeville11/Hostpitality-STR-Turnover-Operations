@@ -33,7 +33,7 @@ const NAV = [
   { href: "/reports", label: "Reporting", icon: BarChart3 },
   { href: "/integrations", label: "Integrations", icon: Plug },
   { href: "/settings", label: "Settings", icon: Settings },
-  { href: "/launch", label: "Launch", icon: Rocket },
+  { href: "/launch", label: "Launch readiness", icon: Rocket },
 ];
 export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname();

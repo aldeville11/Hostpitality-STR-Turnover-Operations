@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import type { ObservabilitySnapshot } from "@/lib/launch";
 import { retryFailedJobsAction } from "@/lib/launch-actions";
-import { Button } from "@/components/ui";
+import { Button, Stat } from "@/components/ui";
+import { LaunchPanel } from "@/components/launch/launch-panel";
 
 export function ObservabilityPanel({ snapshot }: { snapshot: ObservabilitySnapshot }) {
   const [message, setMessage] = useState<string | null>(null);
@@ -17,17 +18,10 @@ export function ObservabilityPanel({ snapshot }: { snapshot: ObservabilitySnapsh
   }
 
   return (
-    <section className="space-y-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="font-[family-name:var(--font-display)] text-xl text-[var(--ink)]">
-            Observability
-          </h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            Sync health, failed jobs, and operational warnings. Failed jobs auto-retry with backoff;
-            permanently failed jobs can be requeued here.
-          </p>
-        </div>
+    <LaunchPanel
+      title="Observability"
+      description="Sync health, failed jobs, and operational warnings. Failed jobs auto-retry with backoff; permanently failed jobs can be requeued here."
+      actions={
         <Button
           type="button"
           variant="secondary"
@@ -37,8 +31,8 @@ export function ObservabilityPanel({ snapshot }: { snapshot: ObservabilitySnapsh
         >
           {pending ? "Requeuing…" : "Retry failed jobs"}
         </Button>
-      </div>
-
+      }
+    >
       {message ? (
         <p className="rounded-lg border border-[var(--border)] bg-[var(--canvas)] px-3 py-2 text-sm text-[var(--ink)]">
           {message}
@@ -46,24 +40,10 @@ export function ObservabilityPanel({ snapshot }: { snapshot: ObservabilitySnapsh
       ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          { label: "Pending", value: snapshot.jobs.pending },
-          { label: "Running", value: snapshot.jobs.running },
-          { label: "Failed", value: snapshot.jobs.failed },
-          { label: "Retryable", value: snapshot.jobs.retryable },
-        ].map((cell) => (
-          <div
-            key={cell.label}
-            className="rounded-xl border border-[var(--border)] bg-[var(--canvas)] px-4 py-3"
-          >
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-              {cell.label}
-            </p>
-            <p className="mt-1 font-[family-name:var(--font-display)] text-2xl text-[var(--ink)]">
-              {cell.value}
-            </p>
-          </div>
-        ))}
+        <Stat label="Pending" value={snapshot.jobs.pending} />
+        <Stat label="Running" value={snapshot.jobs.running} />
+        <Stat label="Failed" value={snapshot.jobs.failed} />
+        <Stat label="Retryable" value={snapshot.jobs.retryable} />
       </div>
 
       {snapshot.warnings.length > 0 ? (
@@ -121,9 +101,7 @@ export function ObservabilityPanel({ snapshot }: { snapshot: ObservabilitySnapsh
                   {e.integration.name} ({e.integration.provider})
                 </p>
                 <p className="mt-1 text-xs text-[var(--muted)]">{e.summary}</p>
-                {e.error ? (
-                  <p className="mt-1 text-xs text-rose-800">{e.error}</p>
-                ) : null}
+                {e.error ? <p className="mt-1 text-xs text-rose-800">{e.error}</p> : null}
               </li>
             ))}
           </ul>
@@ -134,6 +112,6 @@ export function ObservabilityPanel({ snapshot }: { snapshot: ObservabilitySnapsh
         Max job attempts {snapshot.maxJobAttempts} · {snapshot.jobs.completedRecent} completed in
         last 24h
       </p>
-    </section>
+    </LaunchPanel>
   );
 }

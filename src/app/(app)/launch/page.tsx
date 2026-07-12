@@ -17,7 +17,7 @@ export default async function LaunchPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Launch hardening"
+        title="Launch readiness"
         description="Validate data integrity, run smoke tests, and review operational health before shipping."
         actions={
           <Badge tone={checklist.ready ? "success" : "warning"}>
