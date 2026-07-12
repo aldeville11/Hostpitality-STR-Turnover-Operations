@@ -12,6 +12,32 @@ import { log } from "@/lib/logger";
 const SESSION_COOKIE = "hp_session";
 const SESSION_DAYS = 14;
 
+/** Build an absolute URL that respects Cursor port-forward / proxy Host headers. */
+function absoluteFromRequest(request: Request, path: string) {
+  const url = new URL(request.url);
+  const proto =
+    request.headers.get("x-forwarded-proto") ??
+    url.protocol.replace(":", "") ??
+    "http";
+  const host =
+    request.headers.get("x-forwarded-host") ??
+    request.headers.get("host") ??
+    url.host;
+  return `${proto}://${host}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+function redirectPreservingHost(request: Request, path: string) {
+  // Prefer a relative Location when possible via raw Response so browsers keep
+  // whatever host Cursor port-forward / preview used (not hardcoded localhost).
+  const response = new NextResponse(null, {
+    status: 307,
+    headers: { Location: path.startsWith("/") ? path : `/${path}` },
+  });
+  // Also set an absolute fallback target for clients that require it.
+  response.headers.set("X-Redirect-Absolute", absoluteFromRequest(request, path));
+  return response;
+}
+
 /**
  * Temporary auto-login for the seeded demo manager.
  * GET /api/auth/bypass → sets session cookie and redirects to /dashboard (or ?next=).
@@ -32,7 +58,7 @@ export async function GET(request: Request) {
 
   const existing = await getCurrentUser();
   if (existing?.email === DEMO_MANAGER_EMAIL) {
-    return NextResponse.redirect(new URL(safeNext, request.url));
+    return redirectPreservingHost(request, safeNext);
   }
 
   const user = await prisma.user.findUnique({
@@ -66,7 +92,7 @@ export async function GET(request: Request) {
   });
   log.warn("auth.bypass_login", { email: DEMO_MANAGER_EMAIL, userId: user.id });
 
-  const response = NextResponse.redirect(new URL(safeNext, request.url));
+  const response = redirectPreservingHost(request, safeNext);
   response.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
