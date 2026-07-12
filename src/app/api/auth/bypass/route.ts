@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
-import { DEMO_MANAGER_EMAIL, getCurrentUser } from "@/lib/auth";
+import {
+  DEMO_MANAGER_EMAIL,
+  getCurrentUser,
+  isAuthBypassAllowed,
+} from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { writeAuditLog } from "@/lib/audit";
 import { log } from "@/lib/logger";
@@ -8,20 +12,13 @@ import { log } from "@/lib/logger";
 const SESSION_COOKIE = "hp_session";
 const SESSION_DAYS = 14;
 
-function bypassAllowed() {
-  // Opt out with AUTH_BYPASS=0. Opt in for production with AUTH_BYPASS=1.
-  if (process.env.AUTH_BYPASS === "0") return false;
-  if (process.env.AUTH_BYPASS === "1") return true;
-  return process.env.NODE_ENV !== "production";
-}
-
 /**
  * Temporary auto-login for the seeded demo manager.
  * GET /api/auth/bypass → sets session cookie and redirects to /dashboard (or ?next=).
  * Example: /api/auth/bypass?next=/launch
  */
 export async function GET(request: Request) {
-  if (!bypassAllowed()) {
+  if (!isAuthBypassAllowed()) {
     return NextResponse.json(
       { error: "Auth bypass is disabled. Set AUTH_BYPASS=1 to enable." },
       { status: 403 }

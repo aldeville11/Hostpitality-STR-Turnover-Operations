@@ -123,3 +123,9 @@ export function isOnboarded(user: AuthUser) {
 /** Seeded demo manager email used by temporary /api/auth/bypass. */
 export const DEMO_MANAGER_EMAIL = "manager@hostpitality.app";
 
+/** Temporary demo bypass — on in non-production unless AUTH_BYPASS=0. */
+export function isAuthBypassAllowed() {
+  if (process.env.AUTH_BYPASS === "0") return false;
+  if (process.env.AUTH_BYPASS === "1") return true;
+  return process.env.NODE_ENV !== "production";
+}
