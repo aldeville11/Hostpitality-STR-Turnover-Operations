@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   AlertTriangle,
+  BarChart3,
   Building2,
   Camera,
   CheckSquare,
@@ -13,7 +14,6 @@ import {
   Package,
   Settings,
   Users,
-  UserRound,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -28,7 +28,7 @@ const NAV = [
   { href: "/qa", label: "QA / Photo Review", icon: Camera },
   { href: "/issues", label: "Issues", icon: AlertTriangle },
   { href: "/inventory", label: "Inventory", icon: Package },
-  { href: "/owners", label: "Owners / Reporting", icon: UserRound },
+  { href: "/reports", label: "Reporting", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

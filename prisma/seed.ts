@@ -805,9 +805,298 @@ async function main() {
         toStatus: "COMPLETED",
         note: "Closed after QA (seed history)",
         actorName: "Alex Morgan",
+        createdAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000),
       },
     ],
   });
+
+  // Historical turnovers for reporting trends (last ~2 weeks)
+  const historySpecs: Array<{
+    daysAgo: number;
+    propertyId: string;
+    vendorId: string;
+    late: boolean;
+    qa: "APPROVED" | "NEEDS_REWORK" | "REJECTED";
+    failKitchen: boolean;
+    reinspect?: boolean;
+  }> = [
+    {
+      daysAgo: 12,
+      propertyId: propertyA.id,
+      vendorId: jordan.id,
+      late: false,
+      qa: "APPROVED",
+      failKitchen: false,
+    },
+    {
+      daysAgo: 10,
+      propertyId: propertyB.id,
+      vendorId: sam.id,
+      late: true,
+      qa: "NEEDS_REWORK",
+      failKitchen: true,
+    },
+    {
+      daysAgo: 9,
+      propertyId: propertyB.id,
+      vendorId: sam.id,
+      late: false,
+      qa: "APPROVED",
+      failKitchen: false,
+      reinspect: true,
+    },
+    {
+      daysAgo: 7,
+      propertyId: propertyC.id,
+      vendorId: jordan.id,
+      late: false,
+      qa: "APPROVED",
+      failKitchen: false,
+    },
+    {
+      daysAgo: 5,
+      propertyId: propertyA.id,
+      vendorId: jordan.id,
+      late: false,
+      qa: "REJECTED",
+      failKitchen: true,
+    },
+    {
+      daysAgo: 4,
+      propertyId: propertyA.id,
+      vendorId: jordan.id,
+      late: false,
+      qa: "APPROVED",
+      failKitchen: false,
+      reinspect: true,
+    },
+    {
+      daysAgo: 3,
+      propertyId: propertyC.id,
+      vendorId: sam.id,
+      late: true,
+      qa: "APPROVED",
+      failKitchen: false,
+    },
+  ];
+
+  for (const spec of historySpecs) {
+    const start = new Date(now.getTime() - spec.daysAgo * 24 * 60 * 60 * 1000);
+    start.setHours(10, 0, 0, 0);
+    const deadline = new Date(start.getTime() + 4 * 60 * 60 * 1000);
+    const completedAt = new Date(
+      deadline.getTime() + (spec.late ? 90 * 60 * 1000 : -30 * 60 * 1000)
+    );
+    const cleanerName = spec.vendorId === jordan.id ? jordan.name : sam.name;
+    const hist = await prisma.turnover.create({
+      data: {
+        companyId: company.id,
+        propertyId: spec.propertyId,
+        sopId: sop.id,
+        sowId: sow.id,
+        vendorId: spec.vendorId,
+        status: "COMPLETED",
+        priority: "NORMAL",
+        windowStart: start,
+        windowEnd: deadline,
+        deadlineAt: deadline,
+        photosRequired: 4,
+        photosUploaded: 4,
+        photosVerified: spec.qa === "APPROVED" ? 4 : 3,
+        ownerNotifiedAt: new Date(completedAt.getTime() + 20 * 60 * 1000),
+      },
+    });
+    await seedChecklist(hist.id, { completeAll: true });
+    await prisma.turnoverChecklistItem.create({
+      data: {
+        turnoverId: hist.id,
+        section: "Restock",
+        title: "Restock linens & paper",
+        instructions: "Top up bathrooms and kitchen paper",
+        requiresPhoto: false,
+        sortOrder: 10,
+        completed: true,
+        completedAt: new Date(start.getTime() + 2 * 60 * 60 * 1000),
+        completedBy: cleanerName,
+      },
+    });
+    await prisma.turnoverStatusEvent.createMany({
+      data: [
+        {
+          turnoverId: hist.id,
+          fromStatus: null,
+          toStatus: "ASSIGNED",
+          actorName: "System",
+          createdAt: new Date(start.getTime() - 12 * 60 * 60 * 1000),
+        },
+        {
+          turnoverId: hist.id,
+          fromStatus: "ASSIGNED",
+          toStatus: "IN_PROGRESS",
+          actorName: cleanerName,
+          createdAt: start,
+        },
+        {
+          turnoverId: hist.id,
+          fromStatus: "IN_PROGRESS",
+          toStatus: "READY_FOR_QA",
+          actorName: cleanerName,
+          createdAt: new Date(start.getTime() + 3 * 60 * 60 * 1000),
+        },
+        ...(spec.qa === "NEEDS_REWORK" || spec.qa === "REJECTED"
+          ? [
+              {
+                turnoverId: hist.id,
+                fromStatus: "READY_FOR_QA",
+                toStatus: "NEEDS_REWORK",
+                actorName: manager.name,
+                createdAt: new Date(start.getTime() + 3 * 60 * 60 * 1000 + 30 * 60 * 1000),
+              },
+              {
+                turnoverId: hist.id,
+                fromStatus: "NEEDS_REWORK",
+                toStatus: "READY_FOR_QA",
+                actorName: cleanerName,
+                createdAt: new Date(start.getTime() + 5 * 60 * 60 * 1000),
+              },
+            ]
+          : []),
+        {
+          turnoverId: hist.id,
+          fromStatus: "READY_FOR_QA",
+          toStatus: "COMPLETED",
+          note: "Historical completion",
+          actorName: manager.name,
+          createdAt: completedAt,
+        },
+      ],
+    });
+
+    const firstInspection = await prisma.qaInspection.create({
+      data: {
+        companyId: company.id,
+        turnoverId: hist.id,
+        status: spec.reinspect ? "NEEDS_REWORK" : spec.qa,
+        inspectorId: manager.id,
+        inspectorName: manager.name,
+        startedAt: new Date(start.getTime() + 3 * 60 * 60 * 1000 + 12 * 60 * 1000),
+        completedAt: new Date(start.getTime() + 3 * 60 * 60 * 1000 + 36 * 60 * 1000),
+        decisionNote: spec.failKitchen ? "Kitchen presentation incomplete" : "Looks good",
+        items: {
+          create: [
+            {
+              section: "Kitchen",
+              title: "Counters wiped",
+              result: spec.failKitchen ? "FAIL" : "PASS",
+              comment: spec.failKitchen ? "Residue on island" : null,
+              sortOrder: 0,
+            },
+            {
+              section: "Bathroom",
+              title: "Vanity staged",
+              result: "PASS",
+              sortOrder: 1,
+            },
+            {
+              section: "Restock",
+              title: "Restock linens & paper",
+              result: "PASS",
+              sortOrder: 2,
+            },
+          ],
+        },
+        photos: {
+          create: [
+            {
+              label: "Kitchen wide",
+              required: true,
+              uploaded: true,
+              result: spec.failKitchen ? "FAIL" : "PASS",
+              comment: spec.failKitchen ? "Framing incomplete" : null,
+              sortOrder: 0,
+            },
+            {
+              label: "Bathroom after clean",
+              required: true,
+              uploaded: true,
+              result: "PASS",
+              sortOrder: 1,
+            },
+          ],
+        },
+      },
+    });
+
+    if (spec.reinspect) {
+      await prisma.qaInspection.create({
+        data: {
+          companyId: company.id,
+          turnoverId: hist.id,
+          status: "APPROVED",
+          inspectorId: manager.id,
+          inspectorName: manager.name,
+          startedAt: new Date(start.getTime() + 5 * 60 * 60 * 1000 + 12 * 60 * 1000),
+          completedAt: new Date(start.getTime() + 5 * 60 * 60 * 1000 + 30 * 60 * 1000),
+          decisionNote: "Passed on reinspection",
+          items: {
+            create: [
+              {
+                section: "Kitchen",
+                title: "Counters wiped",
+                result: "PASS",
+                sortOrder: 0,
+              },
+              {
+                section: "Bathroom",
+                title: "Vanity staged",
+                result: "PASS",
+                sortOrder: 1,
+              },
+            ],
+          },
+          photos: {
+            create: [
+              {
+                label: "Kitchen wide",
+                required: true,
+                uploaded: true,
+                result: "PASS",
+                sortOrder: 0,
+              },
+            ],
+          },
+        },
+      });
+    }
+
+    if (spec.failKitchen) {
+      await prisma.issue.create({
+        data: {
+          companyId: company.id,
+          propertyId: spec.propertyId,
+          turnoverId: hist.id,
+          qaInspectionId: firstInspection.id,
+          title: "Kitchen photo rejected",
+          description: "QA failed — framing incomplete, re-shoot required.",
+          severity: "MEDIUM",
+          status: spec.daysAgo > 6 ? "CLOSED" : "RESOLVED",
+          category: "qa",
+          source: "QA_FAILURE",
+          blocking: false,
+          ownerUserId: manager.id,
+          ownerName: manager.name,
+          assigneeVendorId: spec.vendorId,
+          assigneeName: cleanerName,
+          resolvedAt: new Date(completedAt.getTime() + 6 * 60 * 60 * 1000),
+          closedAt:
+            spec.daysAgo > 6
+              ? new Date(completedAt.getTime() + 12 * 60 * 60 * 1000)
+              : null,
+          createdAt: new Date(start.getTime() + 3 * 60 * 60 * 1000 + 42 * 60 * 1000),
+        },
+      });
+    }
+  }
 
   const dueSoon = new Date(Date.now() + 2 * 60 * 60 * 1000);
   const overdueDue = new Date(Date.now() - 3 * 60 * 60 * 1000);

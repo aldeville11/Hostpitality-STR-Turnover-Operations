@@ -1,10 +1,5 @@
-import PlaceholderPage from "@/components/placeholder-page";
+import { redirect } from "next/navigation";
 
 export default function OwnersPage() {
-  return (
-    <PlaceholderPage
-      title="Owners / Reporting"
-      description="Owner contacts and turnover completion summaries."
-    />
-  );
+  redirect("/reports");
 }
