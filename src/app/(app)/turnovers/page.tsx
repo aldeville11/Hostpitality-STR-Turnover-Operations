@@ -35,7 +35,7 @@ export default async function TurnoversPage({
   const canManage = can(user.role, "turnovers:manage");
 
   return (
-    <div>
+    <div className="space-y-4">
       <PageHeader
         title="Turnovers"
         description="Checkout windows become scheduled cleaning jobs — assign cleaners, run checklists, and advance status through Ready for QA."

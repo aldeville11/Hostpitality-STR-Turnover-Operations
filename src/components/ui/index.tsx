@@ -267,3 +267,8 @@ export function ModuleCard({
 
 export { StatusBadge, statusLabel, statusTone } from "./status";
 export type { OperationalStatus } from "./status";
+export { DataTable } from "./data-table";
+export type { DataTableColumn } from "./data-table";
+export { ListFilterBar } from "./list-filter-bar";
+export type { FilterField } from "./list-filter-bar";
+export { SortableDataTable } from "./sortable-data-table";

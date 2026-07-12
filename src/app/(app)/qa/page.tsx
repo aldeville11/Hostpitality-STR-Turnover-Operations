@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { can } from "@/lib/rbac";
 import { listQaQueue } from "@/lib/qa";
 import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/ui";
@@ -40,7 +39,7 @@ export default async function QaPage({
   ]);
 
   return (
-    <div>
+    <div className="space-y-4">
       <PageHeader
         title="QA / Photo Review"
         description="Verify turnover work against the property SOP and SOW — pass/fail checklist items, review photos, and approve or send back for rework."
@@ -51,7 +50,6 @@ export default async function QaPage({
         properties={properties}
         inspectors={inspectors}
       />
-      {!can(user.role, "qa:review") ? null : null}
     </div>
   );
 }

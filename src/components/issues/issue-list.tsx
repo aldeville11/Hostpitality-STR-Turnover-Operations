@@ -1,12 +1,18 @@
+"use client";
+
 import Link from "next/link";
-import { Badge } from "@/components/ui";
-import { IssueCard } from "@/components/issues/issue-card";
+import { Badge, ModuleCard, StatusBadge } from "@/components/ui";
+import { ListFilterBar } from "@/components/ui/list-filter-bar";
+import { SortableDataTable } from "@/components/ui/sortable-data-table";
+import type { DataTableColumn } from "@/components/ui/data-table";
 import {
   ISSUE_SEVERITIES,
   ISSUE_STATUSES,
   ISSUE_STATUS_LABELS,
   type listIssues,
 } from "@/lib/issues";
+import { formatDateTime } from "@/lib/utils";
+import { mapIssueSeverity, mapIssueStatus } from "@/lib/status-map";
 
 type IssueRow = Awaited<ReturnType<typeof listIssues>>[number];
 
@@ -27,111 +33,170 @@ export function IssueList({
   };
   properties: { id: string; name: string; unitCode: string }[];
 }) {
-  const blockingCount = issues.filter((i) => i.blocking && i.sla.overdue === false).length;
+  const blockingCount = issues.filter((i) => i.blocking).length;
   const overdueCount = issues.filter((i) => i.sla.overdue).length;
+
+  const columns: DataTableColumn<IssueRow>[] = [
+    {
+      id: "title",
+      header: "Issue",
+      sortable: true,
+      sortValue: (r) => r.title,
+      cell: (r) => <span className="line-clamp-1 font-medium">{r.title}</span>,
+    },
+    {
+      id: "status",
+      header: "Status",
+      sortable: true,
+      sortValue: (r) => r.status,
+      cell: (r) => (
+        <StatusBadge status={mapIssueStatus(r.status)}>
+          {ISSUE_STATUS_LABELS[r.status as keyof typeof ISSUE_STATUS_LABELS] ?? r.status}
+        </StatusBadge>
+      ),
+    },
+    {
+      id: "severity",
+      header: "Severity",
+      sortable: true,
+      sortValue: (r) => r.severity,
+      cell: (r) => (
+        <StatusBadge status={mapIssueSeverity(r.severity)}>{r.severity}</StatusBadge>
+      ),
+    },
+    {
+      id: "property",
+      header: "Property",
+      sortable: true,
+      sortValue: (r) => r.property?.name ?? "",
+      cell: (r) =>
+        r.property ? (
+          <span>
+            {r.property.name} · {r.property.unitCode}
+          </span>
+        ) : (
+          "—"
+        ),
+    },
+    {
+      id: "owner",
+      header: "Owner",
+      sortable: true,
+      sortValue: (r) => r.ownerName ?? "",
+      cell: (r) => r.ownerName ?? "—",
+    },
+    {
+      id: "sla",
+      header: "SLA",
+      sortable: true,
+      sortValue: (r) => (r.sla.overdue ? 2 : r.blocking ? 1 : 0),
+      cell: (r) => (
+        <div className="flex flex-wrap gap-1">
+          {r.blocking ? <Badge tone="warning">Blocking</Badge> : null}
+          {r.sla.overdue ? <Badge tone="danger">Overdue</Badge> : null}
+          {!r.blocking && !r.sla.overdue ? (
+            <span className="text-[var(--muted)]">On track</span>
+          ) : null}
+        </div>
+      ),
+    },
+    {
+      id: "created",
+      header: "Created",
+      sortable: true,
+      sortValue: (r) => r.createdAt,
+      cell: (r) => (
+        <span className="whitespace-nowrap text-[var(--text-secondary)]">
+          {formatDateTime(r.createdAt)}
+        </span>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-4">
-      <form className="flex flex-wrap gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-3">
-        <input
-          name="q"
-          defaultValue={filters.q ?? ""}
-          placeholder="Search issues"
-          className="min-w-[150px] flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
-        />
-        <select
-          name="status"
-          defaultValue={filters.status ?? ""}
-          className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
-        >
-          <option value="">All statuses</option>
-          {ISSUE_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {ISSUE_STATUS_LABELS[s]}
-            </option>
-          ))}
-        </select>
-        <select
-          name="severity"
-          defaultValue={filters.severity ?? ""}
-          className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
-        >
-          <option value="">All severities</option>
-          {ISSUE_SEVERITIES.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-        <select
-          name="propertyId"
-          defaultValue={filters.propertyId ?? ""}
-          className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
-        >
-          <option value="">All properties</option>
-          {properties.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name} ({p.unitCode})
-            </option>
-          ))}
-        </select>
-        <input
-          type="date"
-          name="from"
-          defaultValue={filters.from ?? ""}
-          className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
-        />
-        <input
-          type="date"
-          name="to"
-          defaultValue={filters.to ?? ""}
-          className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
-        />
-        <label className="flex items-center gap-2 rounded-lg border border-[var(--border)] px-3 py-2 text-sm">
-          <input
-            type="checkbox"
-            name="blocking"
-            value="1"
-            defaultChecked={filters.blocking === "1"}
-          />
-          Blocking only
-        </label>
-        <button
-          type="submit"
-          className="rounded-lg bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white"
-        >
-          Filter
-        </button>
-        <Link
-          href="/issues"
-          className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm"
-        >
-          Reset
-        </Link>
-      </form>
+      <ListFilterBar
+        resetHref="/issues"
+        fields={[
+          { type: "search", name: "q", placeholder: "Search issues", defaultValue: filters.q },
+          {
+            type: "select",
+            name: "status",
+            label: "Status",
+            emptyLabel: "All statuses",
+            defaultValue: filters.status,
+            options: ISSUE_STATUSES.map((s) => ({ value: s, label: ISSUE_STATUS_LABELS[s] })),
+          },
+          {
+            type: "select",
+            name: "severity",
+            label: "Severity",
+            emptyLabel: "All severities",
+            defaultValue: filters.severity,
+            options: ISSUE_SEVERITIES.map((s) => ({ value: s, label: s })),
+          },
+          {
+            type: "select",
+            name: "propertyId",
+            label: "Property",
+            emptyLabel: "All properties",
+            defaultValue: filters.propertyId,
+            options: properties.map((p) => ({
+              value: p.id,
+              label: `${p.name} (${p.unitCode})`,
+            })),
+          },
+          { type: "date", name: "from", label: "From", defaultValue: filters.from },
+          { type: "date", name: "to", label: "To", defaultValue: filters.to },
+          {
+            type: "checkbox",
+            name: "blocking",
+            label: "Blocking only",
+            value: "1",
+            defaultChecked: filters.blocking === "1",
+          },
+        ]}
+      />
 
-      <div className="flex flex-wrap gap-2 text-sm text-[var(--muted)]">
-        <Badge tone="accent">{issues.length} shown</Badge>
-        {overdueCount ? <Badge tone="danger">{overdueCount} overdue</Badge> : null}
-        {blockingCount ? <Badge tone="warning">{blockingCount} blocking</Badge> : null}
-      </div>
-
-      {issues.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[var(--border)] px-6 py-12 text-center">
-          <p className="font-[family-name:var(--font-display)] text-lg font-semibold">
-            No issues match
-          </p>
-          <p className="mx-auto mt-2 max-w-md text-sm text-[var(--muted)]">
-            Create an issue from QA failures, a blocked turnover, or manual entry to start tracking.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {issues.map((issue) => (
-            <IssueCard key={issue.id} issue={issue} />
-          ))}
-        </div>
-      )}
+      <ModuleCard
+        title="Issues"
+        description="Problems from QA failures, blocked turnovers, and field reports."
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Badge tone="accent">{issues.length} shown</Badge>
+            {overdueCount ? <Badge tone="danger">{overdueCount} overdue</Badge> : null}
+            {blockingCount ? <Badge tone="warning">{blockingCount} blocking</Badge> : null}
+          </div>
+        }
+      >
+        <SortableDataTable
+          columns={columns}
+          rows={issues}
+          initialSortKey="created"
+          initialSortDir="desc"
+          onRowHref={(r) => `/issues/${r.id}`}
+          emptyTitle="No issues match"
+          emptyDescription="Create an issue from QA failures, a blocked turnover, or manual entry to start tracking."
+          mobileCard={(r) => (
+            <Link
+              href={`/issues/${r.id}`}
+              className="block rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-3"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-semibold line-clamp-1">{r.title}</p>
+                  <p className="text-xs text-[var(--muted)]">
+                    {r.property?.name ?? "No property"} · {formatDateTime(r.createdAt)}
+                  </p>
+                </div>
+                <StatusBadge status={mapIssueStatus(r.status)}>
+                  {ISSUE_STATUS_LABELS[r.status as keyof typeof ISSUE_STATUS_LABELS] ?? r.status}
+                </StatusBadge>
+              </div>
+            </Link>
+          )}
+        />
+      </ModuleCard>
     </div>
   );
 }

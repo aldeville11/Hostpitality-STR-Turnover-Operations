@@ -54,13 +54,13 @@ export default async function CleanersPage({
   ];
 
   return (
-    <div>
+    <div className="space-y-4">
       <PageHeader
         title="Cleaner Assignments"
         description="Dispatch cleaners and vendors across turnover windows — workload, coverage, conflicts, and assignment history."
       />
       {boardConflicts.length ? (
-        <div className="mb-6">
+        <div>
           <ConflictAlert conflicts={boardConflicts} title="Dispatch board alerts" />
         </div>
       ) : null}

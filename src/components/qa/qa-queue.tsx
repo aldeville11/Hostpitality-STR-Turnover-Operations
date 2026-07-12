@@ -1,7 +1,13 @@
+"use client";
+
 import Link from "next/link";
-import { Badge } from "@/components/ui";
-import { QaCard } from "@/components/qa/qa-card";
+import { Badge, ModuleCard, StatusBadge } from "@/components/ui";
+import { ListFilterBar } from "@/components/ui/list-filter-bar";
+import { SortableDataTable } from "@/components/ui/sortable-data-table";
+import type { DataTableColumn } from "@/components/ui/data-table";
 import { QA_STATUSES, QA_STATUS_LABELS, type listQaQueue } from "@/lib/qa";
+import { formatDateTime, statusLabel } from "@/lib/utils";
+import { mapQaStatus, mapTurnoverStatus } from "@/lib/status-map";
 
 type QueueRow = Awaited<ReturnType<typeof listQaQueue>>[number];
 
@@ -21,86 +27,155 @@ export function QaQueue({
   properties: { id: string; name: string; unitCode: string }[];
   inspectors: { id: string; name: string }[];
 }) {
+  const columns: DataTableColumn<QueueRow>[] = [
+    {
+      id: "property",
+      header: "Property",
+      sortable: true,
+      sortValue: (r) => r.property.name,
+      cell: (r) => (
+        <span>
+          {r.property.name}
+          <span className="ml-1 text-[var(--muted)]">· {r.property.unitCode}</span>
+        </span>
+      ),
+    },
+    {
+      id: "qaStatus",
+      header: "QA status",
+      sortable: true,
+      sortValue: (r) => r.qaStatus,
+      cell: (r) => (
+        <StatusBadge status={mapQaStatus(r.qaStatus)}>
+          {QA_STATUS_LABELS[r.qaStatus as keyof typeof QA_STATUS_LABELS] ?? r.qaStatus}
+        </StatusBadge>
+      ),
+    },
+    {
+      id: "turnover",
+      header: "Turnover",
+      sortable: true,
+      sortValue: (r) => r.status,
+      cell: (r) => (
+        <StatusBadge status={mapTurnoverStatus(r.status)}>{statusLabel(r.status)}</StatusBadge>
+      ),
+    },
+    {
+      id: "priority",
+      header: "Priority",
+      sortable: true,
+      sortValue: (r) => r.priority,
+      cell: (r) => <Badge tone="neutral">{r.priority}</Badge>,
+    },
+    {
+      id: "deadline",
+      header: "Deadline",
+      sortable: true,
+      sortValue: (r) => r.deadlineAt,
+      cell: (r) => (
+        <span className="whitespace-nowrap text-[var(--text-secondary)]">
+          {formatDateTime(r.deadlineAt)}
+        </span>
+      ),
+    },
+    {
+      id: "progress",
+      header: "Checklist",
+      sortable: true,
+      sortValue: (r) =>
+        r.checklistProgress.total
+          ? r.checklistProgress.done / r.checklistProgress.total
+          : -1,
+      cell: (r) =>
+        r.checklistProgress.total
+          ? `${r.checklistProgress.done}/${r.checklistProgress.total}`
+          : "—",
+    },
+    {
+      id: "inspector",
+      header: "Inspector",
+      sortable: true,
+      sortValue: (r) => r.latestQa?.inspectorName ?? "",
+      cell: (r) => r.latestQa?.inspectorName ?? "—",
+    },
+  ];
+
   return (
     <div className="space-y-4">
-      <form className="flex flex-wrap gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-3">
-        <input
-          name="q"
-          defaultValue={filters.q ?? ""}
-          placeholder="Search property or cleaner"
-          className="min-w-[160px] flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
+      <ListFilterBar
+        resetHref="/qa"
+        fields={[
+          {
+            type: "search",
+            name: "q",
+            placeholder: "Search property or cleaner",
+            defaultValue: filters.q,
+          },
+          {
+            type: "select",
+            name: "status",
+            label: "QA status",
+            emptyLabel: "Queue (pending / rework)",
+            defaultValue: filters.status,
+            options: QA_STATUSES.map((s) => ({ value: s, label: QA_STATUS_LABELS[s] })),
+          },
+          {
+            type: "select",
+            name: "propertyId",
+            label: "Property",
+            emptyLabel: "All properties",
+            defaultValue: filters.propertyId,
+            options: properties.map((p) => ({
+              value: p.id,
+              label: `${p.name} (${p.unitCode})`,
+            })),
+          },
+          {
+            type: "select",
+            name: "inspectorId",
+            label: "Inspector",
+            emptyLabel: "All inspectors",
+            defaultValue: filters.inspectorId,
+            options: inspectors.map((i) => ({ value: i.id, label: i.name })),
+          },
+        ]}
+      />
+
+      <ModuleCard
+        title="QA queue"
+        description="Pass/fail inspection against property SOP and SOW for turnovers ready for review."
+        actions={<Badge tone="accent">{items.length} shown</Badge>}
+      >
+        <SortableDataTable
+          columns={columns}
+          rows={items}
+          initialSortKey="deadline"
+          initialSortDir="asc"
+          onRowHref={(r) => `/qa/${r.id}`}
+          emptyTitle="QA queue is clear"
+          emptyDescription="Turnovers marked Ready for QA will appear here for pass/fail inspection against the property SOP and SOW."
+          mobileCard={(r) => (
+            <Link
+              href={`/qa/${r.id}`}
+              className="block rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] p-3"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-semibold">
+                    {r.property.name} · {r.property.unitCode}
+                  </p>
+                  <p className="text-xs text-[var(--muted)]">
+                    Due {formatDateTime(r.deadlineAt)}
+                  </p>
+                </div>
+                <StatusBadge status={mapQaStatus(r.qaStatus)}>
+                  {QA_STATUS_LABELS[r.qaStatus as keyof typeof QA_STATUS_LABELS] ?? r.qaStatus}
+                </StatusBadge>
+              </div>
+            </Link>
+          )}
         />
-        <select
-          name="status"
-          defaultValue={filters.status ?? ""}
-          className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
-        >
-          <option value="">Queue (pending / rework)</option>
-          {QA_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {QA_STATUS_LABELS[s]}
-            </option>
-          ))}
-        </select>
-        <select
-          name="propertyId"
-          defaultValue={filters.propertyId ?? ""}
-          className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
-        >
-          <option value="">All properties</option>
-          {properties.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name} ({p.unitCode})
-            </option>
-          ))}
-        </select>
-        <select
-          name="inspectorId"
-          defaultValue={filters.inspectorId ?? ""}
-          className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
-        >
-          <option value="">All inspectors</option>
-          {inspectors.map((i) => (
-            <option key={i.id} value={i.id}>
-              {i.name}
-            </option>
-          ))}
-        </select>
-        <button
-          type="submit"
-          className="rounded-lg bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white"
-        >
-          Filter
-        </button>
-        <Link
-          href="/qa"
-          className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm"
-        >
-          Reset
-        </Link>
-      </form>
-
-      <div className="flex flex-wrap gap-2 text-sm text-[var(--muted)]">
-        <Badge tone="accent">{items.length} shown</Badge>
-      </div>
-
-      {items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[var(--border)] px-6 py-12 text-center">
-          <p className="font-[family-name:var(--font-display)] text-lg font-semibold">
-            QA queue is clear
-          </p>
-          <p className="mx-auto mt-2 max-w-md text-sm text-[var(--muted)]">
-            Turnovers marked Ready for QA will appear here for pass/fail inspection against the
-            property SOP and SOW.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {items.map((item) => (
-            <QaCard key={item.id} item={item} />
-          ))}
-        </div>
-      )}
+      </ModuleCard>
     </div>
   );
 }
