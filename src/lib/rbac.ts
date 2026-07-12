@@ -1,4 +1,13 @@
-import type { Role } from "./types";
+export const ROLES = [
+  "OWNER_OPERATOR",
+  "PROPERTY_MANAGER",
+  "CLEANING_COORDINATOR",
+  "CLEANER",
+  "VENDOR",
+  "OPS_MANAGER",
+] as const;
+
+export type Role = (typeof ROLES)[number];
 
 export const ROLE_LABELS: Record<Role, string> = {
   OWNER_OPERATOR: "Owner / Operator",
@@ -9,7 +18,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   OPS_MANAGER: "Ops Manager",
 };
 
-type Permission =
+export type Permission =
   | "dashboard:view"
   | "properties:manage"
   | "turnovers:manage"
@@ -22,7 +31,6 @@ type Permission =
   | "inventory:manage"
   | "owners:report"
   | "settings:manage"
-  | "agents:approve"
   | "onboarding:run";
 
 const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
@@ -38,7 +46,6 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "inventory:manage",
     "owners:report",
     "settings:manage",
-    "agents:approve",
     "onboarding:run",
   ],
   PROPERTY_MANAGER: [
@@ -52,7 +59,6 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "issues:manage",
     "inventory:manage",
     "owners:report",
-    "agents:approve",
   ],
   CLEANING_COORDINATOR: [
     "dashboard:view",
@@ -61,7 +67,6 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "qa:review",
     "issues:manage",
     "inventory:manage",
-    "agents:approve",
   ],
   CLEANER: ["dashboard:view", "turnovers:execute", "qa:review", "issues:manage"],
   VENDOR: ["dashboard:view", "issues:manage", "turnovers:execute"],
@@ -77,15 +82,26 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "inventory:manage",
     "owners:report",
     "settings:manage",
-    "agents:approve",
     "onboarding:run",
   ],
 };
 
-export function can(role: Role, permission: Permission): boolean {
-  return ROLE_PERMISSIONS[role]?.includes(permission) ?? false;
+export function isRole(value: string): value is Role {
+  return (ROLES as readonly string[]).includes(value);
 }
 
-export function permissionsFor(role: Role): Permission[] {
-  return ROLE_PERMISSIONS[role] ?? [];
+export function can(role: string, permission: Permission): boolean {
+  if (!isRole(role)) return false;
+  return ROLE_PERMISSIONS[role].includes(permission);
+}
+
+export function requirePermission(role: string, permission: Permission): void {
+  if (!can(role, permission)) {
+    throw new Error(`Forbidden: missing permission ${permission}`);
+  }
+}
+
+export function permissionsFor(role: string): Permission[] {
+  if (!isRole(role)) return [];
+  return ROLE_PERMISSIONS[role];
 }

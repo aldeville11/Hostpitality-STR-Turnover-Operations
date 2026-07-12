@@ -1,15 +1,22 @@
-# Hostpitality
+# Hostpitality — Phase 1 Foundation
 
 AI-powered turnover operations for short-term rental cleaning teams and managers.
 
-## Stack
+## Phase 1 scope
 
-- Next.js (App Router) + TypeScript + Tailwind CSS
-- Prisma + SQLite (persistent local database)
-- Session auth with RBAC
-- Background jobs for reminders, calendar sync, and overdue checks
-- AI agent actions gated behind explicit human approval
+Foundation only:
+
+- Next.js App Router + TypeScript + Tailwind
+- Prisma + SQLite
+- Session auth (login / signup)
+- RBAC helpers (server-side)
 - Audit logging
+- Background job scaffold
+- App shell (sidebar, topbar, UI primitives)
+- Placeholder routes for all main sections
+- Root redirect to onboarding or dashboard based on auth + setup state
+
+Business screens (dashboard metrics, turnover workflows, SOP editors, etc.) are intentionally deferred.
 
 ## Quick start
 
@@ -26,39 +33,26 @@ Open [http://localhost:3000](http://localhost:3000).
 - Email: `manager@hostpitality.app`
 - Password: `demo1234`
 
-Also available: `coord@hostpitality.app` / `demo1234`, `cleaner@hostpitality.app` / `demo1234`
+### New accounts
 
-## Product scope (v1)
+Use `/signup` to create a company, then complete onboarding by adding a first property.
 
-Focuses on cleaning, turnover, and QA only — not a full PMS, guest messaging, booking marketplace, or pricing optimizer.
+## Key files
 
-### Screens
-
-Dashboard, Properties, Turnovers, SOPs, SOW Templates, Cleaner Assignments, QA / Photo Review, Issues, Inventory, Owners / Reporting, Settings
-
-### Core workflow
-
-1. Calendar/booking sync creates a turnover
-2. SOP Agent loads the property playbook (approval required)
-3. SOW Agent defines scope and add-ons (approval required)
-4. Cleaning Scheduler Agent assigns a cleaner (approval required)
-5. Cleaner Dispatch Agent sends checklist, timing, and photo requirements
-6. Checklist / QA Agent verifies completion
-7. Photo Verification Agent checks required photos
-8. Issue Escalation Agent flags damage or misses
-9. Inventory / Restock Agent tracks supplies
-10. Owner Update Agent sends completion summaries
-
-### Onboarding
-
-Create company → add properties → import calendars → upload SOPs → define SOW templates → add cleaners/vendors → activate first turnover workflow
+| Area | Path |
+|------|------|
+| Schema | `prisma/schema.prisma` |
+| DB client | `src/lib/db.ts` |
+| Auth | `src/lib/auth.ts` |
+| RBAC | `src/lib/rbac.ts` |
+| Audit | `src/lib/audit.ts` |
+| Jobs | `src/lib/jobs.ts` |
+| Shell | `src/components/sidebar.tsx`, `src/components/topbar.tsx` |
 
 ## Background jobs
-
-Process due jobs from **Settings → Process due jobs**, or:
 
 ```bash
 curl -X POST http://localhost:3000/api/jobs/process
 ```
 
-Job types: `booking.sync`, `turnover.pipeline`, `turnover.remind`, `turnover.overdue_check`, `inventory.alert_scan`
+Scaffolded job types: `turnover.remind`, `turnover.overdue_check`, `notification.dispatch`

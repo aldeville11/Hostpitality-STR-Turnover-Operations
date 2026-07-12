@@ -4,14 +4,19 @@ import bcrypt from "bcryptjs";
 import { nanoid } from "nanoid";
 import type { User } from "@prisma/client";
 import { prisma } from "./db";
-import { can } from "./rbac";
-import type { Role } from "./types";
+import { can, type Permission } from "./rbac";
+import { writeAuditLog } from "./audit";
 
 const SESSION_COOKIE = "hp_session";
 const SESSION_DAYS = 14;
 
 export type AuthUser = User & {
-  company: { id: string; name: string; slug: string; onboardedAt: Date | null } | null;
+  company: {
+    id: string;
+    name: string;
+    slug: string;
+    onboardedAt: Date | null;
+  } | null;
 };
 
 export async function hashPassword(password: string) {
@@ -78,34 +83,39 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 }
 
 export async function requireUser(opts?: {
-  permission?: Parameters<typeof can>[1];
-  onboarded?: boolean;
+  permission?: Permission;
 }): Promise<AuthUser> {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  if (opts?.permission && !can(user.role as Role, opts.permission)) {
+  if (opts?.permission && !can(user.role, opts.permission)) {
     redirect("/dashboard");
-  }
-
-  if (opts?.onboarded !== false && user.company && !user.company.onboardedAt) {
-    if (!opts?.permission || opts.permission === "onboarding:run") {
-      // allow
-    }
-  }
-
-  if (opts?.onboarded && user.company && !user.company.onboardedAt) {
-    redirect("/onboarding");
   }
 
   return user;
 }
 
 export async function loginWithCredentials(email: string, password: string) {
-  const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+  const user = await prisma.user.findUnique({
+    where: { email: email.toLowerCase().trim() },
+  });
   if (!user || !user.active) return { error: "Invalid email or password" };
+
   const ok = await verifyPassword(password, user.passwordHash);
   if (!ok) return { error: "Invalid email or password" };
+
   await createSession(user.id);
+  await writeAuditLog({
+    companyId: user.companyId,
+    userId: user.id,
+    action: "auth.login",
+    entityType: "User",
+    entityId: user.id,
+  });
+
   return { user };
+}
+
+export function isOnboarded(user: AuthUser) {
+  return Boolean(user.companyId && user.company?.onboardedAt);
 }

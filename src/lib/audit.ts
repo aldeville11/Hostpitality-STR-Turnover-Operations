@@ -1,7 +1,7 @@
 import { prisma } from "./db";
 
 export async function writeAuditLog(input: {
-  companyId: string;
+  companyId?: string | null;
   userId?: string | null;
   action: string;
   entityType: string;
@@ -10,7 +10,7 @@ export async function writeAuditLog(input: {
 }) {
   return prisma.auditLog.create({
     data: {
-      companyId: input.companyId,
+      companyId: input.companyId ?? null,
       userId: input.userId ?? null,
       action: input.action,
       entityType: input.entityType,

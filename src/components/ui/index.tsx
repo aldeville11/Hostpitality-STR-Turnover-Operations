@@ -1,4 +1,10 @@
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+import type {
+  ButtonHTMLAttributes,
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from "react";
 import { cn } from "@/lib/utils";
 
 export function Button({
@@ -19,8 +25,10 @@ export function Button({
         size === "lg" && "px-5 py-2.5 text-base",
         variant === "primary" && "bg-[var(--accent)] text-white hover:bg-[var(--accent-strong)]",
         variant === "secondary" && "bg-[var(--surface-2)] text-[var(--ink)] hover:bg-[var(--border)]",
-        variant === "outline" && "border border-[var(--border)] bg-transparent text-[var(--ink)] hover:bg-[var(--surface-2)]",
-        variant === "ghost" && "bg-transparent text-[var(--muted)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]",
+        variant === "outline" &&
+          "border border-[var(--border)] bg-transparent text-[var(--ink)] hover:bg-[var(--surface-2)]",
+        variant === "ghost" &&
+          "bg-transparent text-[var(--muted)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]",
         variant === "danger" && "bg-rose-600 text-white hover:bg-rose-700",
         className
       )}
@@ -69,7 +77,10 @@ export function Select({ className, children, ...props }: SelectHTMLAttributes<H
 
 export function Label({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {
   return (
-    <label htmlFor={htmlFor} className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+    <label
+      htmlFor={htmlFor}
+      className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[var(--muted)]"
+    >
       {children}
     </label>
   );
@@ -121,29 +132,22 @@ export function PageHeader({
   );
 }
 
-export function EmptyState({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface)]/60 px-6 py-12 text-center">
-      <p className="font-medium text-[var(--ink)]">{title}</p>
-      <p className="mt-1 text-sm text-[var(--muted)]">{description}</p>
-    </div>
-  );
-}
-
-export function Stat({
-  label,
-  value,
-  hint,
+export function PlaceholderPanel({
+  title,
+  description,
 }: {
-  label: string;
-  value: string | number;
-  hint?: string;
+  title: string;
+  description: string;
 }) {
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)]/80 p-4 backdrop-blur">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">{label}</p>
-      <p className="mt-2 font-[family-name:var(--font-display)] text-2xl font-semibold text-[var(--ink)]">{value}</p>
-      {hint ? <p className="mt-1 text-xs text-[var(--muted)]">{hint}</p> : null}
+    <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface)]/70 px-6 py-14 text-center">
+      <p className="font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--ink)]">
+        {title}
+      </p>
+      <p className="mx-auto mt-2 max-w-md text-sm text-[var(--muted)]">{description}</p>
+      <p className="mt-4 text-xs font-medium uppercase tracking-wide text-[var(--accent)]">
+        Coming in a later phase
+      </p>
     </div>
   );
 }

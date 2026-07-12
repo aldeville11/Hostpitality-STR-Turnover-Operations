@@ -1,21 +1,18 @@
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
-import { AppShell } from "@/components/layout/AppShell";
+import { getCurrentUser, isOnboarded } from "@/lib/auth";
+import { AppShell } from "@/components/app-shell";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  if (!user.companyId) redirect("/onboarding");
-  if (user.company && !user.company.onboardedAt) {
-    // allow settings/onboarding access via /onboarding only
-  }
+  if (!isOnboarded(user)) redirect("/onboarding");
 
   return (
     <AppShell
       user={{
         name: user.name,
         email: user.email,
-        role: user.role as import("@/lib/types").Role,
+        role: user.role,
         companyName: user.company?.name ?? "Company",
       }}
     >
