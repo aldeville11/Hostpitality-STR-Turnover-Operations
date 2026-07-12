@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+:root {
+  /* Enterprise design tokens */
+  --background: #f4f6f5;
+  --surface: #ffffff;
+  --surface-raised: #f8faf9;
+  --surface-sidebar: #0f1c1a;
+  --border: #d7e0dd;
+  --border-strong: #c2ceca;
+  --text-primary: #0f1c1a;
+  --text-secondary: #4d5f5a;
+  --muted: #6b7c77;
+  --accent: #0f766e;
+  --accent-strong: #0b5f59;
+  --accent-soft: #e6f4f2;
+  --success: #047857;
+  --success-soft: #ecfdf5;
+  --warning: #b45309;
+  --warning-soft: #fffbeb;
+  --danger: #b91c1c;
+  --danger-soft: #fef2f2;
+  --info: #0369a1;
+  --info-soft: #f0f9ff;
+  --focus: #0f766e;
+  --shadow-sm: 0 1px 2px rgb(15 28 26 / 0.04);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --transition: 150ms ease;
+
+  /* Legacy aliases used across the app */
+  --bg: var(--background);
+  --canvas: #eef2f1;
+  --surface-2: #e8efed;
+  --ink: var(--text-primary);
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--text-primary);
+  --font-sans: var(--font-body);
+}
+
+body {
+  background: var(--background);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

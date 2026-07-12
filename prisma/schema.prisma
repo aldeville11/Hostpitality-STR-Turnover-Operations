@@ -1,0 +1,630 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id                  String    @id @default(cuid())
+  name                String
+  slug                String    @unique
+  timezone            String    @default("America/Los_Angeles")
+  brandName           String?
+  logoUrl             String?
+  accentColor         String    @default("#0F766E")
+  supportEmail        String?
+  supportPhone        String?
+  contactName         String?
+  notificationPrefsJson String  @default("{}")
+  workingHoursJson    String    @default("{}")
+  systemSettingsJson  String    @default("{}")
+  onboardedAt         DateTime?
+  onboardingStep      String    @default("company")
+  onboardingProgress  String    @default("{}")
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  users          User[]
+  properties     Property[]
+  vendors        Vendor[]
+  sops           Sop[]
+  sows           Sow[]
+  turnovers      Turnover[]
+  inventory      InventoryItem[]
+  issues         Issue[]
+  notifications  Notification[]
+  auditLogs      AuditLog[]
+  backgroundJobs BackgroundJob[]
+  qaInspections  QaInspection[]
+  integrations   Integration[]
+  calendarEvents CalendarEvent[]
+  storedFiles    StoredFile[]
+}
+
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  passwordHash    String
+  name            String
+  role            String   @default("PROPERTY_MANAGER")
+  companyId       String?
+  active          Boolean  @default(true)
+  accessScopeJson String   @default("{\"allProperties\":true,\"propertyIds\":[]}")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  company       Company?       @relation(fields: [companyId], references: [id])
+  sessions      Session[]
+  auditLogs     AuditLog[]
+  notifications Notification[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Property {
+  id                   String    @id @default(cuid())
+  companyId            String
+  name                 String
+  unitCode             String
+  address              String
+  city                 String
+  state                String
+  unitType             String    @default("apartment")
+  bedrooms             Int       @default(1)
+  bathrooms            Float     @default(1)
+  maxGuests            Int       @default(2)
+  calendarUrl          String?
+  bookingSource        String    @default("manual")
+  calendarSyncedAt     DateTime?
+  calendarStatus       String    @default("not_connected")
+  sopId                String?
+  sowId                String?
+  defaultVendorId      String?
+  photoRequirementsJson String   @default("[]")
+  restockDefaultsJson  String    @default("[]")
+  accessNotes          String?
+  turnoverBufferMins   Int       @default(60)
+  sameDayTurnover      Boolean   @default(true)
+  active               Boolean   @default(true)
+  notes                String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  company       Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  sop           Sop?            @relation(fields: [sopId], references: [id])
+  sow           Sow?            @relation(fields: [sowId], references: [id])
+  defaultVendor Vendor?         @relation("PropertyDefaultVendor", fields: [defaultVendorId], references: [id])
+  bookings      Booking[]
+  turnovers     Turnover[]
+  inventory     InventoryItem[]
+  issues        Issue[]
+
+  @@unique([companyId, unitCode])
+}
+
+model Vendor {
+  id                 String    @id @default(cuid())
+  companyId          String
+  name               String
+  email              String
+  phone              String?
+  type               String    @default("CLEANER")
+  active             Boolean   @default(true)
+  notes              String?
+  coverageAreasJson  String    @default("[]")
+  skillsJson         String    @default("[]")
+  capacity           Int       @default(3)
+  rating             Float     @default(5)
+  availabilityStatus String    @default("AVAILABLE")
+  unavailableUntil   DateTime?
+  unavailableReason  String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  company            Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assignments        Turnover[]
+  defaultProperties  Property[] @relation("PropertyDefaultVendor")
+  assignedIssues     Issue[]
+
+  @@unique([companyId, email])
+}
+
+model Booking {
+  id           String    @id @default(cuid())
+  propertyId   String
+  externalId   String?
+  guestName    String?
+  checkIn      DateTime
+  checkOut     DateTime
+  source       String    @default("manual")
+  status       String    @default("CONFIRMED")
+  cancelledAt  DateTime?
+  lastSyncedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  property Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  turnover Turnover?
+
+  @@unique([propertyId, externalId])
+}
+
+model Sop {
+  id          String    @id @default(cuid())
+  companyId   String
+  name        String
+  description String?
+  version     Int       @default(1)
+  contentJson String    @default("{\"version\":1,\"sections\":[]}")
+  status      String    @default("DRAFT")
+  publishedAt DateTime?
+  templateKey String?
+  unitType    String?
+  safetyNotes String?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  company    Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  properties Property[]
+  turnovers  Turnover[]
+  versions   SopVersion[]
+}
+
+model SopVersion {
+  id          String   @id @default(cuid())
+  sopId       String
+  version     Int
+  name        String
+  description String?
+  contentJson String
+  safetyNotes String?
+  changeNote  String?
+  actorId     String?
+  actorName   String?
+  createdAt   DateTime @default(now())
+
+  sop Sop @relation(fields: [sopId], references: [id], onDelete: Cascade)
+
+  @@unique([sopId, version])
+}
+
+model Sow {
+  id                        String    @id @default(cuid())
+  companyId                 String
+  name                      String
+  description               String?
+  standardScope             String    @default("")
+  addOnsJson                String    @default("[]")
+  contentJson               String    @default("{\"version\":1,\"scopeItems\":[],\"addOns\":[],\"restockItems\":[],\"photoRequirements\":[],\"escalationRules\":[],\"approvalGates\":[]}")
+  slaMinutes                Int       @default(240)
+  completionDeadlineMinutes Int       @default(240)
+  version                   Int       @default(1)
+  status                    String    @default("DRAFT")
+  unitType                  String?
+  useCase                   String?
+  propertyGroup             String?
+  approvedAt                DateTime?
+  approvedById              String?
+  approvedByName            String?
+  publishedAt               DateTime?
+  active                    Boolean   @default(true)
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+
+  company    Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  properties Property[]
+  turnovers  Turnover[]
+  versions   SowVersion[]
+}
+
+model SowVersion {
+  id                        String   @id @default(cuid())
+  sowId                     String
+  version                   Int
+  name                      String
+  description               String?
+  standardScope             String
+  addOnsJson                String
+  contentJson               String
+  slaMinutes                Int
+  completionDeadlineMinutes Int
+  useCase                   String?
+  unitType                  String?
+  propertyGroup             String?
+  status                    String
+  changeNote                String?
+  actorId                   String?
+  actorName                 String?
+  createdAt                 DateTime @default(now())
+
+  sow Sow @relation(fields: [sowId], references: [id], onDelete: Cascade)
+
+  @@unique([sowId, version])
+}
+
+model Turnover {
+  id              String    @id @default(cuid())
+  companyId       String
+  propertyId      String
+  bookingId       String?   @unique
+  sopId           String?
+  sowId           String?
+  vendorId        String?
+  status          String    @default("DRAFT")
+  priority        String    @default("NORMAL")
+  windowStart     DateTime
+  windowEnd       DateTime
+  deadlineAt      DateTime
+  photosRequired  Int       @default(4)
+  photosUploaded  Int       @default(0)
+  photosVerified  Int       @default(0)
+  ownerNotifiedAt DateTime?
+  escalatedAt     DateTime?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  company            Company                   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  property           Property                  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  booking            Booking?                  @relation(fields: [bookingId], references: [id])
+  sop                Sop?                      @relation(fields: [sopId], references: [id])
+  sow                Sow?                      @relation(fields: [sowId], references: [id])
+  vendor             Vendor?                   @relation(fields: [vendorId], references: [id])
+  issues             Issue[]
+  checklistItems     TurnoverChecklistItem[]
+  statusEvents       TurnoverStatusEvent[]
+  assignmentEvents   TurnoverAssignmentEvent[]
+  qaInspections      QaInspection[]
+}
+
+model TurnoverChecklistItem {
+  id            String    @id @default(cuid())
+  turnoverId    String
+  section       String
+  title         String
+  instructions  String?
+  requiresPhoto Boolean   @default(false)
+  completed     Boolean   @default(false)
+  completedAt   DateTime?
+  completedBy   String?
+  sortOrder     Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  turnover   Turnover            @relation(fields: [turnoverId], references: [id], onDelete: Cascade)
+  qaItems    QaInspectionItem[]
+}
+
+model TurnoverStatusEvent {
+  id         String   @id @default(cuid())
+  turnoverId String
+  fromStatus String?
+  toStatus   String
+  note       String?
+  actorId    String?
+  actorName  String?
+  createdAt  DateTime @default(now())
+
+  turnover Turnover @relation(fields: [turnoverId], references: [id], onDelete: Cascade)
+}
+
+model TurnoverAssignmentEvent {
+  id           String   @id @default(cuid())
+  turnoverId   String
+  fromVendorId String?
+  toVendorId   String?
+  fromName     String?
+  toName       String?
+  note         String?
+  actorId      String?
+  actorName    String?
+  createdAt    DateTime @default(now())
+
+  turnover Turnover @relation(fields: [turnoverId], references: [id], onDelete: Cascade)
+}
+
+model QaInspection {
+  id                 String    @id @default(cuid())
+  companyId          String
+  turnoverId         String
+  status             String    @default("PENDING")
+  inspectorId        String?
+  inspectorName      String?
+  decisionNote       String?
+  overrideIncomplete Boolean   @default(false)
+  startedAt          DateTime?
+  completedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  company  Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  turnover Turnover             @relation(fields: [turnoverId], references: [id], onDelete: Cascade)
+  items    QaInspectionItem[]
+  photos   QaPhotoReview[]
+  events   QaInspectionEvent[]
+  issues   Issue[]
+}
+
+model QaInspectionItem {
+  id              String    @id @default(cuid())
+  inspectionId    String
+  checklistItemId String?
+  section         String
+  title           String
+  result          String    @default("PENDING")
+  comment         String?
+  reviewedAt      DateTime?
+  sortOrder       Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  inspection    QaInspection           @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  checklistItem TurnoverChecklistItem? @relation(fields: [checklistItemId], references: [id], onDelete: SetNull)
+}
+
+model QaPhotoReview {
+  id           String    @id @default(cuid())
+  inspectionId String
+  label        String
+  required     Boolean   @default(true)
+  uploaded     Boolean   @default(false)
+  result       String    @default("PENDING")
+  comment      String?
+  reviewedAt   DateTime?
+  sortOrder    Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  inspection QaInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+}
+
+model QaInspectionEvent {
+  id           String   @id @default(cuid())
+  inspectionId String
+  turnoverId   String
+  fromStatus   String?
+  toStatus     String
+  note         String?
+  actorId      String?
+  actorName    String?
+  createdAt    DateTime @default(now())
+
+  inspection QaInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+}
+
+model Issue {
+  id              String    @id @default(cuid())
+  companyId       String
+  propertyId      String?
+  turnoverId      String?
+  qaInspectionId  String?
+  title           String
+  description     String
+  severity        String    @default("MEDIUM")
+  status          String    @default("OPEN")
+  category        String    @default("damage")
+  source          String    @default("MANUAL")
+  blocking        Boolean   @default(false)
+  ownerUserId     String?
+  ownerName       String?
+  assigneeVendorId String?
+  assigneeName    String?
+  dueAt           DateTime?
+  escalatedAt     DateTime?
+  resolvedAt      DateTime?
+  verifiedAt      DateTime?
+  closedAt        DateTime?
+  photosJson      String    @default("[]")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  company      Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  property     Property?      @relation(fields: [propertyId], references: [id])
+  turnover     Turnover?      @relation(fields: [turnoverId], references: [id])
+  qaInspection QaInspection?  @relation(fields: [qaInspectionId], references: [id])
+  assignee     Vendor?        @relation(fields: [assigneeVendorId], references: [id])
+  comments     IssueComment[]
+  events       IssueEvent[]
+}
+
+model IssueComment {
+  id         String   @id @default(cuid())
+  issueId    String
+  body       String
+  visibility String   @default("INTERNAL")
+  actorId    String?
+  actorName  String?
+  createdAt  DateTime @default(now())
+
+  issue Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+}
+
+model IssueEvent {
+  id         String   @id @default(cuid())
+  issueId    String
+  type       String   @default("STATUS")
+  fromValue  String?
+  toValue    String?
+  note       String?
+  actorId    String?
+  actorName  String?
+  createdAt  DateTime @default(now())
+
+  issue Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+}
+
+model InventoryItem {
+  id           String   @id @default(cuid())
+  companyId    String
+  propertyId   String?
+  name         String
+  category     String   @default("supplies")
+  quantity     Int      @default(0)
+  reorderLevel Int      @default(5)
+  unit         String   @default("each")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  property Property? @relation(fields: [propertyId], references: [id])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  companyId String
+  userId    String?
+  title     String
+  body      String
+  type      String    @default("info")
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  companyId  String?
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   String   @default("{}")
+  createdAt  DateTime @default(now())
+
+  company Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User?    @relation(fields: [userId], references: [id])
+}
+
+model BackgroundJob {
+  id          String    @id @default(cuid())
+  companyId   String?
+  type        String
+  payloadJson String    @default("{}")
+  status      String    @default("PENDING")
+  runAt       DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  error       String?
+  attempts    Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  company Company? @relation(fields: [companyId], references: [id])
+}
+
+model Integration {
+  id              String    @id @default(cuid())
+  companyId       String
+  provider        String
+  category        String
+  name            String
+  status          String    @default("DISCONNECTED")
+  enabled         Boolean   @default(false)
+  externalAccount String?
+  configJson      String    @default("{}")
+  lastSyncAt      DateTime?
+  lastSuccessAt   DateTime?
+  lastError       String?
+  syncCursor      String?
+  connectedAt     DateTime?
+  disabledAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  company      Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  syncEvents   IntegrationSyncEvent[]
+  webhookLogs  IntegrationWebhookLog[]
+  calendarEvents CalendarEvent[]
+  storedFiles  StoredFile[]
+
+  @@unique([companyId, provider])
+}
+
+model IntegrationSyncEvent {
+  id             String    @id @default(cuid())
+  integrationId  String
+  type           String    @default("SYNC")
+  status         String    @default("SUCCESS")
+  summary        String
+  detailJson     String    @default("{}")
+  recordsCreated Int       @default(0)
+  recordsUpdated Int       @default(0)
+  recordsSkipped Int       @default(0)
+  error          String?
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+}
+
+model IntegrationWebhookLog {
+  id            String    @id @default(cuid())
+  companyId     String
+  integrationId String
+  eventType     String
+  externalId    String?
+  payloadJson   String    @default("{}")
+  status        String    @default("RECEIVED")
+  resultJson    String    @default("{}")
+  error         String?
+  processedAt   DateTime?
+  createdAt     DateTime  @default(now())
+
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+}
+
+model CalendarEvent {
+  id              String    @id @default(cuid())
+  companyId       String
+  integrationId   String
+  propertyId      String?
+  externalId      String
+  title           String
+  startsAt        DateTime
+  endsAt          DateTime
+  source          String
+  linkedTurnoverId String?
+  rawJson         String    @default("{}")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  company     Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@unique([integrationId, externalId])
+}
+
+model StoredFile {
+  id            String   @id @default(cuid())
+  companyId     String
+  integrationId String?
+  entityType    String
+  entityId      String
+  filename      String
+  mimeType      String   @default("application/octet-stream")
+  sizeBytes     Int      @default(0)
+  storageKey    String
+  url           String
+  source        String   @default("UPLOAD")
+  label         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  integration Integration? @relation(fields: [integrationId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+}
