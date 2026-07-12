@@ -1,14 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { Badge, Button } from "@/components/ui";
+import {
+  Badge,
+  Button,
+  DetailFactGrid,
+  DetailSection,
+  EmptyState,
+  StatusBadge,
+} from "@/components/ui";
 import { InspectionChecklist } from "@/components/qa/inspection-checklist";
 import { PhotoReview } from "@/components/qa/photo-review";
 import { QaDecisionPanel } from "@/components/qa/qa-decision-panel";
 import { ReinspectionHistory } from "@/components/qa/reinspection-history";
 import { openQaInspectionAction } from "@/lib/qa-actions";
 import { createIssuesFromQaAction } from "@/lib/issue-actions";
-import { QA_STATUS_LABELS, qaStatusTone, type QaStatus } from "@/lib/qa";
+import { QA_STATUS_LABELS, type QaStatus } from "@/lib/qa";
+import { mapQaStatus, mapTurnoverStatus } from "@/lib/status-map";
 import { formatDateTime, statusLabel } from "@/lib/utils";
 import { priorityTone } from "@/lib/dashboard";
 import { useRouter } from "next/navigation";
@@ -123,23 +131,19 @@ export function QaDetail({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge tone={qaStatusTone(qaStatus)}>
+        <StatusBadge status={mapQaStatus(qaStatus)}>
           {QA_STATUS_LABELS[qaStatus] ?? qaStatus}
-        </Badge>
+        </StatusBadge>
         <Badge tone={priorityTone(turnover.priority)}>{turnover.priority}</Badge>
-        <Badge tone="neutral">{statusLabel(turnover.status)}</Badge>
+        <StatusBadge status={mapTurnoverStatus(turnover.status)}>
+          {statusLabel(turnover.status)}
+        </StatusBadge>
       </div>
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-4 sm:p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold">
-              {turnover.property.name}
-            </h2>
-            <p className="mt-1 text-sm text-[var(--muted)]">
-              {turnover.property.address}, {turnover.property.city} · {turnover.property.unitCode}
-            </p>
-          </div>
+      <DetailSection
+        title={turnover.property.name}
+        description={`${turnover.property.address}, ${turnover.property.city} · ${turnover.property.unitCode}`}
+        actions={
           <div className="flex flex-wrap gap-2">
             <Link href={`/turnovers/${turnover.id}`}>
               <Button variant="outline" size="sm">
@@ -152,34 +156,25 @@ export function QaDetail({
               </Button>
             </Link>
           </div>
-        </div>
-
-        <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <dt className="text-xs uppercase tracking-wide text-[var(--muted)]">Cleaner</dt>
-            <dd className="font-medium">{turnover.vendor?.name ?? "Unassigned"}</dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-wide text-[var(--muted)]">Inspector</dt>
-            <dd className="font-medium">
-              {latestInspection?.inspectorName ?? "Unclaimed"}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-wide text-[var(--muted)]">Due</dt>
-            <dd className="font-medium">{formatDateTime(turnover.deadlineAt)}</dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-wide text-[var(--muted)]">Photos</dt>
-            <dd className="font-medium">
-              {turnover.photosUploaded}/{turnover.photosRequired} · verified{" "}
-              {turnover.photosVerified}
-            </dd>
-          </div>
-        </dl>
+        }
+      >
+        <DetailFactGrid
+          items={[
+            { label: "Cleaner", value: turnover.vendor?.name ?? "Unassigned" },
+            {
+              label: "Inspector",
+              value: latestInspection?.inspectorName ?? "Unclaimed",
+            },
+            { label: "Due", value: formatDateTime(turnover.deadlineAt) },
+            {
+              label: "Photos",
+              value: `${turnover.photosUploaded}/${turnover.photosRequired} · verified ${turnover.photosVerified}`,
+            },
+          ]}
+        />
 
         <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-          <div className="rounded-xl border border-[var(--border)] px-3 py-2">
+          <div className="rounded-[var(--radius-md)] border border-[var(--border)] px-3 py-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
               Linked SOP
             </p>
@@ -188,10 +183,10 @@ export function QaDetail({
                 {turnover.sop.name} · v{turnover.sop.version}
               </Link>
             ) : (
-              <p className="text-[var(--muted)]">None</p>
+              <p className="text-[var(--text-secondary)]">None</p>
             )}
           </div>
-          <div className="rounded-xl border border-[var(--border)] px-3 py-2">
+          <div className="rounded-[var(--radius-md)] border border-[var(--border)] px-3 py-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
               Linked SOW
             </p>
@@ -200,13 +195,13 @@ export function QaDetail({
                 {turnover.sow.name} · {turnover.sow.slaMinutes}m SLA
               </Link>
             ) : (
-              <p className="text-[var(--muted)]">None</p>
+              <p className="text-[var(--text-secondary)]">None</p>
             )}
           </div>
         </div>
 
         {turnover.notes ? (
-          <p className="mt-3 whitespace-pre-wrap rounded-xl bg-[var(--surface-2)]/60 px-3 py-2 text-sm text-[var(--muted)]">
+          <p className="mt-3 whitespace-pre-wrap rounded-[var(--radius-md)] bg-[var(--surface-2)]/60 px-3 py-2 text-sm text-[var(--text-secondary)]">
             {turnover.notes}
           </p>
         ) : null}
@@ -232,25 +227,26 @@ export function QaDetail({
             {error ? <p className="mt-2 text-sm text-rose-600">{error}</p> : null}
           </div>
         ) : null}
-      </section>
+      </DetailSection>
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-4 sm:p-5">
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-          Cleaner checklist results
-        </h2>
-        <ul className="mt-3 space-y-1 text-sm">
-          {turnover.checklistItems.map((item) => (
-            <li key={item.id} className="flex flex-wrap items-center justify-between gap-2">
-              <span>
-                {item.section}: {item.title}
-              </span>
-              <Badge tone={item.completed ? "success" : "warning"}>
-                {item.completed ? `Done${item.completedBy ? ` · ${item.completedBy}` : ""}` : "Open"}
-              </Badge>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <DetailSection title="Cleaner checklist results">
+        {turnover.checklistItems.length === 0 ? (
+          <EmptyState title="No checklist" description="No cleaner checklist items on this turnover." />
+        ) : (
+          <ul className="space-y-1 text-sm">
+            {turnover.checklistItems.map((item) => (
+              <li key={item.id} className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-[var(--text-primary)]">
+                  {item.section}: {item.title}
+                </span>
+                <Badge tone={item.completed ? "success" : "warning"}>
+                  {item.completed ? `Done${item.completedBy ? ` · ${item.completedBy}` : ""}` : "Open"}
+                </Badge>
+              </li>
+            ))}
+          </ul>
+        )}
+      </DetailSection>
 
       {latestInspection ? (
         <>
@@ -272,15 +268,11 @@ export function QaDetail({
           {canReview &&
           (latestInspection.items.some((i) => i.result === "FAIL") ||
             latestInspection.photos.some((p) => p.result === "FAIL")) ? (
-            <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-4 sm:p-5">
-              <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-                Create issues from failures
-              </h2>
-              <p className="mt-1 text-sm text-[var(--muted)]">
-                Open blocking issues for each failed checklist item and photo so ops can track
-                resolution.
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
+            <DetailSection
+              title="Create issues from failures"
+              description="Open blocking issues for each failed checklist item and photo so ops can track resolution."
+            >
+              <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
                   variant="outline"
@@ -306,13 +298,14 @@ export function QaDetail({
                 </Link>
               </div>
               {error ? <p className="mt-2 text-sm text-rose-600">{error}</p> : null}
-            </section>
+            </DetailSection>
           ) : null}
         </>
       ) : (
-        <div className="rounded-2xl border border-dashed border-[var(--border)] px-6 py-10 text-center text-sm text-[var(--muted)]">
-          Open an inspection to mark pass/fail items and review photos.
-        </div>
+        <EmptyState
+          title="No inspection open"
+          description="Open an inspection to mark pass/fail items and review photos."
+        />
       )}
 
       <ReinspectionHistory inspections={inspections} />

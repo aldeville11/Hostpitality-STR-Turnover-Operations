@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { can } from "@/lib/rbac";
 import { ensureQaInspection, getQaDetail } from "@/lib/qa";
-import { PageHeader } from "@/components/ui";
+import { Button, PageHeader } from "@/components/ui";
 import { QaDetail } from "@/components/qa/qa-detail";
 
 export default async function QaDetailPage({
@@ -41,11 +41,10 @@ export default async function QaDetailPage({
         title={`QA · ${data.turnover.property.name}`}
         description={`${data.turnover.property.unitCode} · Inspect against SOP / SOW`}
         actions={
-          <Link
-            href="/qa"
-            className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm font-medium hover:bg-[var(--surface-2)]"
-          >
-            QA queue
+          <Link href="/qa">
+            <Button variant="outline" size="sm">
+              QA queue
+            </Button>
           </Link>
         }
       />

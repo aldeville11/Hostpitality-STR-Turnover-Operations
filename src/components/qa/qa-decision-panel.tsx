@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Badge, Button, Label, Textarea } from "@/components/ui";
+import { Badge, Button, DetailSection, Label, Textarea } from "@/components/ui";
 import { decideQaAction, setQaOverrideAction } from "@/lib/qa-actions";
 import { evaluateApprovalReadiness } from "@/lib/qa";
 
@@ -62,15 +62,11 @@ export function QaDecisionPanel({
   }
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-4 sm:p-5">
-      <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-        QA decision
-      </h2>
-      <p className="mt-1 text-sm text-[var(--muted)]">
-        Approve closes the turnover. Reject / needs rework sends it back to the cleaner.
-      </p>
-
-      <div className="mt-3 flex flex-wrap gap-2">
+    <DetailSection
+      title="QA decision"
+      description="Approve closes the turnover. Reject / needs rework sends it back to the cleaner."
+    >
+      <div className="flex flex-wrap gap-2">
         <Badge tone={readiness.canApprove ? "success" : "warning"}>
           {readiness.canApprove ? "Ready to approve" : "Blocked"}
         </Badge>
@@ -78,7 +74,7 @@ export function QaDecisionPanel({
       </div>
 
       {readiness.blockers.length > 0 ? (
-        <ul className="mt-3 space-y-1 rounded-xl border border-amber-200 bg-amber-50/70 px-3 py-2 text-xs text-amber-900">
+        <ul className="mt-3 space-y-1 rounded-[var(--radius-md)] border border-amber-200 bg-amber-50/70 px-3 py-2 text-xs text-amber-900">
           {readiness.blockers.map((b) => (
             <li key={b}>{b}</li>
           ))}
@@ -146,7 +142,7 @@ export function QaDecisionPanel({
           </div>
         </div>
       ) : (
-        <p className="mt-3 text-sm text-[var(--muted)]">
+        <p className="mt-3 text-sm text-[var(--text-secondary)]">
           {closed
             ? `Inspection closed as ${inspection.status}.`
             : "You do not have permission to decide this inspection."}
@@ -155,6 +151,6 @@ export function QaDecisionPanel({
 
       {message ? <p className="mt-3 text-sm text-emerald-700">{message}</p> : null}
       {error ? <p className="mt-3 text-sm text-rose-600">{error}</p> : null}
-    </section>
+    </DetailSection>
   );
 }

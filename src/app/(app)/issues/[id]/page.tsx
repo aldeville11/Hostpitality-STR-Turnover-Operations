@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { can } from "@/lib/rbac";
 import { getIssueDetail } from "@/lib/issues";
-import { PageHeader } from "@/components/ui";
+import { Button, PageHeader } from "@/components/ui";
 import { IssueDetail } from "@/components/issues/issue-detail";
 
 export default async function IssueDetailPage({
@@ -25,18 +25,16 @@ export default async function IssueDetailPage({
         description={`${data.issue.property?.name ?? "No property"} · Issue tracking`}
         actions={
           <div className="flex flex-wrap gap-2">
-            <Link
-              href="/issues"
-              className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm font-medium hover:bg-[var(--surface-2)]"
-            >
-              All issues
+            <Link href="/issues">
+              <Button variant="outline" size="sm">
+                All issues
+              </Button>
             </Link>
             {data.issue.turnoverId ? (
-              <Link
-                href={`/turnovers/${data.issue.turnoverId}`}
-                className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm font-medium hover:bg-[var(--surface-2)]"
-              >
-                Turnover
+              <Link href={`/turnovers/${data.issue.turnoverId}`}>
+                <Button variant="outline" size="sm">
+                  Turnover
+                </Button>
               </Link>
             ) : null}
           </div>

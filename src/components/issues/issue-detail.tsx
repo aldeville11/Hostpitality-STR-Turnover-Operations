@@ -13,11 +13,20 @@ import {
   issueCategoryLabel,
   issueSeverityLabel,
   issueSourceLabel,
-  issueStatusTone,
   type IssueDetailPayload,
   type IssueStatus,
 } from "@/lib/issues";
-import { Badge, Button, Select, Textarea } from "@/components/ui";
+import {
+  Badge,
+  Button,
+  DetailFactGrid,
+  DetailSection,
+  EmptyState,
+  Select,
+  StatusBadge,
+  Textarea,
+} from "@/components/ui";
+import { mapIssueSeverity, mapIssueStatus } from "@/lib/status-map";
 import { statusLabel } from "@/lib/utils";
 
 export function IssueDetail({
@@ -80,72 +89,83 @@ export function IssueDetail({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge tone={issueStatusTone(issue.status)}>
+        <StatusBadge status={mapIssueStatus(issue.status)}>
           {ISSUE_STATUS_LABELS[issue.status as IssueStatus] ?? statusLabel(issue.status)}
-        </Badge>
-        <Badge tone="neutral">{issueSeverityLabel(issue.severity)}</Badge>
+        </StatusBadge>
+        <StatusBadge status={mapIssueSeverity(issue.severity)}>
+          {issueSeverityLabel(issue.severity)}
+        </StatusBadge>
         <Badge tone="neutral">{issueCategoryLabel(issue.category)}</Badge>
         <Badge tone="info">{issueSourceLabel(issue.source)}</Badge>
         {issue.blocking ? <Badge tone="danger">Blocking</Badge> : null}
-        {issue.sla.isOverdue ? <Badge tone="danger">Overdue</Badge> : null}
+        {issue.sla.isOverdue ? <StatusBadge status="at_risk">Overdue</StatusBadge> : null}
         {issue.sla.escalationRisk && !issue.sla.isOverdue ? (
-          <Badge tone="warning">Escalation risk</Badge>
+          <StatusBadge status="warning">Escalation risk</StatusBadge>
         ) : null}
       </div>
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-          {issue.title}
-        </h2>
-        <p className="mt-2 whitespace-pre-wrap text-sm text-[var(--muted)]">
+      <DetailSection title={issue.title}>
+        <p className="mb-4 whitespace-pre-wrap text-sm text-[var(--text-secondary)]">
           {issue.description}
         </p>
-        <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
-          <Meta
-            label="Property"
-            value={
-              issue.property
-                ? `${issue.property.name} · ${issue.property.unitCode}`
-                : "—"
-            }
-            href={issue.propertyId ? `/properties/${issue.propertyId}` : undefined}
-          />
-          <Meta
-            label="Turnover"
-            value={issue.turnover ? statusLabel(issue.turnover.status) : "—"}
-            href={issue.turnoverId ? `/turnovers/${issue.turnoverId}` : undefined}
-          />
-          <Meta
-            label="QA inspection"
-            value={
-              issue.qaInspection
-                ? statusLabel(issue.qaInspection.status)
-                : "—"
-            }
-            href={
-              issue.turnoverId && issue.qaInspectionId
-                ? `/qa/${issue.turnoverId}`
-                : undefined
-            }
-          />
-          <Meta label="Owner" value={issue.ownerName ?? "—"} />
-          <Meta label="Assignee" value={issue.assigneeName ?? "Unassigned"} />
-          <Meta label="Opened" value={formatIssueDateTime(issue.createdAt)} />
-          <Meta label="Due" value={formatIssueDateTime(issue.sla.dueAt)} />
-          <Meta label="Age" value={issue.sla.ageLabel} />
-        </div>
-      </section>
+        <DetailFactGrid
+          items={[
+            {
+              label: "Property",
+              value: issue.propertyId ? (
+                <Link href={`/properties/${issue.propertyId}`} className="hover:underline">
+                  {issue.property
+                    ? `${issue.property.name} · ${issue.property.unitCode}`
+                    : "—"}
+                </Link>
+              ) : issue.property ? (
+                `${issue.property.name} · ${issue.property.unitCode}`
+              ) : (
+                "—"
+              ),
+            },
+            {
+              label: "Turnover",
+              value: issue.turnoverId ? (
+                <Link href={`/turnovers/${issue.turnoverId}`} className="hover:underline">
+                  {issue.turnover ? statusLabel(issue.turnover.status) : "—"}
+                </Link>
+              ) : (
+                "—"
+              ),
+            },
+            {
+              label: "QA inspection",
+              value:
+                issue.turnoverId && issue.qaInspectionId ? (
+                  <Link href={`/qa/${issue.turnoverId}`} className="hover:underline">
+                    {issue.qaInspection ? statusLabel(issue.qaInspection.status) : "—"}
+                  </Link>
+                ) : (
+                  "—"
+                ),
+            },
+            { label: "Owner", value: issue.ownerName ?? "—" },
+            { label: "Assignee", value: issue.assigneeName ?? "Unassigned" },
+            { label: "Opened", value: formatIssueDateTime(issue.createdAt) },
+            {
+              label: "Due",
+              value: issue.sla.dueAt ? formatIssueDateTime(issue.sla.dueAt) : "—",
+            },
+            { label: "Age", value: issue.sla.ageLabel },
+          ]}
+        />
+      </DetailSection>
 
       {canManage && issue.allowedNextStatuses.length > 0 ? (
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-            Workflow
-          </h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            Advance status through triage, assignment, resolution, verification, and close.
-          </p>
-          <div className="mt-3">
-            <label className="mb-1.5 block text-sm font-medium">Transition note</label>
+        <DetailSection
+          title="Workflow"
+          description="Advance status through triage, assignment, resolution, verification, and close."
+        >
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">
+              Transition note
+            </label>
             <Textarea
               value={statusNote}
               onChange={(e) => setStatusNote(e.target.value)}
@@ -174,33 +194,30 @@ export function IssueDetail({
               </Button>
             ))}
           </div>
-        </section>
+        </DetailSection>
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
         <div className="space-y-6">
-          <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-            <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-              Linked context
-            </h2>
-            <div className="mt-4 space-y-4 text-sm">
+          <DetailSection title="Linked context">
+            <div className="space-y-4 text-sm">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
                   SOP
                 </p>
                 {sop ? (
                   <>
-                    <p className="font-medium">
+                    <p className="font-medium text-[var(--text-primary)]">
                       <Link href={`/sops/${sop.id}`} className="hover:underline">
                         {sop.name}
                       </Link>
                     </p>
                     {sop.description ? (
-                      <p className="text-[var(--muted)]">{sop.description}</p>
+                      <p className="text-[var(--text-secondary)]">{sop.description}</p>
                     ) : null}
                   </>
                 ) : (
-                  <p className="text-[var(--muted)]">No SOP linked</p>
+                  <p className="text-[var(--text-secondary)]">No SOP linked</p>
                 )}
               </div>
               <div>
@@ -209,15 +226,15 @@ export function IssueDetail({
                 </p>
                 {sow ? (
                   <>
-                    <p className="font-medium">
+                    <p className="font-medium text-[var(--text-primary)]">
                       <Link href={`/sows/${sow.id}`} className="hover:underline">
                         {sow.name}
                       </Link>
                     </p>
-                    <p className="text-[var(--muted)]">{sow.standardScope}</p>
+                    <p className="text-[var(--text-secondary)]">{sow.standardScope}</p>
                   </>
                 ) : (
-                  <p className="text-[var(--muted)]">No SOW linked</p>
+                  <p className="text-[var(--text-secondary)]">No SOW linked</p>
                 )}
               </div>
               {issue.qaInspection && issue.qaInspection.items.length > 0 ? (
@@ -227,7 +244,7 @@ export function IssueDetail({
                   </p>
                   <ul className="mt-1 space-y-1">
                     {issue.qaInspection.items.map((item) => (
-                      <li key={item.id} className="text-[var(--muted)]">
+                      <li key={item.id} className="text-[var(--text-secondary)]">
                         {item.title}
                         {item.comment ? ` — ${item.comment}` : ""}
                       </li>
@@ -236,16 +253,13 @@ export function IssueDetail({
                 </div>
               ) : null}
             </div>
-          </section>
+          </DetailSection>
 
-          <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-            <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-              Photos
-            </h2>
+          <DetailSection title="Photos">
             {photos.length === 0 && !(issue.qaInspection?.photos?.length) ? (
-              <p className="mt-2 text-sm text-[var(--muted)]">No photos attached.</p>
+              <EmptyState title="No photos" description="No photos attached." />
             ) : (
-              <ul className="mt-3 flex flex-wrap gap-2">
+              <ul className="flex flex-wrap gap-2">
                 {photos.map((p) => (
                   <li key={p}>
                     <Badge tone="neutral">{p}</Badge>
@@ -258,17 +272,14 @@ export function IssueDetail({
                 ))}
               </ul>
             )}
-          </section>
+          </DetailSection>
 
           {canManage ? (
-            <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-              <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-                Add update
-              </h2>
-              <p className="mt-1 text-sm text-[var(--muted)]">
-                Internal comments stay ops-only. External updates can be shared with vendors.
-              </p>
-              <div className="mt-3 space-y-3">
+            <DetailSection
+              title="Add update"
+              description="Internal comments stay ops-only. External updates can be shared with vendors."
+            >
+              <div className="space-y-3">
                 <Select
                   value={visibility}
                   onChange={(e) =>
@@ -290,7 +301,7 @@ export function IssueDetail({
                   {pending ? "Saving…" : "Post update"}
                 </Button>
               </div>
-            </section>
+            </DetailSection>
           ) : null}
 
           <IssueTimeline events={issue.events} comments={issue.comments} />
@@ -308,14 +319,11 @@ export function IssueDetail({
               currentOwnerName={issue.ownerName}
             />
           ) : (
-            <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-              <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-                Assignment
-              </h2>
-              <p className="mt-2 text-sm text-[var(--muted)]">
+            <DetailSection title="Assignment">
+              <p className="text-sm text-[var(--text-secondary)]">
                 Owner {issue.ownerName ?? "—"} · Assignee {issue.assigneeName ?? "Unassigned"}
               </p>
-            </section>
+            </DetailSection>
           )}
 
           <EscalationPanel issue={issue} />
@@ -323,29 +331,6 @@ export function IssueDetail({
       </div>
 
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
-    </div>
-  );
-}
-
-function Meta({
-  label,
-  value,
-  href,
-}: {
-  label: string;
-  value: string;
-  href?: string;
-}) {
-  return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)]/40 px-3 py-2">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">{label}</p>
-      {href ? (
-        <Link href={href} className="mt-1 block text-sm font-medium hover:underline">
-          {value}
-        </Link>
-      ) : (
-        <p className="mt-1 text-sm font-medium">{value}</p>
-      )}
     </div>
   );
 }

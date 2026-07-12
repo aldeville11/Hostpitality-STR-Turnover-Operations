@@ -1,6 +1,6 @@
-import { Badge } from "@/components/ui";
+import { DetailSection, EmptyState, StatusBadge } from "@/components/ui";
+import { mapTurnoverStatus } from "@/lib/status-map";
 import { formatDateTime, statusLabel } from "@/lib/utils";
-import { turnoverStatusTone } from "@/lib/dashboard";
 
 type StatusEvent = {
   id: string;
@@ -19,16 +19,19 @@ export function StatusTimeline({
   currentStatus: string;
 }) {
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-          Status history
-        </h2>
-        <Badge tone={turnoverStatusTone(currentStatus)}>{statusLabel(currentStatus)}</Badge>
-      </div>
-
+    <DetailSection
+      title="Status history"
+      actions={
+        <StatusBadge status={mapTurnoverStatus(currentStatus)}>
+          {statusLabel(currentStatus)}
+        </StatusBadge>
+      }
+    >
       {events.length === 0 ? (
-        <p className="text-sm text-[var(--muted)]">No status transitions recorded yet.</p>
+        <EmptyState
+          title="No transitions"
+          description="No status transitions recorded yet."
+        />
       ) : (
         <ol className="space-y-3">
           {events.map((event, idx) => (
@@ -37,19 +40,21 @@ export function StatusTimeline({
               {idx < events.length - 1 ? (
                 <span className="absolute left-[4px] top-4 h-[calc(100%-4px)] w-px bg-[var(--border)]" />
               ) : null}
-              <p className="text-sm font-medium">
+              <p className="text-sm font-medium text-[var(--text-primary)]">
                 {event.fromStatus ? statusLabel(event.fromStatus) : "Created"} →{" "}
                 {statusLabel(event.toStatus)}
               </p>
-              <p className="text-xs text-[var(--muted)]">
+              <p className="text-xs text-[var(--text-secondary)]">
                 {formatDateTime(event.createdAt)}
                 {event.actorName ? ` · ${event.actorName}` : ""}
               </p>
-              {event.note ? <p className="mt-1 text-xs text-[var(--muted)]">{event.note}</p> : null}
+              {event.note ? (
+                <p className="mt-1 text-xs text-[var(--text-secondary)]">{event.note}</p>
+              ) : null}
             </li>
           ))}
         </ol>
       )}
-    </section>
+    </DetailSection>
   );
 }

@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui";
+import { Badge, DetailSection } from "@/components/ui";
 import { parseJson } from "@/lib/json";
 import type { PhotoRequirement, RestockDefault } from "@/lib/properties";
 import { formatDateTime } from "@/lib/utils";
@@ -41,21 +41,17 @@ export function LinkedContext({
   const addOns = parseJson<string[]>(sow?.addOnsJson, []);
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-      <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-        Linked context
-      </h2>
-
-      <div className="mt-4 space-y-4 text-sm">
+    <DetailSection title="Linked context">
+      <div className="space-y-4 text-sm">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
             Property
           </p>
-          <p className="font-medium">
+          <p className="font-medium text-[var(--text-primary)]">
             {property.name} · {property.unitCode}
           </p>
           {property.accessNotes ? (
-            <p className="text-[var(--muted)]">Access: {property.accessNotes}</p>
+            <p className="text-[var(--text-secondary)]">Access: {property.accessNotes}</p>
           ) : null}
         </div>
 
@@ -64,12 +60,12 @@ export function LinkedContext({
             Booking source
           </p>
           {booking ? (
-            <p className="text-[var(--muted)]">
+            <p className="text-[var(--text-secondary)]">
               {booking.source} · {booking.guestName ?? "Guest"} ·{" "}
               {formatDateTime(booking.checkIn)} → {formatDateTime(booking.checkOut)}
             </p>
           ) : (
-            <p className="text-[var(--muted)]">No booking linked</p>
+            <p className="text-[var(--text-secondary)]">No booking linked</p>
           )}
         </div>
 
@@ -77,11 +73,11 @@ export function LinkedContext({
           <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">SOP</p>
           {sop ? (
             <>
-              <p className="font-medium">{sop.name}</p>
-              <p className="text-[var(--muted)]">{sop.description}</p>
+              <p className="font-medium text-[var(--text-primary)]">{sop.name}</p>
+              <p className="text-[var(--text-secondary)]">{sop.description}</p>
             </>
           ) : (
-            <p className="text-[var(--muted)]">No SOP linked</p>
+            <p className="text-[var(--text-secondary)]">No SOP linked</p>
           )}
         </div>
 
@@ -91,10 +87,10 @@ export function LinkedContext({
           </p>
           {sow ? (
             <>
-              <p className="font-medium">
+              <p className="font-medium text-[var(--text-primary)]">
                 {sow.name} <Badge tone="info">{sow.slaMinutes}m SLA</Badge>
               </p>
-              <p className="text-[var(--muted)]">{sow.standardScope}</p>
+              <p className="text-[var(--text-secondary)]">{sow.standardScope}</p>
               {addOns.length > 0 ? (
                 <div className="mt-1 flex flex-wrap gap-1">
                   {addOns.map((a) => (
@@ -106,7 +102,7 @@ export function LinkedContext({
               ) : null}
             </>
           ) : (
-            <p className="text-[var(--muted)]">No SOW linked</p>
+            <p className="text-[var(--text-secondary)]">No SOW linked</p>
           )}
         </div>
 
@@ -127,7 +123,7 @@ export function LinkedContext({
           <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
             Restock items
           </p>
-          <ul className="mt-1 space-y-0.5 text-[var(--muted)]">
+          <ul className="mt-1 space-y-0.5 text-[var(--text-secondary)]">
             {restockDefaults.map((r) => (
               <li key={r.name}>
                 {r.name} — {r.quantity} {r.unit}
@@ -136,6 +132,6 @@ export function LinkedContext({
           </ul>
         </div>
       </div>
-    </section>
+    </DetailSection>
   );
 }

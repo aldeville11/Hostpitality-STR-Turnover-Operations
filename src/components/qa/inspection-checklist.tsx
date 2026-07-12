@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Badge, Button, Textarea } from "@/components/ui";
+import { Badge, Button, DetailSection, EmptyState, Textarea } from "@/components/ui";
 import { reviewQaItemAction } from "@/lib/qa-actions";
 
 type Item = {
@@ -45,18 +45,17 @@ export function InspectionChecklist({
   }
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-4 sm:p-5">
-      <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-        Inspection checklist
-      </h2>
-      <p className="mt-1 text-sm text-[var(--muted)]">
-        Mark each SOP-derived task pass or fail. Failed items require a comment.
-      </p>
-
+    <DetailSection
+      title="Inspection checklist"
+      description="Mark each SOP-derived task pass or fail. Failed items require a comment."
+    >
       {items.length === 0 ? (
-        <p className="mt-4 text-sm text-[var(--muted)]">No checklist items on this turnover.</p>
+        <EmptyState
+          title="No checklist items"
+          description="No checklist items on this turnover."
+        />
       ) : (
-        <div className="mt-4 space-y-4">
+        <div className="space-y-4">
           {sections.map((section) => (
             <div key={section}>
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--accent)]">
@@ -139,6 +138,6 @@ export function InspectionChecklist({
         </div>
       )}
       {error ? <p className="mt-3 text-sm text-rose-600">{error}</p> : null}
-    </section>
+    </DetailSection>
   );
 }

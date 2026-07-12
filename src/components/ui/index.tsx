@@ -272,3 +272,4 @@ export type { DataTableColumn } from "./data-table";
 export { ListFilterBar } from "./list-filter-bar";
 export type { FilterField } from "./list-filter-bar";
 export { SortableDataTable } from "./sortable-data-table";
+export { DetailSection, DetailFactGrid } from "./detail-section";

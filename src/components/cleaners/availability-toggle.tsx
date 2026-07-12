@@ -2,13 +2,22 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Badge, Button, Input, Label, Select, Textarea } from "@/components/ui";
+import {
+  Button,
+  DetailSection,
+  Input,
+  Label,
+  Select,
+  StatusBadge,
+  Textarea,
+} from "@/components/ui";
 import { updateAvailabilityAction } from "@/lib/cleaner-actions";
 import {
   AVAILABILITY_LABELS,
   AVAILABILITY_STATUSES,
   type AvailabilityStatus,
 } from "@/lib/cleaners";
+import { mapAvailability } from "@/lib/status-map";
 
 export function AvailabilityToggle({
   vendorId,
@@ -34,24 +43,14 @@ export function AvailabilityToggle({
   const router = useRouter();
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-          Availability
-        </h2>
-        <Badge
-          tone={
-            availabilityStatus === "AVAILABLE"
-              ? "success"
-              : availabilityStatus === "OUT_OF_SERVICE"
-                ? "danger"
-                : "warning"
-          }
-        >
+    <DetailSection
+      title="Availability"
+      actions={
+        <StatusBadge status={mapAvailability(availabilityStatus)}>
           {AVAILABILITY_LABELS[availabilityStatus as AvailabilityStatus] ?? status}
-        </Badge>
-      </div>
-
+        </StatusBadge>
+      }
+    >
       <form
         className="space-y-3"
         action={(fd) => {
@@ -114,6 +113,6 @@ export function AvailabilityToggle({
           {pending ? "Saving…" : "Update availability"}
         </Button>
       </form>
-    </section>
+    </DetailSection>
   );
 }

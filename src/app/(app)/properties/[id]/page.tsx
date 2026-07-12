@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getPropertyDetail } from "@/lib/properties";
-import { PageHeader } from "@/components/ui";
+import { Button, PageHeader } from "@/components/ui";
 import { PropertyDetail } from "@/components/properties/property-detail";
 
 export default async function PropertyDetailPage({
@@ -23,11 +23,10 @@ export default async function PropertyDetailPage({
         title={data.property.name}
         description={`${data.property.unitCode} · Operational context for turnovers`}
         actions={
-          <Link
-            href="/properties"
-            className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm font-medium hover:bg-[var(--surface-2)]"
-          >
-            All properties
+          <Link href="/properties">
+            <Button variant="outline" size="sm">
+              All properties
+            </Button>
           </Link>
         }
       />

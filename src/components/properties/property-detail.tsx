@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Badge } from "@/components/ui";
+import { Badge, DetailFactGrid, DetailSection, EmptyState, StatusBadge } from "@/components/ui";
 import type { getPropertyDetail } from "@/lib/properties";
 import { unitTypeLabel } from "@/lib/properties";
+import { mapActive, mapReadiness, mapTurnoverStatus } from "@/lib/status-map";
 import { formatDateTime, statusLabel } from "@/lib/utils";
 import { LinkedSops } from "@/components/properties/linked-sops";
 import { LinkedSows } from "@/components/properties/linked-sows";
@@ -15,152 +16,129 @@ export function PropertyDetail({ data }: { data: Detail }) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="font-[family-name:var(--font-display)] text-xl font-semibold">
-              Property profile
-            </h2>
-            <p className="mt-1 text-sm text-[var(--muted)]">
-              {property.address}, {property.city}, {property.state}
-            </p>
-          </div>
+      <DetailSection
+        title="Property profile"
+        description={`${property.address}, ${property.city}, ${property.state}`}
+        actions={
           <div className="flex flex-wrap gap-1.5">
-            <Badge tone={property.active ? "success" : "danger"}>
+            <StatusBadge status={mapActive(property.active)}>
               {property.active ? "Active" : "Inactive"}
-            </Badge>
+            </StatusBadge>
             <Badge tone="neutral">{unitTypeLabel(property.unitType)}</Badge>
-            <Badge
-              tone={
-                property.readiness.label === "Ready"
-                  ? "success"
-                  : property.readiness.label === "Almost ready"
-                    ? "warning"
-                    : "danger"
-              }
-            >
+            <StatusBadge status={mapReadiness(property.readiness.label)}>
               {property.readiness.label} · {property.readiness.score}%
-            </Badge>
+            </StatusBadge>
           </div>
-        </div>
-
-        <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-sm">
-          <div>
-            <dt className="text-xs uppercase tracking-wide text-[var(--muted)]">Unit code</dt>
-            <dd className="font-medium">{property.unitCode}</dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-wide text-[var(--muted)]">Beds / baths</dt>
-            <dd className="font-medium">
-              {property.bedrooms} / {property.bathrooms}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-wide text-[var(--muted)]">Max guests</dt>
-            <dd className="font-medium">{property.maxGuests}</dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-wide text-[var(--muted)]">Default cleaner</dt>
-            <dd className="font-medium">{property.defaultVendor?.name ?? "Not set"}</dd>
-          </div>
-        </dl>
+        }
+      >
+        <DetailFactGrid
+          items={[
+            { label: "Unit code", value: property.unitCode },
+            {
+              label: "Beds / baths",
+              value: `${property.bedrooms} / ${property.bathrooms}`,
+            },
+            { label: "Max guests", value: property.maxGuests },
+            {
+              label: "Default cleaner",
+              value: property.defaultVendor?.name ?? "Not set",
+            },
+          ]}
+        />
 
         {property.accessNotes ? (
-          <p className="mt-4 rounded-xl bg-[var(--surface-2)]/60 px-3 py-2 text-sm">
+          <p className="mt-4 rounded-[var(--radius-md)] bg-[var(--surface-2)]/60 px-3 py-2 text-sm text-[var(--text-primary)]">
             <span className="font-semibold">Access: </span>
             {property.accessNotes}
           </p>
         ) : null}
         {property.notes ? (
-          <p className="mt-2 text-sm text-[var(--muted)]">{property.notes}</p>
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">{property.notes}</p>
         ) : null}
-      </section>
+      </DetailSection>
 
       <div className="grid gap-6 xl:grid-cols-2">
         <LinkedSops sop={property.sop} />
         <LinkedSows sow={property.sow} />
         <CalendarConnections property={property} />
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-            Assigned cleaner / vendor
-          </h2>
+        <DetailSection title="Assigned cleaner / vendor">
           {property.defaultVendor ? (
-            <div className="mt-3 rounded-xl border border-[var(--border)] px-3 py-3">
-              <p className="font-medium">{property.defaultVendor.name}</p>
-              <p className="text-sm text-[var(--muted)]">
+            <div className="rounded-[var(--radius-md)] border border-[var(--border)] px-3 py-3">
+              <p className="font-medium text-[var(--text-primary)]">{property.defaultVendor.name}</p>
+              <p className="text-sm text-[var(--text-secondary)]">
                 {property.defaultVendor.email}
                 {property.defaultVendor.phone ? ` · ${property.defaultVendor.phone}` : ""}
               </p>
               <Badge>{property.defaultVendor.type}</Badge>
             </div>
           ) : (
-            <p className="mt-3 text-sm text-[var(--muted)]">
-              No default cleaner set. Choose one in property settings so the next phase can prefill
-              assignments.
-            </p>
+            <EmptyState
+              title="No default cleaner"
+              description="Choose one in property settings so the next phase can prefill assignments."
+            />
           )}
-          <div className="mt-4 text-xs text-[var(--muted)]">
+          <div className="mt-4 text-xs text-[var(--text-secondary)]">
             Buffer {property.turnoverBufferMins}m · Same-day turnovers{" "}
             {property.sameDayTurnover ? "allowed" : "blocked"}
           </div>
-        </section>
+        </DetailSection>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-          <h2 className="mb-3 font-[family-name:var(--font-display)] text-lg font-semibold">
-            Recent turnovers
-          </h2>
+        <DetailSection title="Recent turnovers">
           {property.turnovers.length === 0 ? (
-            <p className="text-sm text-[var(--muted)]">
-              No turnovers yet. Once calendar sync generates jobs, they will show here.
-            </p>
+            <EmptyState
+              title="No turnovers yet"
+              description="Once calendar sync generates jobs, they will show here."
+            />
           ) : (
             <div className="space-y-2">
               {property.turnovers.map((t) => (
                 <div
                   key={t.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--border)] px-3 py-2 text-sm"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-md)] border border-[var(--border)] px-3 py-2 text-sm"
                 >
                   <div>
-                    <p className="font-medium">{formatDateTime(t.windowStart)}</p>
-                    <p className="text-xs text-[var(--muted)]">
+                    <p className="font-medium text-[var(--text-primary)]">
+                      {formatDateTime(t.windowStart)}
+                    </p>
+                    <p className="text-xs text-[var(--text-secondary)]">
                       {t.vendor?.name ?? "Unassigned"}
                       {t.issues.length ? ` · ${t.issues.length} open issue(s)` : ""}
                     </p>
                   </div>
-                  <Badge>{statusLabel(t.status)}</Badge>
+                  <StatusBadge status={mapTurnoverStatus(t.status)}>
+                    {statusLabel(t.status)}
+                  </StatusBadge>
                 </div>
               ))}
             </div>
           )}
-        </section>
+        </DetailSection>
 
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-          <h2 className="mb-3 font-[family-name:var(--font-display)] text-lg font-semibold">
-            Recent issues
-          </h2>
+        <DetailSection title="Recent issues">
           {openIssues.length === 0 ? (
-            <p className="text-sm text-[var(--muted)]">
-              No open issues linked to this property’s recent turnovers.
-            </p>
+            <EmptyState
+              title="No open issues"
+              description="No open issues linked to this property’s recent turnovers."
+            />
           ) : (
             <div className="space-y-2">
               {openIssues.map((issue) => (
                 <Link
                   key={issue.id}
                   href={`/issues/${issue.id}`}
-                  className="block rounded-xl border border-[var(--border)] px-3 py-2 transition hover:border-[var(--accent)]/40"
+                  className="block rounded-[var(--radius-md)] border border-[var(--border)] px-3 py-2 transition hover:border-[var(--accent)]/40"
                 >
-                  <p className="font-medium">{issue.title}</p>
-                  <p className="text-xs text-[var(--muted)]">
+                  <p className="font-medium text-[var(--text-primary)]">{issue.title}</p>
+                  <p className="text-xs text-[var(--text-secondary)]">
                     {issue.severity} · {statusLabel(issue.status)} · {issue.category}
                   </p>
                 </Link>
               ))}
             </div>
           )}
-        </section>
+        </DetailSection>
       </div>
 
       <PropertySettings property={property} options={options} />

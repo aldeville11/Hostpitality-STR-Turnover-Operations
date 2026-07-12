@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Badge, Button, Label, Select, Input } from "@/components/ui";
+import { Badge, Button, DetailSection, EmptyState, Input, Label, Select } from "@/components/ui";
 import { assignCleanerAction } from "@/lib/turnover-actions";
 import { formatDateTime } from "@/lib/utils";
 
@@ -34,16 +34,12 @@ export function AssignmentPanel({
   const router = useRouter();
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-      <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-        Cleaner assignment
-      </h2>
-      <p className="mt-1 text-sm text-[var(--muted)]">
-        Current: <span className="font-medium text-[var(--ink)]">{currentVendorName ?? "Unassigned"}</span>
-      </p>
-
+    <DetailSection
+      title="Cleaner assignment"
+      description={`Current: ${currentVendorName ?? "Unassigned"}`}
+    >
       <form
-        className="mt-4 space-y-3"
+        className="space-y-3"
         action={(fd) => {
           setError(null);
           startTransition(async () => {
@@ -80,26 +76,29 @@ export function AssignmentPanel({
           Assignment history
         </p>
         {history.length === 0 ? (
-          <p className="text-sm text-[var(--muted)]">No assignment changes yet.</p>
+          <EmptyState title="No history" description="No assignment changes yet." />
         ) : (
           <ul className="space-y-2">
             {history.map((h) => (
-              <li key={h.id} className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm">
+              <li
+                key={h.id}
+                className="rounded-[var(--radius-md)] border border-[var(--border)] px-3 py-2 text-sm"
+              >
                 <div className="flex flex-wrap items-center gap-1">
                   <Badge tone="neutral">{h.fromName ?? "Unassigned"}</Badge>
-                  <span className="text-[var(--muted)]">→</span>
+                  <span className="text-[var(--text-secondary)]">→</span>
                   <Badge tone="accent">{h.toName ?? "Unassigned"}</Badge>
                 </div>
-                <p className="mt-1 text-xs text-[var(--muted)]">
+                <p className="mt-1 text-xs text-[var(--text-secondary)]">
                   {formatDateTime(h.createdAt)}
                   {h.actorName ? ` · ${h.actorName}` : ""}
                 </p>
-                {h.note ? <p className="text-xs text-[var(--muted)]">{h.note}</p> : null}
+                {h.note ? <p className="text-xs text-[var(--text-secondary)]">{h.note}</p> : null}
               </li>
             ))}
           </ul>
         )}
       </div>
-    </section>
+    </DetailSection>
   );
 }

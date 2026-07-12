@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Badge, Button, Textarea } from "@/components/ui";
+import { Badge, Button, DetailSection, EmptyState, Textarea } from "@/components/ui";
 import { reviewQaPhotoAction } from "@/lib/qa-actions";
 
 type Photo = {
@@ -43,19 +43,17 @@ export function PhotoReview({
   }
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-4 sm:p-5">
-      <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-        Photo review
-      </h2>
-      <p className="mt-1 text-sm text-[var(--muted)]">
-        Verify SOW / property photo proof slots. Missing required shots block approval unless
-        overridden.
-      </p>
-
+    <DetailSection
+      title="Photo review"
+      description="Verify SOW / property photo proof slots. Missing required shots block approval unless overridden."
+    >
       {photos.length === 0 ? (
-        <p className="mt-4 text-sm text-[var(--muted)]">No photo requirements on this template.</p>
+        <EmptyState
+          title="No photo requirements"
+          description="No photo requirements on this template."
+        />
       ) : (
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           {photos.map((photo) => (
             <div key={photo.id} className="rounded-xl border border-[var(--border)] p-3">
               <div
@@ -139,6 +137,6 @@ export function PhotoReview({
         </div>
       )}
       {error ? <p className="mt-3 text-sm text-rose-600">{error}</p> : null}
-    </section>
+    </DetailSection>
   );
 }

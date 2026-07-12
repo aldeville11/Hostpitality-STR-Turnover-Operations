@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { assignIssueAction } from "@/lib/issue-actions";
-import { Button, Select } from "@/components/ui";
+import { Button, DetailSection, Select } from "@/components/ui";
 
 type Option = { id: string; label: string };
 
@@ -39,21 +39,21 @@ export function IssueAssignment({
   }
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-      <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-        Assignment
-      </h2>
-      <p className="mt-1 text-sm text-[var(--muted)]">
-        Owner and vendor assignee for this issue.
-      </p>
-
-      <div className="mt-4 space-y-3">
+    <DetailSection
+      title="Assignment"
+      description="Owner and vendor assignee for this issue."
+    >
+      <div className="space-y-3">
         <div className="text-sm">
-          <span className="text-[var(--muted)]">Owner: </span>
-          <span className="font-medium">{currentOwnerName ?? "—"}</span>
+          <span className="text-[var(--text-secondary)]">Owner: </span>
+          <span className="font-medium text-[var(--text-primary)]">
+            {currentOwnerName ?? "—"}
+          </span>
         </div>
         <div>
-          <label className="mb-1.5 block text-sm font-medium">Assignee</label>
+          <label className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">
+            Assignee
+          </label>
           <Select
             value={vendorId}
             onChange={(e) => setVendorId(e.target.value)}
@@ -72,6 +72,6 @@ export function IssueAssignment({
           {pending ? "Updating…" : "Update assignment"}
         </Button>
       </div>
-    </section>
+    </DetailSection>
   );
 }

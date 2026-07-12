@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Badge, Button } from "@/components/ui";
+import { Badge, Button, DetailSection, EmptyState } from "@/components/ui";
 import {
   regenerateChecklistAction,
   toggleChecklistItemAction,
@@ -33,16 +33,10 @@ export function ChecklistPanel({
   const done = items.filter((i) => i.completed).length;
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-            Checklist
-          </h2>
-          <p className="text-sm text-[var(--muted)]">
-            Generated from the property SOP · {done}/{items.length} complete
-          </p>
-        </div>
+    <DetailSection
+      title="Checklist"
+      description={`Generated from the property SOP · ${done}/${items.length} complete`}
+      actions={
         <form
           action={(fd) => {
             setError(null);
@@ -58,12 +52,13 @@ export function ChecklistPanel({
             Regenerate from SOP
           </Button>
         </form>
-      </div>
-
+      }
+    >
       {items.length === 0 ? (
-        <p className="text-sm text-[var(--muted)]">
-          No checklist items. Regenerate from the linked SOP to create tasks.
-        </p>
+        <EmptyState
+          title="No checklist items"
+          description="Regenerate from the linked SOP to create tasks."
+        />
       ) : (
         <div className="space-y-4">
           {sections.map((section) => (
@@ -85,7 +80,7 @@ export function ChecklistPanel({
                           else router.refresh();
                         });
                       }}
-                      className="flex items-start gap-3 rounded-xl border border-[var(--border)] px-3 py-2"
+                      className="flex items-start gap-3 rounded-[var(--radius-md)] border border-[var(--border)] px-3 py-2"
                     >
                       <input type="hidden" name="itemId" value={item.id} />
                       <button
@@ -100,14 +95,14 @@ export function ChecklistPanel({
                       />
                       <div className="min-w-0 flex-1">
                         <p
-                          className={`text-sm font-medium ${
+                          className={`text-sm font-medium text-[var(--text-primary)] ${
                             item.completed ? "line-through opacity-60" : ""
                           }`}
                         >
                           {item.title}
                         </p>
                         {item.instructions ? (
-                          <p className="text-xs text-[var(--muted)]">{item.instructions}</p>
+                          <p className="text-xs text-[var(--text-secondary)]">{item.instructions}</p>
                         ) : null}
                         <div className="mt-1 flex flex-wrap gap-1">
                           {item.requiresPhoto ? <Badge tone="info">Photo</Badge> : null}
@@ -124,6 +119,6 @@ export function ChecklistPanel({
         </div>
       )}
       {error ? <p className="mt-3 text-sm text-rose-600">{error}</p> : null}
-    </section>
+    </DetailSection>
   );
 }

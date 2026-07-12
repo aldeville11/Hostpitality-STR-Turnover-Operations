@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { can } from "@/lib/rbac";
 import { getTurnoverDetail } from "@/lib/turnovers";
-import { PageHeader } from "@/components/ui";
+import { Button, PageHeader } from "@/components/ui";
 import { TurnoverDetail } from "@/components/turnovers/turnover-detail";
 
 export default async function TurnoverDetailPage({
@@ -28,17 +28,15 @@ export default async function TurnoverDetailPage({
         description={`${data.turnover.property.unitCode} · Turnover operations record`}
         actions={
           <div className="flex flex-wrap gap-2">
-            <Link
-              href="/turnovers"
-              className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm font-medium hover:bg-[var(--surface-2)]"
-            >
-              All turnovers
+            <Link href="/turnovers">
+              <Button variant="outline" size="sm">
+                All turnovers
+              </Button>
             </Link>
-            <Link
-              href={`/properties/${data.turnover.propertyId}`}
-              className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm font-medium hover:bg-[var(--surface-2)]"
-            >
-              Property
+            <Link href={`/properties/${data.turnover.propertyId}`}>
+              <Button variant="outline" size="sm">
+                Property
+              </Button>
             </Link>
           </div>
         }

@@ -3,7 +3,7 @@ import {
   type IssueCommentDto,
   type IssueEventDto,
 } from "@/lib/issues";
-import { Badge } from "@/components/ui";
+import { Badge, DetailSection, EmptyState } from "@/components/ui";
 
 function eventLabel(type: string) {
   if (type === "STATUS") return "Status";
@@ -46,18 +46,14 @@ export function IssueTimeline({
   ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-      <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-        History & comments
-      </h2>
-      <p className="mt-1 text-sm text-[var(--muted)]">
-        Status transitions, assignments, escalations, and notes.
-      </p>
-
+    <DetailSection
+      title="History & comments"
+      description="Status transitions, assignments, escalations, and notes."
+    >
       {items.length === 0 ? (
-        <p className="mt-4 text-sm text-[var(--muted)]">No history yet.</p>
+        <EmptyState title="No history" description="No history yet." />
       ) : (
-        <ol className="mt-4 space-y-4">
+        <ol className="space-y-4">
           {items.map((item) => (
             <li key={item.id} className="relative border-l-2 border-[var(--border)] pl-4">
               <div className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full bg-[var(--accent)]" />
@@ -69,18 +65,20 @@ export function IssueTimeline({
                       : "Internal note"
                     : eventLabel(item.type)}
                 </Badge>
-                <span className="text-xs text-[var(--muted)]">
+                <span className="text-xs text-[var(--text-secondary)]">
                   {formatIssueDateTime(item.at)}
                 </span>
                 {item.actorName ? (
-                  <span className="text-xs text-[var(--muted)]">· {item.actorName}</span>
+                  <span className="text-xs text-[var(--text-secondary)]">
+                    · {item.actorName}
+                  </span>
                 ) : null}
               </div>
-              <p className="mt-1 whitespace-pre-wrap text-sm text-[var(--ink)]">
+              <p className="mt-1 whitespace-pre-wrap text-sm text-[var(--text-primary)]">
                 {item.summary}
               </p>
               {item.showTransition ? (
-                <p className="mt-0.5 text-xs text-[var(--muted)]">
+                <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
                   {item.fromValue ?? "—"} → {item.toValue ?? "—"}
                 </p>
               ) : null}
@@ -88,6 +86,6 @@ export function IssueTimeline({
           ))}
         </ol>
       )}
-    </section>
+    </DetailSection>
   );
 }

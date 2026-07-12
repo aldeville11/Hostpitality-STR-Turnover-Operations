@@ -2,10 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Badge, Button, Input, Label, Select, Textarea } from "@/components/ui";
+import { Badge, Button, DetailSection, EmptyState, Input, Label, Select, StatusBadge, Textarea } from "@/components/ui";
 import { ConflictAlert } from "@/components/cleaners/conflict-alert";
 import { assignFromCleanersAction } from "@/lib/cleaner-actions";
 import type { AssignmentConflict } from "@/lib/cleaners";
+import { mapTurnoverStatus } from "@/lib/status-map";
 import { formatDateTime, statusLabel } from "@/lib/utils";
 
 type TurnoverOption = {
@@ -47,17 +48,12 @@ export function AssignmentPanel({
   ];
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-      <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-        Assign / reassign
-      </h2>
-      <p className="mt-1 text-sm text-[var(--muted)]">
-        Dispatch upcoming turnovers to {cleanerName}. Conflicts and SLA risk are checked before
-        save.
-      </p>
-
+    <DetailSection
+      title="Assign / reassign"
+      description={`Dispatch upcoming turnovers to ${cleanerName}. Conflicts and SLA risk are checked before save.`}
+    >
       <form
-        className="mt-4 space-y-3"
+        className="space-y-3"
         action={(fd) => {
           setError(null);
           setMessage(null);
@@ -162,25 +158,27 @@ export function AssignmentPanel({
           Currently assigned
         </p>
         {assignedTurnovers.length === 0 ? (
-          <p className="text-sm text-[var(--muted)]">No open assignments.</p>
+          <EmptyState title="No assignments" description="No open assignments." />
         ) : (
           <ul className="space-y-2">
             {assignedTurnovers.map((t) => (
               <li
                 key={t.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--border)] px-3 py-2 text-sm"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-md)] border border-[var(--border)] px-3 py-2 text-sm"
               >
                 <div>
-                  <p className="font-medium">
+                  <p className="font-medium text-[var(--text-primary)]">
                     {t.property.name}{" "}
-                    <span className="text-[var(--muted)]">· {t.property.unitCode}</span>
+                    <span className="text-[var(--text-secondary)]">· {t.property.unitCode}</span>
                   </p>
-                  <p className="text-xs text-[var(--muted)]">
+                  <p className="text-xs text-[var(--text-secondary)]">
                     {formatDateTime(t.windowStart)} · due {formatDateTime(t.deadlineAt)}
                   </p>
                 </div>
                 <div className="flex gap-1">
-                  <Badge tone="neutral">{statusLabel(t.status)}</Badge>
+                  <StatusBadge status={mapTurnoverStatus(t.status)}>
+                    {statusLabel(t.status)}
+                  </StatusBadge>
                   <Badge tone={t.priority === "URGENT" || t.priority === "HIGH" ? "danger" : "neutral"}>
                     {t.priority}
                   </Badge>
@@ -190,6 +188,6 @@ export function AssignmentPanel({
           </ul>
         )}
       </div>
-    </section>
+    </DetailSection>
   );
 }

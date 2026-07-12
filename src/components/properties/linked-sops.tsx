@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Badge } from "@/components/ui";
+import { Badge, DetailSection, EmptyState } from "@/components/ui";
 import { countSteps, parseSopDocument, STATUS_LABELS, type SopStatus } from "@/lib/sops";
 
 type Sop = {
@@ -18,17 +18,16 @@ export function LinkedSops({ sop }: { sop: Sop }) {
   const status = (sop?.status as SopStatus | undefined) ?? "DRAFT";
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-      <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">Linked SOP</h2>
+    <DetailSection title="Linked SOP">
       {!sop ? (
-        <p className="mt-3 text-sm text-[var(--muted)]">
-          No SOP linked. Attach a playbook in settings or from the SOPs page so cleaners know the
-          room-by-room process.
-        </p>
+        <EmptyState
+          title="No SOP linked"
+          description="Attach a playbook in settings or from the SOPs page so cleaners know the room-by-room process."
+        />
       ) : (
-        <div className="mt-3 space-y-3">
+        <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="font-medium">{sop.name}</p>
+            <p className="font-medium text-[var(--text-primary)]">{sop.name}</p>
             <Badge>v{sop.version}</Badge>
             <Badge
               tone={
@@ -39,13 +38,13 @@ export function LinkedSops({ sop }: { sop: Sop }) {
             </Badge>
           </div>
           {sop.description ? (
-            <p className="text-sm text-[var(--muted)]">{sop.description}</p>
+            <p className="text-sm text-[var(--text-secondary)]">{sop.description}</p>
           ) : null}
-          <p className="text-xs text-[var(--muted)]">
+          <p className="text-xs text-[var(--text-secondary)]">
             {doc.sections.length} sections · {steps} steps
           </p>
           {doc.sections.length > 0 ? (
-            <ul className="space-y-1 text-sm text-[var(--muted)]">
+            <ul className="space-y-1 text-sm text-[var(--text-secondary)]">
               {doc.sections.slice(0, 5).map((section) => (
                 <li key={section.id}>
                   {section.title}
@@ -54,7 +53,7 @@ export function LinkedSops({ sop }: { sop: Sop }) {
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-[var(--muted)]">SOP has no checklist steps yet.</p>
+            <p className="text-sm text-[var(--text-secondary)]">SOP has no checklist steps yet.</p>
           )}
           <Link
             href={`/sops/${sop.id}`}
@@ -64,6 +63,6 @@ export function LinkedSops({ sop }: { sop: Sop }) {
           </Link>
         </div>
       )}
-    </section>
+    </DetailSection>
   );
 }

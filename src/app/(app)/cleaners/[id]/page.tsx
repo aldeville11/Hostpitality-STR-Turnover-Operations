@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { can } from "@/lib/rbac";
 import { getCleanerDetail } from "@/lib/cleaners";
-import { PageHeader } from "@/components/ui";
+import { Button, PageHeader } from "@/components/ui";
 import { CleanerDetail } from "@/components/cleaners/cleaner-detail";
 
 export default async function CleanerDetailPage({
@@ -27,11 +27,10 @@ export default async function CleanerDetailPage({
         title={data.vendor.name}
         description={`${data.vendor.type} · Assignment & coverage`}
         actions={
-          <Link
-            href="/cleaners"
-            className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm font-medium hover:bg-[var(--surface-2)]"
-          >
-            All cleaners
+          <Link href="/cleaners">
+            <Button variant="outline" size="sm">
+              All cleaners
+            </Button>
           </Link>
         }
       />

@@ -3,7 +3,16 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Badge, Button, Input, Label, Textarea } from "@/components/ui";
+import {
+  Badge,
+  Button,
+  DetailSection,
+  EmptyState,
+  Input,
+  Label,
+  StatusBadge,
+  Textarea,
+} from "@/components/ui";
 import { AvailabilityToggle } from "@/components/cleaners/availability-toggle";
 import { AssignmentPanel } from "@/components/cleaners/assignment-panel";
 import { WorkloadCalendar } from "@/components/cleaners/workload-calendar";
@@ -15,6 +24,7 @@ import {
   type AssignmentConflict,
   type AvailabilityStatus,
 } from "@/lib/cleaners";
+import { mapAvailability, mapTurnoverStatus } from "@/lib/status-map";
 import { formatDateTime, statusLabel } from "@/lib/utils";
 import { assignFromCleanersAction } from "@/lib/cleaner-actions";
 
@@ -123,34 +133,22 @@ export function CleanerDetail({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="neutral">{TYPE_LABELS[vendor.type] ?? vendor.type}</Badge>
-        <Badge
-          tone={
-            vendor.available
-              ? "success"
-              : vendor.availabilityStatus === "OUT_OF_SERVICE"
-                ? "danger"
-                : "warning"
-          }
-        >
+        <StatusBadge status={mapAvailability(vendor.availabilityStatus)}>
           {AVAILABILITY_LABELS[vendor.availabilityStatus as AvailabilityStatus] ??
             vendor.availabilityStatus}
-        </Badge>
+        </StatusBadge>
         <Badge tone="accent">
           Load {vendor.openLoad}/{vendor.capacity}
         </Badge>
         <Badge tone="info">Rating {vendor.rating.toFixed(1)}</Badge>
       </div>
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-          Profile
-        </h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          {vendor.email}
-          {vendor.phone ? ` · ${vendor.phone}` : ""}
-        </p>
+      <DetailSection
+        title="Profile"
+        description={`${vendor.email}${vendor.phone ? ` · ${vendor.phone}` : ""}`}
+      >
         {vendor.defaultProperties.length > 0 ? (
-          <div className="mt-3 flex flex-wrap gap-1">
+          <div className="mb-4 flex flex-wrap gap-1">
             {vendor.defaultProperties.map((p) => (
               <Link key={p.id} href={`/properties/${p.id}`}>
                 <Badge tone="info">
@@ -163,7 +161,7 @@ export function CleanerDetail({
 
         {canManage ? (
           <form
-            className="mt-4 grid gap-3 sm:grid-cols-2"
+            className="grid gap-3 sm:grid-cols-2"
             action={(fd) => {
               setError(null);
               setMessage(null);
@@ -250,7 +248,7 @@ export function CleanerDetail({
             </div>
           </form>
         ) : null}
-      </section>
+      </DetailSection>
 
       {data.conflicts.length ? (
         <ConflictAlert conflicts={data.conflicts} title="Coverage conflicts & risks" />
@@ -276,36 +274,34 @@ export function CleanerDetail({
         />
       </div>
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-          Coverage gaps
-        </h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          Unassigned turnovers in this cleaner&apos;s service area (or all areas if coverage is
-          unset).
-        </p>
+      <DetailSection
+        title="Coverage gaps"
+        description="Unassigned turnovers in this cleaner's service area (or all areas if coverage is unset)."
+      >
         {data.gaps.length === 0 ? (
-          <p className="mt-3 text-sm text-[var(--muted)]">No gaps in the next two weeks.</p>
+          <EmptyState title="No gaps" description="No gaps in the next two weeks." />
         ) : (
-          <ul className="mt-3 space-y-2">
+          <ul className="space-y-2">
             {data.gaps.map((gap) => (
               <li
                 key={gap.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--border)] px-3 py-2 text-sm"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-md)] border border-[var(--border)] px-3 py-2 text-sm"
               >
                 <div>
-                  <p className="font-medium">
+                  <p className="font-medium text-[var(--text-primary)]">
                     {gap.propertyName}{" "}
-                    <span className="text-[var(--muted)]">
+                    <span className="text-[var(--text-secondary)]">
                       · {gap.unitCode} · {gap.city}
                     </span>
                   </p>
-                  <p className="text-xs text-[var(--muted)]">
+                  <p className="text-xs text-[var(--text-secondary)]">
                     {formatDateTime(gap.windowStart)} · due {formatDateTime(gap.deadlineAt)}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge tone="warning">{statusLabel(gap.status)}</Badge>
+                  <StatusBadge status={mapTurnoverStatus(gap.status)}>
+                    {statusLabel(gap.status)}
+                  </StatusBadge>
                   {canManage ? (
                     <form
                       action={(fd) => {
@@ -329,24 +325,21 @@ export function CleanerDetail({
             ))}
           </ul>
         )}
-      </section>
+      </DetailSection>
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-          Assignment history
-        </h2>
+      <DetailSection title="Assignment history">
         {data.assignmentHistory.length === 0 ? (
-          <p className="mt-3 text-sm text-[var(--muted)]">No assignment changes yet.</p>
+          <EmptyState title="No history" description="No assignment changes yet." />
         ) : (
-          <ol className="mt-3 space-y-2">
+          <ol className="space-y-2">
             {data.assignmentHistory.map((event) => (
               <li
                 key={event.id}
-                className="rounded-xl border border-[var(--border)] px-3 py-2 text-sm"
+                className="rounded-[var(--radius-md)] border border-[var(--border)] px-3 py-2 text-sm"
               >
                 <div className="flex flex-wrap items-center gap-1">
                   <Badge tone="neutral">{event.fromName ?? "Unassigned"}</Badge>
-                  <span className="text-[var(--muted)]">→</span>
+                  <span className="text-[var(--text-secondary)]">→</span>
                   <Badge tone="accent">{event.toName ?? "Unassigned"}</Badge>
                   <Link
                     href={`/turnovers/${event.turnover.id}`}
@@ -355,18 +348,18 @@ export function CleanerDetail({
                     {event.turnover.property.name}
                   </Link>
                 </div>
-                <p className="mt-1 text-xs text-[var(--muted)]">
+                <p className="mt-1 text-xs text-[var(--text-secondary)]">
                   {formatDateTime(event.createdAt)}
                   {event.actorName ? ` · ${event.actorName}` : ""}
                 </p>
                 {event.note ? (
-                  <p className="mt-1 text-xs text-[var(--muted)]">{event.note}</p>
+                  <p className="mt-1 text-xs text-[var(--text-secondary)]">{event.note}</p>
                 ) : null}
               </li>
             ))}
           </ol>
         )}
-      </section>
+      </DetailSection>
     </div>
   );
 }

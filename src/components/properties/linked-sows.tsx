@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Badge } from "@/components/ui";
+import { Badge, DetailSection, EmptyState } from "@/components/ui";
 import { parseSowDocument, STATUS_LABELS, type SowStatus } from "@/lib/sows";
 
 type Sow = {
@@ -24,18 +24,16 @@ export function LinkedSows({ sow }: { sow: Sow }) {
   const status = (sow?.status as SowStatus | undefined) ?? "DRAFT";
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-      <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-        Linked SOW template
-      </h2>
+    <DetailSection title="Linked SOW template">
       {!sow ? (
-        <p className="mt-3 text-sm text-[var(--muted)]">
-          No SOW template linked. Define scope and SLA before generating turnovers.
-        </p>
+        <EmptyState
+          title="No SOW template linked"
+          description="Define scope and SLA before generating turnovers."
+        />
       ) : (
-        <div className="mt-3 space-y-3">
+        <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="font-medium">{sow.name}</p>
+            <p className="font-medium text-[var(--text-primary)]">{sow.name}</p>
             {sow.version ? <Badge>v{sow.version}</Badge> : null}
             <Badge tone="info">{sow.slaMinutes}m SLA</Badge>
             <Badge
@@ -53,12 +51,12 @@ export function LinkedSows({ sow }: { sow: Sow }) {
             </Badge>
           </div>
           {sow.useCase ? (
-            <p className="text-xs text-[var(--muted)]">Use case: {sow.useCase}</p>
+            <p className="text-xs text-[var(--text-secondary)]">Use case: {sow.useCase}</p>
           ) : null}
-          <p className="text-sm text-[var(--muted)]">
+          <p className="text-sm text-[var(--text-secondary)]">
             {sow.standardScope || doc.scopeItems.map((i) => i.title).join(", ")}
           </p>
-          <p className="text-xs text-[var(--muted)]">
+          <p className="text-xs text-[var(--text-secondary)]">
             {doc.scopeItems.length} scope · {doc.addOns.length} add-ons ·{" "}
             {doc.photoRequirements.length} photo reqs
           </p>
@@ -79,6 +77,6 @@ export function LinkedSows({ sow }: { sow: Sow }) {
           </Link>
         </div>
       )}
-    </section>
+    </DetailSection>
   );
 }

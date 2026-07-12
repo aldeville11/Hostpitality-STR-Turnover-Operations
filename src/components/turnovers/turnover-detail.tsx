@@ -3,15 +3,23 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Badge, Button } from "@/components/ui";
+import {
+  Badge,
+  Button,
+  DetailFactGrid,
+  DetailSection,
+  EmptyState,
+  StatusBadge,
+} from "@/components/ui";
 import { AssignmentPanel } from "@/components/turnovers/assignment-panel";
 import { ChecklistPanel } from "@/components/turnovers/checklist-panel";
 import { LinkedContext } from "@/components/turnovers/linked-context";
 import { StatusTimeline } from "@/components/turnovers/status-timeline";
 import { updateTurnoverStatusAction } from "@/lib/turnover-actions";
 import type { getTurnoverDetail } from "@/lib/turnovers";
+import { mapIssueStatus, mapTurnoverStatus } from "@/lib/status-map";
 import { formatDateTime, statusLabel } from "@/lib/utils";
-import { priorityTone, turnoverStatusTone } from "@/lib/dashboard";
+import { priorityTone } from "@/lib/dashboard";
 
 type Detail = NonNullable<Awaited<ReturnType<typeof getTurnoverDetail>>>;
 
@@ -33,7 +41,9 @@ export function TurnoverDetail({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge tone={turnoverStatusTone(turnover.status)}>{statusLabel(turnover.status)}</Badge>
+        <StatusBadge status={mapTurnoverStatus(turnover.status)}>
+          {statusLabel(turnover.status)}
+        </StatusBadge>
         <Badge tone={priorityTone(turnover.priority)}>{turnover.priority}</Badge>
         <Badge tone="neutral">
           Checklist {checklistProgress.done}/{checklistProgress.total}
@@ -48,85 +58,93 @@ export function TurnoverDetail({
         ) : null}
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Meta label="Scheduled window" value={`${formatDateTime(turnover.windowStart)} – ${formatDateTime(turnover.windowEnd)}`} />
-        <Meta label="Due" value={formatDateTime(turnover.deadlineAt)} />
-        <Meta label="Cleaner" value={turnover.vendor?.name ?? "Unassigned"} />
-        <Meta
-          label="Booking"
-          value={
-            turnover.booking
+      <DetailFactGrid
+        items={[
+          {
+            label: "Scheduled window",
+            value: `${formatDateTime(turnover.windowStart)} – ${formatDateTime(turnover.windowEnd)}`,
+          },
+          { label: "Due", value: formatDateTime(turnover.deadlineAt) },
+          { label: "Cleaner", value: turnover.vendor?.name ?? "Unassigned" },
+          {
+            label: "Booking",
+            value: turnover.booking
               ? `${turnover.booking.source} · ${turnover.booking.guestName ?? "Guest"}`
-              : "No booking linked"
-          }
-        />
-      </div>
+              : "No booking linked",
+          },
+        ]}
+      />
 
       {canManage && allowedNextStatuses.length > 0 ? (
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-            Advance status
-          </h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            Lifecycle through Ready for QA. Transitions are audited.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-              {allowedNextStatuses.map((status) => (
-                <form
-                  key={status}
-                  action={(fd) => {
-                    setError(null);
-                    startTransition(async () => {
-                      const res = await updateTurnoverStatusAction(fd);
-                      if (res?.error) setError(res.error);
-                      else router.refresh();
-                    });
-                  }}
+        <DetailSection
+          title="Advance status"
+          description="Lifecycle through Ready for QA. Transitions are audited."
+        >
+          <div className="flex flex-wrap gap-2">
+            {allowedNextStatuses.map((status) => (
+              <form
+                key={status}
+                action={(fd) => {
+                  setError(null);
+                  startTransition(async () => {
+                    const res = await updateTurnoverStatusAction(fd);
+                    if (res?.error) setError(res.error);
+                    else router.refresh();
+                  });
+                }}
+              >
+                <input type="hidden" name="id" value={turnover.id} />
+                <input type="hidden" name="toStatus" value={status} />
+                <input type="hidden" name="note" value="" />
+                <Button
+                  type="submit"
+                  size="sm"
+                  variant={
+                    status === "BLOCKED"
+                      ? "danger"
+                      : status === "READY_FOR_QA"
+                        ? "primary"
+                        : "outline"
+                  }
+                  disabled={pending}
                 >
-                  <input type="hidden" name="id" value={turnover.id} />
-                  <input type="hidden" name="toStatus" value={status} />
-                  <input type="hidden" name="note" value="" />
-                  <Button
-                    type="submit"
-                    size="sm"
-                    variant={
-                      status === "BLOCKED"
-                        ? "danger"
-                        : status === "READY_FOR_QA"
-                          ? "primary"
-                          : "outline"
-                    }
-                    disabled={pending}
-                  >
-                    {statusLabel(status)}
-                  </Button>
-                </form>
-              ))}
-            </div>
-            {error ? <p className="text-sm text-rose-600">{error}</p> : null}
-        </section>
+                  {statusLabel(status)}
+                </Button>
+              </form>
+            ))}
+          </div>
+          {error ? <p className="mt-3 text-sm text-rose-600">{error}</p> : null}
+        </DetailSection>
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
         <div className="space-y-6">
-          <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-            <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-              Booking & schedule
-            </h2>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 text-sm">
-              <Field label="Guest check-out" value={turnover.booking ? formatDateTime(turnover.booking.checkOut) : "—"} />
-              <Field label="Guest check-in" value={turnover.booking ? formatDateTime(turnover.booking.checkIn) : "—"} />
-              <Field label="Window start" value={formatDateTime(turnover.windowStart)} />
-              <Field label="Window end" value={formatDateTime(turnover.windowEnd)} />
-              <Field label="Deadline" value={formatDateTime(turnover.deadlineAt)} />
-              <Field label="External booking" value={turnover.booking?.externalId ?? "—"} />
-            </div>
+          <DetailSection title="Booking & schedule">
+            <DetailFactGrid
+              items={[
+                {
+                  label: "Guest check-out",
+                  value: turnover.booking ? formatDateTime(turnover.booking.checkOut) : "—",
+                },
+                {
+                  label: "Guest check-in",
+                  value: turnover.booking ? formatDateTime(turnover.booking.checkIn) : "—",
+                },
+                { label: "Window start", value: formatDateTime(turnover.windowStart) },
+                { label: "Window end", value: formatDateTime(turnover.windowEnd) },
+                { label: "Deadline", value: formatDateTime(turnover.deadlineAt) },
+                {
+                  label: "External booking",
+                  value: turnover.booking?.externalId ?? "—",
+                },
+              ]}
+            />
             {turnover.notes ? (
-              <p className="mt-4 whitespace-pre-wrap rounded-xl border border-[var(--border)] bg-[var(--surface-2)]/50 px-3 py-2 text-sm text-[var(--muted)]">
+              <p className="mt-4 whitespace-pre-wrap rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-2)]/50 px-3 py-2 text-sm text-[var(--text-secondary)]">
                 {turnover.notes}
               </p>
             ) : null}
-          </section>
+          </DetailSection>
 
           <ChecklistPanel turnoverId={turnover.id} items={turnover.checklistItems} />
         </div>
@@ -141,14 +159,11 @@ export function TurnoverDetail({
               history={turnover.assignmentEvents}
             />
           ) : (
-            <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-              <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-                Cleaner assignment
-              </h2>
-              <p className="mt-2 text-sm text-[var(--muted)]">
+            <DetailSection title="Cleaner assignment">
+              <p className="text-sm text-[var(--text-secondary)]">
                 {turnover.vendor?.name ?? "Unassigned"}
               </p>
-            </section>
+            </DetailSection>
           )}
 
           <LinkedContext
@@ -164,34 +179,38 @@ export function TurnoverDetail({
             restockDefaults={restockDefaults}
           />
 
-          <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-                Issues
-              </h2>
+          <DetailSection
+            title="Issues"
+            actions={
               <Link
                 href={`/issues?propertyId=${turnover.propertyId}`}
                 className="text-sm text-[var(--accent)] hover:underline"
               >
                 View all
               </Link>
-            </div>
+            }
+          >
             {turnover.issues.length === 0 ? (
-              <p className="mt-2 text-sm text-[var(--muted)]">No issues linked to this turnover.</p>
+              <EmptyState
+                title="No issues"
+                description="No issues linked to this turnover."
+              />
             ) : (
-              <ul className="mt-3 space-y-2">
+              <ul className="space-y-2">
                 {turnover.issues.map((issue) => (
                   <li key={issue.id}>
                     <Link
                       href={`/issues/${issue.id}`}
-                      className="block rounded-xl border border-[var(--border)] px-3 py-2 hover:border-[var(--accent)]/40"
+                      className="block rounded-[var(--radius-md)] border border-[var(--border)] px-3 py-2 hover:border-[var(--accent)]/40"
                     >
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-medium">{issue.title}</p>
+                        <p className="font-medium text-[var(--text-primary)]">{issue.title}</p>
                         {issue.blocking ? <Badge tone="danger">Blocking</Badge> : null}
-                        <Badge tone="neutral">{statusLabel(issue.status)}</Badge>
+                        <StatusBadge status={mapIssueStatus(issue.status)}>
+                          {statusLabel(issue.status)}
+                        </StatusBadge>
                       </div>
-                      <p className="mt-0.5 text-xs text-[var(--muted)]">
+                      <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
                         {issue.severity} · {issue.category}
                       </p>
                     </Link>
@@ -206,29 +225,11 @@ export function TurnoverDetail({
                 </Button>
               </Link>
             </div>
-          </section>
+          </DetailSection>
 
           <StatusTimeline events={turnover.statusEvents} currentStatus={turnover.status} />
         </div>
       </div>
-    </div>
-  );
-}
-
-function Meta({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)]/80 p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">{label}</p>
-      <p className="mt-2 text-sm font-medium text-[var(--ink)]">{value}</p>
-    </div>
-  );
-}
-
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">{label}</p>
-      <p className="mt-1 text-[var(--ink)]">{value}</p>
     </div>
   );
 }

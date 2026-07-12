@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Input, Label, Select, Textarea } from "@/components/ui";
+import { Button, DetailSection, Input, Label, Select, Textarea } from "@/components/ui";
 import {
   updatePropertyProfileAction,
   updatePropertySettingsAction,
@@ -55,16 +55,11 @@ export function PropertySettings({
     .join("\n");
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-      <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-        Property settings
-      </h2>
-      <p className="mt-1 text-sm text-[var(--muted)]">
-        Edit profile, operational rules, photo proof requirements, restock defaults, and default
-        cleaner.
-      </p>
-
-      <div className="mt-5 grid gap-6 lg:grid-cols-2">
+    <DetailSection
+      title="Property settings"
+      description="Edit profile, operational rules, photo proof requirements, restock defaults, and default cleaner."
+    >
+      <div className="grid gap-6 lg:grid-cols-2">
         <form
           className="space-y-3 rounded-xl border border-[var(--border)] p-4"
           action={(fd) => {
@@ -262,6 +257,6 @@ export function PropertySettings({
       </div>
 
       {error ? <p className="mt-3 text-sm text-rose-600">{error}</p> : null}
-    </section>
+    </DetailSection>
   );
 }
