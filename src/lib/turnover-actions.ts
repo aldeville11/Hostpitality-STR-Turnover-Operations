@@ -10,7 +10,6 @@ import {
   canTransition,
   createTurnoverFromBooking,
   generateChecklistForTurnover,
-  recordAssignmentChange,
   recordStatusChange,
   syncTurnoversFromCalendars,
 } from "@/lib/turnovers";
@@ -116,73 +115,36 @@ export async function assignCleanerAction(formData: FormData) {
   const user = await requireUser({ permission: "assignments:manage" });
   if (!user.companyId) return { error: "No company" };
 
-  const id = String(formData.get("id") || "");
+  const id = String(formData.get("id") || formData.get("turnoverId") || "");
   const vendorId = String(formData.get("vendorId") || "") || null;
   const note = String(formData.get("note") || "").trim() || undefined;
+  const reason = String(formData.get("reason") || "").trim() || undefined;
+  const manualOverride = String(formData.get("manualOverride") || "") === "1";
 
-  const turnover = await prisma.turnover.findFirst({
-    where: { id, companyId: user.companyId },
-    include: { vendor: true },
-  });
-  if (!turnover) return { error: "Turnover not found" };
+  if (!id) return { error: "Turnover required" };
 
-  const nextVendor = vendorId
-    ? await prisma.vendor.findFirst({ where: { id: vendorId, companyId: user.companyId } })
-    : null;
-  if (vendorId && !nextVendor) return { error: "Cleaner not found" };
+  const { assignCleanerToTurnover } = await import("@/lib/cleaners");
 
-  const nextStatus =
-    vendorId && ["DRAFT", "SCHEDULED", "BLOCKED"].includes(turnover.status)
-      ? "ASSIGNED"
-      : !vendorId && turnover.status === "ASSIGNED"
-        ? "SCHEDULED"
-        : turnover.status;
-
-  await prisma.turnover.update({
-    where: { id },
-    data: {
-      vendorId,
-      status: nextStatus,
-    },
-  });
-
-  await recordAssignmentChange({
-    turnoverId: id,
-    fromVendorId: turnover.vendorId,
-    toVendorId: vendorId,
-    fromName: turnover.vendor?.name,
-    toName: nextVendor?.name,
-    note: note ?? (vendorId ? "Cleaner assigned" : "Cleaner unassigned"),
-    actorId: user.id,
-    actorName: user.name,
-  });
-
-  if (nextStatus !== turnover.status) {
-    await recordStatusChange({
-      turnoverId: id,
-      fromStatus: turnover.status,
-      toStatus: nextStatus,
-      note: "Status updated with assignment change",
-      actorId: user.id,
-      actorName: user.name,
-    });
-  }
-
-  await writeAuditLog({
+  // Turnover detail stays fast: override warnings by default, but still record them.
+  const result = await assignCleanerToTurnover({
     companyId: user.companyId,
     userId: user.id,
-    action: "turnover.assigned",
-    entityType: "Turnover",
-    entityId: id,
-    metadata: {
-      fromVendorId: turnover.vendorId,
-      toVendorId: vendorId,
-      status: nextStatus,
-    },
+    actorName: user.name,
+    turnoverId: id,
+    vendorId,
+    note,
+    reason,
+    manualOverride: manualOverride || true,
   });
 
+  if (!result.ok) {
+    return { error: result.error, conflicts: result.conflicts };
+  }
+
   revalidateTurnoverPaths(id);
-  return;
+  revalidatePath("/cleaners");
+  revalidatePath("/assignments");
+  return { ok: true as const, conflicts: result.conflicts };
 }
 
 export async function toggleChecklistItemAction(formData: FormData) {

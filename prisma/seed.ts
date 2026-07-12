@@ -72,6 +72,11 @@ async function main() {
       email: "jordan.cleaner@pacificstay.ops",
       type: "CLEANER",
       phone: "+1-555-0144",
+      coverageAreasJson: JSON.stringify(["Santa Barbara", "Montecito"]),
+      skillsJson: JSON.stringify(["apartment", "condo", "deep_clean"]),
+      capacity: 4,
+      rating: 4.8,
+      availabilityStatus: "AVAILABLE",
     },
   });
 
@@ -81,6 +86,12 @@ async function main() {
       name: "Sam Ortiz",
       email: "sam.cleaner@pacificstay.ops",
       type: "CLEANER",
+      phone: "+1-555-0188",
+      coverageAreasJson: JSON.stringify(["Santa Barbara"]),
+      skillsJson: JSON.stringify(["apartment", "studio"]),
+      capacity: 3,
+      rating: 4.5,
+      availabilityStatus: "AVAILABLE",
     },
   });
 
@@ -90,6 +101,13 @@ async function main() {
       name: "Chris Handyman",
       email: "chris.vendor@pacificstay.ops",
       type: "VENDOR",
+      coverageAreasJson: JSON.stringify(["Santa Barbara", "Goleta"]),
+      skillsJson: JSON.stringify(["house", "vendor"]),
+      capacity: 2,
+      rating: 4.2,
+      availabilityStatus: "UNAVAILABLE",
+      unavailableReason: "On another property punch-list",
+      unavailableUntil: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
     },
   });
 

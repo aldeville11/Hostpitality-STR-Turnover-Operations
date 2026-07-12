@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Badge } from "@/components/ui";
 import type { DashboardData } from "@/lib/dashboard";
 import { formatTime, statusLabel } from "@/lib/utils";
@@ -16,7 +17,12 @@ export function CleanerAssignments({
         <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
           Cleaner assignments
         </h2>
-        <Badge tone="info">{cleaners.length} on roster</Badge>
+          <Link
+            href="/cleaners"
+            className="text-xs font-medium text-[var(--accent)] hover:underline"
+          >
+            Open dispatch
+          </Link>
       </div>
 
       {cleaners.length === 0 ? (

@@ -99,16 +99,23 @@ model Property {
 }
 
 model Vendor {
-  id        String   @id @default(cuid())
-  companyId String
-  name      String
-  email     String
-  phone     String?
-  type      String   @default("CLEANER")
-  active    Boolean  @default(true)
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String    @id @default(cuid())
+  companyId          String
+  name               String
+  email              String
+  phone              String?
+  type               String    @default("CLEANER")
+  active             Boolean   @default(true)
+  notes              String?
+  coverageAreasJson  String    @default("[]")
+  skillsJson         String    @default("[]")
+  capacity           Int       @default(3)
+  rating             Float     @default(5)
+  availabilityStatus String    @default("AVAILABLE")
+  unavailableUntil   DateTime?
+  unavailableReason  String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   company            Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
   assignments        Turnover[]

@@ -443,6 +443,11 @@ export async function addVendorStepAction(formData: FormData) {
         email,
         phone,
         type,
+        coverageAreasJson: JSON.stringify([]),
+        skillsJson: JSON.stringify(type === "CLEANER" ? ["apartment"] : ["vendor"]),
+        capacity: type === "CLEANER" ? 3 : 2,
+        rating: 5,
+        availabilityStatus: "AVAILABLE",
       },
     });
 

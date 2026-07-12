@@ -24,7 +24,7 @@ const NAV = [
   { href: "/turnovers", label: "Turnovers", icon: ClipboardList },
   { href: "/sops", label: "SOPs", icon: FileText },
   { href: "/sows", label: "SOW Templates", icon: CheckSquare },
-  { href: "/assignments", label: "Cleaner Assignments", icon: Users },
+  { href: "/cleaners", label: "Cleaner Assignments", icon: Users },
   { href: "/qa", label: "QA / Photo Review", icon: Camera },
   { href: "/issues", label: "Issues", icon: AlertTriangle },
   { href: "/inventory", label: "Inventory", icon: Package },

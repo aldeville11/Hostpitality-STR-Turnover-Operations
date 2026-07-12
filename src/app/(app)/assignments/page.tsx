@@ -1,10 +1,6 @@
-import PlaceholderPage from "@/components/placeholder-page";
+import { redirect } from "next/navigation";
 
-export default function AssignmentsPage() {
-  return (
-    <PlaceholderPage
-      title="Cleaner Assignments"
-      description="Dispatch cleaners and vendors to turnover windows."
-    />
-  );
+/** Legacy route — cleaner assignments now live at /cleaners */
+export default function AssignmentsRedirectPage() {
+  redirect("/cleaners");
 }
