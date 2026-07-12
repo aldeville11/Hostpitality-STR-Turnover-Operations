@@ -645,9 +645,10 @@ export async function runSmokeTests(companyId: string): Promise<SmokeTestResult[
   });
 
   await run("integrations", "Integration catalog", async () => {
-    const list = await ensureIntegrations(companyId);
-    if (list.length < 8) throw new Error("Integration catalog incomplete");
-    return `${list.length} integrations registered`;
+    await ensureIntegrations(companyId);
+    const count = await prisma.integration.count({ where: { companyId } });
+    if (count < 8) throw new Error("Integration catalog incomplete");
+    return `${count} integrations registered`;
   });
 
   await run("settings-json", "Settings JSON parseable", async () => {
