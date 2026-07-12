@@ -1,0 +1,384 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  timezone    String   @default("America/Los_Angeles")
+  onboardedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users          User[]
+  properties     Property[]
+  sops           Sop[]
+  sowTemplates   SowTemplate[]
+  turnovers      Turnover[]
+  inventory      InventoryItem[]
+  owners         Owner[]
+  auditLogs      AuditLog[]
+  agentActions   AgentAction[]
+  backgroundJobs BackgroundJob[]
+  teamMembers    TeamMember[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("PROPERTY_MANAGER")
+  companyId    String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  company           Company?           @relation(fields: [companyId], references: [id])
+  sessions          Session[]
+  assignments       CleanerAssignment[]
+  auditLogs         AuditLog[]
+  approvedActions   AgentAction[]      @relation("ActionApprover")
+  reportedIssues    Issue[]            @relation("IssueReporter")
+  photoSubmissions  PhotoSubmission[]
+  checklistProgress ChecklistItem[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TeamMember {
+  id            String   @id @default(cuid())
+  companyId     String
+  name          String
+  email         String
+  phone         String?
+  role          String
+  skills        String   @default("[]")
+  active        Boolean  @default(true)
+  maxJobsPerDay Int      @default(4)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  company     Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assignments CleanerAssignment[]
+
+  @@unique([companyId, email])
+}
+
+model Property {
+  id               String    @id @default(cuid())
+  companyId        String
+  name             String
+  unitCode         String
+  address          String
+  city             String
+  state            String
+  bedrooms         Int       @default(1)
+  bathrooms        Float     @default(1)
+  maxGuests        Int       @default(2)
+  calendarUrl      String?
+  calendarSyncedAt DateTime?
+  sopId            String?
+  sowTemplateId    String?
+  ownerId          String?
+  active           Boolean   @default(true)
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  sop         Sop?         @relation(fields: [sopId], references: [id])
+  sowTemplate SowTemplate? @relation(fields: [sowTemplateId], references: [id])
+  owner       Owner?       @relation(fields: [ownerId], references: [id])
+  turnovers   Turnover[]
+  inventory   InventoryItem[]
+  bookings    Booking[]
+
+  @@unique([companyId, unitCode])
+}
+
+model Owner {
+  id               String   @id @default(cuid())
+  companyId        String
+  name             String
+  email            String
+  phone            String?
+  notifyOnComplete Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  company    Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  properties Property[]
+  reports    OwnerReport[]
+}
+
+model Booking {
+  id         String   @id @default(cuid())
+  propertyId String
+  externalId String?
+  guestName  String?
+  checkIn    DateTime
+  checkOut   DateTime
+  source     String   @default("manual")
+  createdAt  DateTime @default(now())
+
+  property Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  turnover Turnover?
+
+  @@unique([propertyId, externalId])
+}
+
+model Sop {
+  id            String   @id @default(cuid())
+  companyId     String
+  name          String
+  description   String?
+  version       Int      @default(1)
+  active        Boolean  @default(true)
+  deepCleanEveryN Int    @default(4)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  company    Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  steps      SopStep[]
+  properties Property[]
+  turnovers  Turnover[]
+}
+
+model SopStep {
+  id            String  @id @default(cuid())
+  sopId         String
+  section       String
+  title         String
+  instructions  String
+  requiresPhoto Boolean @default(false)
+  photoLabel    String?
+  sortOrder     Int     @default(0)
+  isDeepClean   Boolean @default(false)
+  isException   Boolean @default(false)
+
+  sop Sop @relation(fields: [sopId], references: [id], onDelete: Cascade)
+}
+
+model SowTemplate {
+  id               String   @id @default(cuid())
+  companyId        String
+  name             String
+  description      String?
+  standardScope    String
+  addOns           String   @default("[]")
+  photoReqs        String   @default("[]")
+  slaMinutes       Int      @default(240)
+  damageRules      String?
+  missingItemRules String?
+  requiresSignOff  Boolean  @default(true)
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  company    Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  properties Property[]
+  turnovers  Turnover[]
+}
+
+model Turnover {
+  id              String   @id @default(cuid())
+  companyId       String
+  propertyId      String
+  bookingId       String?  @unique
+  sopId           String?
+  sowTemplateId   String?
+  status          String   @default("SCHEDULED")
+  windowStart     DateTime
+  windowEnd       DateTime
+  deadlineAt      DateTime
+  isDeepClean     Boolean  @default(false)
+  scopeJson       String   @default("{}")
+  addOnsJson      String   @default("[]")
+  completionNotes String?
+  signedOffAt     DateTime?
+  signedOffBy     String?
+  ownerNotifiedAt DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  company      Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  property     Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  booking      Booking?            @relation(fields: [bookingId], references: [id])
+  sop          Sop?                @relation(fields: [sopId], references: [id])
+  sowTemplate  SowTemplate?        @relation(fields: [sowTemplateId], references: [id])
+  assignments  CleanerAssignment[]
+  checklist    ChecklistItem[]
+  photos       PhotoSubmission[]
+  issues       Issue[]
+  ownerReports OwnerReport[]
+  agentActions AgentAction[]
+}
+
+model CleanerAssignment {
+  id           String    @id @default(cuid())
+  turnoverId   String
+  teamMemberId String?
+  userId       String?
+  assignedAt   DateTime  @default(now())
+  dispatchedAt DateTime?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  status       String    @default("assigned")
+  notes        String?
+
+  turnover   Turnover    @relation(fields: [turnoverId], references: [id], onDelete: Cascade)
+  teamMember TeamMember? @relation(fields: [teamMemberId], references: [id])
+  user       User?       @relation(fields: [userId], references: [id])
+}
+
+model ChecklistItem {
+  id            String    @id @default(cuid())
+  turnoverId    String
+  section       String
+  title         String
+  instructions  String?
+  requiresPhoto Boolean   @default(false)
+  completed     Boolean   @default(false)
+  completedAt   DateTime?
+  completedById String?
+  sortOrder     Int       @default(0)
+  notes         String?
+
+  turnover    Turnover @relation(fields: [turnoverId], references: [id], onDelete: Cascade)
+  completedBy User?    @relation(fields: [completedById], references: [id])
+}
+
+model PhotoSubmission {
+  id           String    @id @default(cuid())
+  turnoverId   String
+  label        String
+  section      String?
+  url          String
+  verified     Boolean   @default(false)
+  verifiedAt   DateTime?
+  aiScore      Float?
+  aiNotes      String?
+  rejected     Boolean   @default(false)
+  uploadedById String?
+  createdAt    DateTime  @default(now())
+
+  turnover   Turnover @relation(fields: [turnoverId], references: [id], onDelete: Cascade)
+  uploadedBy User?    @relation(fields: [uploadedById], references: [id])
+}
+
+model Issue {
+  id             String    @id @default(cuid())
+  turnoverId     String
+  title          String
+  description    String
+  severity       String    @default("MEDIUM")
+  status         String    @default("OPEN")
+  category       String    @default("damage")
+  photoUrl       String?
+  reportedById   String?
+  assignedVendor String?
+  resolvedAt     DateTime?
+  resolution     String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  turnover   Turnover @relation(fields: [turnoverId], references: [id], onDelete: Cascade)
+  reportedBy User?    @relation("IssueReporter", fields: [reportedById], references: [id])
+}
+
+model InventoryItem {
+  id              String    @id @default(cuid())
+  companyId       String
+  propertyId      String?
+  name            String
+  category        String    @default("supplies")
+  quantity        Int       @default(0)
+  reorderLevel    Int       @default(5)
+  unit            String    @default("each")
+  lastRestockedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  property Property? @relation(fields: [propertyId], references: [id])
+}
+
+model OwnerReport {
+  id         String    @id @default(cuid())
+  ownerId    String
+  turnoverId String
+  subject    String
+  body       String
+  sentAt     DateTime?
+  status     String    @default("draft")
+  createdAt  DateTime  @default(now())
+
+  owner    Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  turnover Turnover @relation(fields: [turnoverId], references: [id], onDelete: Cascade)
+}
+
+model AgentAction {
+  id           String    @id @default(cuid())
+  companyId    String
+  turnoverId   String?
+  agentType    String
+  title        String
+  description  String
+  payloadJson  String    @default("{}")
+  status       String    @default("PENDING_APPROVAL")
+  approvedById String?
+  approvedAt   DateTime?
+  executedAt   DateTime?
+  resultJson   String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  turnover   Turnover? @relation(fields: [turnoverId], references: [id])
+  approvedBy User?     @relation("ActionApprover", fields: [approvedById], references: [id])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  companyId  String
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   String   @default("{}")
+  createdAt  DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id])
+}
+
+model BackgroundJob {
+  id          String    @id @default(cuid())
+  companyId   String?
+  type        String
+  payloadJson String    @default("{}")
+  status      String    @default("PENDING")
+  runAt       DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  error       String?
+  attempts    Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  company Company? @relation(fields: [companyId], references: [id])
+}
