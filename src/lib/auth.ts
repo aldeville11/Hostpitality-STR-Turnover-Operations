@@ -119,3 +119,7 @@ export async function loginWithCredentials(email: string, password: string) {
 export function isOnboarded(user: AuthUser) {
   return Boolean(user.companyId && user.company?.onboardedAt);
 }
+
+/** Seeded demo manager email used by temporary /api/auth/bypass. */
+export const DEMO_MANAGER_EMAIL = "manager@hostpitality.app";
+
