@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { updatePropertyDefaultsAction } from "@/lib/settings-actions";
-import { Badge, Button, Input, Textarea } from "@/components/ui";
+import { Badge, Button, EmptyState, Input, Label, ModuleCard, Textarea } from "@/components/ui";
 
 type PropertyRow = {
   id: string;
@@ -29,23 +29,20 @@ export function SettingsPropertyPanel({ properties }: { properties: PropertyRow[
 
   if (!selected) {
     return (
-      <div className="rounded-2xl border border-dashed border-[var(--border)] px-6 py-12 text-center text-sm text-[var(--muted)]">
-        No properties yet. Add properties first, then configure defaults here.
-      </div>
+      <EmptyState
+        title="No properties yet"
+        description="Add properties first, then configure defaults here."
+      />
     );
   }
 
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-          Property defaults
-        </h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          Service windows, access notes, turnover preferences, and SLA defaults.
-        </p>
-
-        <div className="mt-4 flex flex-wrap gap-2">
+      <ModuleCard
+        title="Property defaults"
+        description="Service windows, access notes, turnover preferences, and SLA defaults."
+      >
+        <div className="flex flex-wrap gap-2">
           {properties.map((p) => (
             <button
               key={p.id}
@@ -53,37 +50,33 @@ export function SettingsPropertyPanel({ properties }: { properties: PropertyRow[
               onClick={() => setSelectedId(p.id)}
               className={
                 p.id === selected.id
-                  ? "rounded-lg bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white"
-                  : "rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm text-[var(--muted)]"
+                  ? "rounded-[var(--radius-md)] bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white"
+                  : "rounded-[var(--radius-md)] border border-[var(--border)] px-3 py-1.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-2)]"
               }
             >
               {p.name}
             </button>
           ))}
         </div>
-      </section>
+      </ModuleCard>
 
-      <section
+      <ModuleCard
         key={selected.id}
-        className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5"
+        title={selected.name}
+        description={`${selected.city}${
+          selected.defaultVendor ? ` · Default cleaner ${selected.defaultVendor.name}` : ""
+        }${selected.sow ? ` · SOW ${selected.sow.name}` : ""}`}
+        actions={
+          <div className="flex flex-wrap gap-1.5">
+            <Badge tone="neutral">{selected.unitCode}</Badge>
+            <Badge tone={selected.active ? "success" : "warning"}>
+              {selected.active ? "Active" : "Inactive"}
+            </Badge>
+          </div>
+        }
       >
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-            {selected.name}
-          </h3>
-          <Badge tone="neutral">{selected.unitCode}</Badge>
-          <Badge tone={selected.active ? "success" : "warning"}>
-            {selected.active ? "Active" : "Inactive"}
-          </Badge>
-        </div>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          {selected.city}
-          {selected.defaultVendor ? ` · Default cleaner ${selected.defaultVendor.name}` : ""}
-          {selected.sow ? ` · SOW ${selected.sow.name}` : ""}
-        </p>
-
         <form
-          className="mt-4 grid gap-3 sm:grid-cols-2"
+          className="grid gap-3 sm:grid-cols-2"
           action={(fd) => {
             setError(null);
             setMessage(null);
@@ -100,8 +93,9 @@ export function SettingsPropertyPanel({ properties }: { properties: PropertyRow[
         >
           <input type="hidden" name="propertyId" value={selected.id} />
           <div className="sm:col-span-2">
-            <label className="mb-1.5 block text-sm font-medium">Access notes</label>
+            <Label htmlFor="accessNotes">Access notes</Label>
             <Textarea
+              id="accessNotes"
               name="accessNotes"
               rows={3}
               defaultValue={selected.accessNotes ?? ""}
@@ -109,10 +103,9 @@ export function SettingsPropertyPanel({ properties }: { properties: PropertyRow[
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium">
-              Turnover buffer (minutes)
-            </label>
+            <Label htmlFor="turnoverBufferMins">Turnover buffer (minutes)</Label>
             <Input
+              id="turnoverBufferMins"
               name="turnoverBufferMins"
               type="number"
               min={0}
@@ -121,10 +114,9 @@ export function SettingsPropertyPanel({ properties }: { properties: PropertyRow[
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium">
-              Linked SOW SLA (minutes)
-            </label>
+            <Label htmlFor="slaMinutes">Linked SOW SLA (minutes)</Label>
             <Input
+              id="slaMinutes"
               name="slaMinutes"
               type="number"
               min={30}
@@ -132,7 +124,7 @@ export function SettingsPropertyPanel({ properties }: { properties: PropertyRow[
               disabled={pending || !selected.sow}
             />
           </div>
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex items-center gap-2 text-sm text-[var(--text-primary)]">
             <input
               type="checkbox"
               name="sameDayTurnover"
@@ -142,7 +134,7 @@ export function SettingsPropertyPanel({ properties }: { properties: PropertyRow[
             />
             Allow same-day turnovers
           </label>
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex items-center gap-2 text-sm text-[var(--text-primary)]">
             <input
               type="checkbox"
               name="active"
@@ -159,9 +151,9 @@ export function SettingsPropertyPanel({ properties }: { properties: PropertyRow[
           </div>
         </form>
 
-        {message ? <p className="mt-3 text-sm text-emerald-700">{message}</p> : null}
-        {error ? <p className="mt-3 text-sm text-rose-600">{error}</p> : null}
-      </section>
+        {message ? <p className="mt-3 text-sm text-[var(--success)]">{message}</p> : null}
+        {error ? <p className="mt-3 text-sm text-[var(--danger)]">{error}</p> : null}
+      </ModuleCard>
     </div>
   );
 }

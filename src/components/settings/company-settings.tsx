@@ -7,7 +7,7 @@ import {
   updateNotificationsAction,
 } from "@/lib/settings-actions";
 import type { CompanySettings } from "@/lib/settings";
-import { Button, Input, Select } from "@/components/ui";
+import { Button, Input, Label, ModuleCard, Select } from "@/components/ui";
 
 const TIMEZONES = [
   "America/Los_Angeles",
@@ -54,24 +54,34 @@ export function CompanySettingsForm({ company }: { company: CompanySettings }) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-          Company profile
-        </h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          Legal/operating name, timezone, and default contact details.
-        </p>
+      <ModuleCard
+        title="Company profile"
+        description="Legal/operating name, timezone, and default contact details."
+      >
         <form
-          className="mt-4 grid gap-3 sm:grid-cols-2"
+          className="grid gap-3 sm:grid-cols-2"
           action={(fd) => run(updateCompanyProfileAction, fd)}
         >
           <div className="sm:col-span-2">
-            <label className="mb-1.5 block text-sm font-medium">Company name</label>
-            <Input name="name" defaultValue={company.name} required disabled={pending} />
+            <Label htmlFor="company-name" required>
+              Company name
+            </Label>
+            <Input
+              id="company-name"
+              name="name"
+              defaultValue={company.name}
+              required
+              disabled={pending}
+            />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Timezone</label>
-            <Select name="timezone" defaultValue={company.timezone} disabled={pending}>
+            <Label htmlFor="timezone">Timezone</Label>
+            <Select
+              id="timezone"
+              name="timezone"
+              defaultValue={company.timezone}
+              disabled={pending}
+            >
               {TIMEZONES.map((tz) => (
                 <option key={tz} value={tz}>
                   {tz}
@@ -80,16 +90,18 @@ export function CompanySettingsForm({ company }: { company: CompanySettings }) {
             </Select>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Primary contact</label>
+            <Label htmlFor="contactName">Primary contact</Label>
             <Input
+              id="contactName"
               name="contactName"
               defaultValue={company.contactName ?? ""}
               disabled={pending}
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Support email</label>
+            <Label htmlFor="supportEmail">Support email</Label>
             <Input
+              id="supportEmail"
               name="supportEmail"
               type="email"
               defaultValue={company.supportEmail ?? ""}
@@ -97,8 +109,9 @@ export function CompanySettingsForm({ company }: { company: CompanySettings }) {
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Support phone</label>
+            <Label htmlFor="supportPhone">Support phone</Label>
             <Input
+              id="supportPhone"
               name="supportPhone"
               defaultValue={company.supportPhone ?? ""}
               disabled={pending}
@@ -110,17 +123,14 @@ export function CompanySettingsForm({ company }: { company: CompanySettings }) {
             </Button>
           </div>
         </form>
-      </section>
+      </ModuleCard>
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-          Notifications & working hours
-        </h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          Control which events notify the team and when ops is considered on duty.
-        </p>
+      <ModuleCard
+        title="Notifications & working hours"
+        description="Control which events notify the team and when ops is considered on duty."
+      >
         <form
-          className="mt-4 space-y-4"
+          className="space-y-4"
           action={(fd) => {
             fd.set("days", days.join(","));
             run(updateNotificationsAction, fd);
@@ -136,7 +146,7 @@ export function CompanySettingsForm({ company }: { company: CompanySettings }) {
                 ["digestDaily", "Daily digest email"],
               ] as const
             ).map(([key, label]) => (
-              <label key={key} className="flex items-center gap-2 text-sm">
+              <label key={key} className="flex items-center gap-2 text-sm text-[var(--text-primary)]">
                 <input
                   type="checkbox"
                   name={key}
@@ -151,8 +161,9 @@ export function CompanySettingsForm({ company }: { company: CompanySettings }) {
 
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
-              <label className="mb-1.5 block text-sm font-medium">Hours timezone</label>
+              <Label htmlFor="hours-timezone">Hours timezone</Label>
               <Select
+                id="hours-timezone"
                 name="timezone"
                 defaultValue={company.workingHours.timezone || company.timezone}
                 disabled={pending}
@@ -165,8 +176,9 @@ export function CompanySettingsForm({ company }: { company: CompanySettings }) {
               </Select>
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium">Start</label>
+              <Label htmlFor="start">Start</Label>
               <Input
+                id="start"
                 name="start"
                 type="time"
                 defaultValue={company.workingHours.start}
@@ -174,8 +186,9 @@ export function CompanySettingsForm({ company }: { company: CompanySettings }) {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium">End</label>
+              <Label htmlFor="end">End</Label>
               <Input
+                id="end"
                 name="end"
                 type="time"
                 defaultValue={company.workingHours.end}
@@ -185,7 +198,9 @@ export function CompanySettingsForm({ company }: { company: CompanySettings }) {
           </div>
 
           <div>
-            <p className="mb-2 text-sm font-medium">Working days</p>
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-secondary)]">
+              Working days
+            </p>
             <div className="flex flex-wrap gap-2">
               {DAYS.map((day) => {
                 const on = days.includes(day.id);
@@ -201,8 +216,8 @@ export function CompanySettingsForm({ company }: { company: CompanySettings }) {
                     }
                     className={
                       on
-                        ? "rounded-lg bg-[var(--accent)] px-2.5 py-1.5 text-xs font-medium text-white"
-                        : "rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs font-medium text-[var(--muted)]"
+                        ? "rounded-[var(--radius-md)] bg-[var(--accent)] px-2.5 py-1.5 text-xs font-medium text-white"
+                        : "rounded-[var(--radius-md)] border border-[var(--border)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)]"
                     }
                   >
                     {day.label}
@@ -216,10 +231,10 @@ export function CompanySettingsForm({ company }: { company: CompanySettings }) {
             {pending ? "Saving…" : "Save notifications & hours"}
           </Button>
         </form>
-      </section>
+      </ModuleCard>
 
-      {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
-      {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+      {message ? <p className="text-sm text-[var(--success)]">{message}</p> : null}
+      {error ? <p className="text-sm text-[var(--danger)]">{error}</p> : null}
     </div>
   );
 }

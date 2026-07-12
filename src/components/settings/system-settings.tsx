@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { updateSystemSettingsAction } from "@/lib/settings-actions";
 import type { CompanySettings, SystemSettings } from "@/lib/settings";
-import { Button, Input, Select } from "@/components/ui";
+import { Button, Input, Label, ModuleCard, Select } from "@/components/ui";
 
 export function SystemSettingsForm({
   company,
@@ -22,16 +22,12 @@ export function SystemSettingsForm({
   const settings = company.systemSettings;
 
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-      <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-        System settings
-      </h2>
-      <p className="mt-1 text-sm text-[var(--muted)]">
-        Categories, SLA thresholds, default templates, and feature flags for the company.
-      </p>
-
+    <ModuleCard
+      title="System settings"
+      description="Categories, SLA thresholds, default templates, and feature flags for the company."
+    >
       <form
-        className="mt-4 space-y-5"
+        className="space-y-5"
         action={(fd) => {
           setError(null);
           setMessage(null);
@@ -50,26 +46,27 @@ export function SystemSettingsForm({
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Issue categories</label>
+            <Label htmlFor="issueCategories">Issue categories</Label>
             <Input
+              id="issueCategories"
               name="issueCategories"
               defaultValue={settings.issueCategories.join(", ")}
               disabled={pending}
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Issue severities</label>
+            <Label htmlFor="issueSeverities">Issue severities</Label>
             <Input
+              id="issueSeverities"
               name="issueSeverities"
               defaultValue={settings.issueSeverities.join(", ")}
               disabled={pending}
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium">
-              Default turnover buffer (min)
-            </label>
+            <Label htmlFor="defaultTurnoverBufferMins">Default turnover buffer (min)</Label>
             <Input
+              id="defaultTurnoverBufferMins"
               name="defaultTurnoverBufferMins"
               type="number"
               min={0}
@@ -78,8 +75,9 @@ export function SystemSettingsForm({
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Default SLA (min)</label>
+            <Label htmlFor="defaultSlaMinutes">Default SLA (min)</Label>
             <Input
+              id="defaultSlaMinutes"
               name="defaultSlaMinutes"
               type="number"
               min={30}
@@ -88,8 +86,9 @@ export function SystemSettingsForm({
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Default SOP template</label>
+            <Label htmlFor="defaultSopId">Default SOP template</Label>
             <Select
+              id="defaultSopId"
               name="defaultSopId"
               defaultValue={settings.defaultSopId ?? ""}
               disabled={pending}
@@ -103,8 +102,9 @@ export function SystemSettingsForm({
             </Select>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Default SOW template</label>
+            <Label htmlFor="defaultSowId">Default SOW template</Label>
             <Select
+              id="defaultSowId"
               name="defaultSowId"
               defaultValue={settings.defaultSowId ?? ""}
               disabled={pending}
@@ -120,7 +120,9 @@ export function SystemSettingsForm({
         </div>
 
         <div>
-          <p className="mb-2 text-sm font-medium">Issue SLA thresholds (hours)</p>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-secondary)]">
+            Issue SLA thresholds (hours)
+          </p>
           <div className="grid gap-3 sm:grid-cols-4">
             {(
               [
@@ -131,8 +133,9 @@ export function SystemSettingsForm({
               ] as const
             ).map(([name, label, value]) => (
               <div key={name}>
-                <label className="mb-1.5 block text-xs text-[var(--muted)]">{label}</label>
+                <Label htmlFor={name}>{label}</Label>
                 <Input
+                  id={name}
                   name={name}
                   type="number"
                   min={1}
@@ -145,14 +148,16 @@ export function SystemSettingsForm({
         </div>
 
         <div>
-          <p className="mb-2 text-sm font-medium">Feature flags</p>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-secondary)]">
+            Feature flags
+          </p>
           <div className="grid gap-2 sm:grid-cols-2">
             {(
               Object.entries(settings.featureFlags) as Array<
                 [keyof SystemSettings["featureFlags"], boolean]
               >
             ).map(([key, value]) => (
-              <label key={key} className="flex items-center gap-2 text-sm">
+              <label key={key} className="flex items-center gap-2 text-sm text-[var(--text-primary)]">
                 <input
                   type="checkbox"
                   name={`flag_${key}`}
@@ -166,9 +171,11 @@ export function SystemSettingsForm({
           </div>
         </div>
 
-        <div>
-          <p className="mb-2 text-sm font-medium">Known turnover statuses</p>
-          <p className="text-sm text-[var(--muted)]">
+        <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-raised)] px-3 py-2.5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
+            Known turnover statuses
+          </p>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">
             {settings.turnoverStatuses.join(" · ")}
           </p>
         </div>
@@ -178,8 +185,8 @@ export function SystemSettingsForm({
         </Button>
       </form>
 
-      {message ? <p className="mt-3 text-sm text-emerald-700">{message}</p> : null}
-      {error ? <p className="mt-3 text-sm text-rose-600">{error}</p> : null}
-    </section>
+      {message ? <p className="mt-3 text-sm text-[var(--success)]">{message}</p> : null}
+      {error ? <p className="mt-3 text-sm text-[var(--danger)]">{error}</p> : null}
+    </ModuleCard>
   );
 }

@@ -5,9 +5,23 @@ import {
   getOnboardingContext,
   getResumeHref,
   ONBOARDING_STEPS,
+  type OnboardingProgress,
   type OnboardingStepId,
 } from "@/lib/onboarding";
-import { Badge, Button } from "@/components/ui";
+import { Button, ModuleCard, StatusBadge } from "@/components/ui";
+
+function hubStatus(status: OnboardingProgress[OnboardingStepId], required: boolean) {
+  if (status === "complete") {
+    return <StatusBadge status="complete">Done</StatusBadge>;
+  }
+  if (status === "skipped") {
+    return <StatusBadge status="pending">Skipped</StatusBadge>;
+  }
+  if (required) {
+    return <StatusBadge status="needs_review">Required</StatusBadge>;
+  }
+  return <StatusBadge status="pending">Optional</StatusBadge>;
+}
 
 export default async function OnboardingHubPage() {
   const user = await getCurrentUser();
@@ -18,48 +32,42 @@ export default async function OnboardingHubPage() {
   const ctx = await getOnboardingContext(user.companyId);
   const resumeHref = getResumeHref(ctx.progress, ctx.company.onboardingStep);
 
-  return (
-    <div className="rounded-2xl border border-[var(--border)] bg-white/90 p-6 backdrop-blur">
-      <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight">
-        Workspace setup
-      </h1>
-      <p className="mt-1 text-sm text-[var(--muted)]">
-        Complete these steps to prepare Hostpitality for turnover operations. Progress saves
-        automatically — leave and resume anytime.
-      </p>
+  const completedCount = ONBOARDING_STEPS.filter((step) => {
+    const status = ctx.progress[step.id as OnboardingStepId];
+    return status === "complete" || status === "skipped";
+  }).length;
 
-      <div className="mt-6 space-y-2">
+  return (
+    <ModuleCard
+      title="Workspace setup"
+      description="Complete these steps to prepare Hostpitality for turnover operations. Progress saves automatically — leave and resume anytime."
+      actions={
+        <StatusBadge status={completedCount === ONBOARDING_STEPS.length ? "complete" : "running"}>
+          {completedCount}/{ONBOARDING_STEPS.length} steps
+        </StatusBadge>
+      }
+    >
+      <ul className="space-y-2">
         {ONBOARDING_STEPS.map((step, index) => {
           const status = ctx.progress[step.id as OnboardingStepId];
           return (
-            <Link
-              key={step.id}
-              href={step.href}
-              className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] px-4 py-3 hover:bg-[var(--surface-2)]/50"
-            >
-              <div>
-                <p className="font-medium">
-                  {index + 1}. {step.label}
-                </p>
-                <p className="text-xs text-[var(--muted)]">{step.description}</p>
-              </div>
-              <Badge
-                tone={
-                  status === "complete" ? "success" : status === "skipped" ? "neutral" : "warning"
-                }
+            <li key={step.id}>
+              <Link
+                href={step.href}
+                className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-raised)] px-4 py-3 transition-colors hover:border-[var(--accent)]/40 hover:bg-[var(--surface)]"
               >
-                {status === "complete"
-                  ? "Done"
-                  : status === "skipped"
-                    ? "Skipped"
-                    : step.required
-                      ? "Required"
-                      : "Optional"}
-              </Badge>
-            </Link>
+                <div>
+                  <p className="font-medium text-[var(--text-primary)]">
+                    {index + 1}. {step.label}
+                  </p>
+                  <p className="text-xs text-[var(--text-secondary)]">{step.description}</p>
+                </div>
+                {hubStatus(status, step.required)}
+              </Link>
+            </li>
           );
         })}
-      </div>
+      </ul>
 
       <div className="mt-6 flex flex-wrap gap-2">
         <Link href={resumeHref}>
@@ -69,6 +77,6 @@ export default async function OnboardingHubPage() {
           <Button variant="outline">Jump to review</Button>
         </Link>
       </div>
-    </div>
+    </ModuleCard>
   );
 }

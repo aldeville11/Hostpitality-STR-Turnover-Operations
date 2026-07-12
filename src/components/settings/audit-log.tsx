@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui";
+import { Badge, EmptyState, ModuleCard } from "@/components/ui";
 import { formatDateTime } from "@/lib/utils";
 
 type AuditRow = {
@@ -13,22 +13,21 @@ type AuditRow = {
 
 export function AuditLogPanel({ logs }: { logs: AuditRow[] }) {
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-      <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-        Audit & security
-      </h2>
-      <p className="mt-1 text-sm text-[var(--muted)]">
-        Critical changes to settings, users/permissions, and integrations.
-      </p>
-
+    <ModuleCard
+      title="Audit & security"
+      description="Critical changes to settings, users/permissions, and integrations."
+    >
       {logs.length === 0 ? (
-        <p className="mt-4 text-sm text-[var(--muted)]">No admin audit events yet.</p>
+        <EmptyState
+          title="No admin audit events yet"
+          description="Settings, user, and integration changes will appear here once recorded."
+        />
       ) : (
-        <ul className="mt-4 space-y-2">
+        <ul className="space-y-2">
           {logs.map((log) => (
             <li
               key={log.id}
-              className="rounded-xl border border-[var(--border)] px-3 py-3 text-sm"
+              className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-raised)] px-3 py-3 text-sm"
             >
               <div className="flex flex-wrap items-center gap-2">
                 <Badge
@@ -46,7 +45,7 @@ export function AuditLogPanel({ logs }: { logs: AuditRow[] }) {
                   {formatDateTime(log.createdAt)}
                 </span>
               </div>
-              <p className="mt-1">
+              <p className="mt-1 text-[var(--text-primary)]">
                 <span className="font-medium">{log.entityType}</span>
                 {log.entityId ? (
                   <span className="text-[var(--muted)]"> · {log.entityId.slice(0, 12)}…</span>
@@ -56,7 +55,7 @@ export function AuditLogPanel({ logs }: { logs: AuditRow[] }) {
                 {log.user ? `${log.user.name} · ${log.user.email}` : "System"}
               </p>
               {Object.keys(log.metadata).length > 0 ? (
-                <pre className="mt-2 overflow-x-auto rounded-lg bg-[var(--surface-2)]/60 px-2 py-1.5 text-[11px] text-[var(--muted)]">
+                <pre className="mt-2 overflow-x-auto rounded-[var(--radius-md)] bg-[var(--surface-2)]/60 px-2 py-1.5 text-[11px] text-[var(--muted)]">
                   {JSON.stringify(log.metadata, null, 2)}
                 </pre>
               ) : null}
@@ -64,6 +63,6 @@ export function AuditLogPanel({ logs }: { logs: AuditRow[] }) {
           ))}
         </ul>
       )}
-    </section>
+    </ModuleCard>
   );
 }

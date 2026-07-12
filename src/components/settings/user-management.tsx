@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { createUserAction, updateUserAction } from "@/lib/settings-actions";
 import { ROLE_LABELS, ROLES, type Role } from "@/lib/rbac";
 import type { CompanyUserRow } from "@/lib/settings";
-import { Badge, Button, Input, Select } from "@/components/ui";
+import { Badge, Button, Input, Label, ModuleCard, Select } from "@/components/ui";
 
 export function UserManagement({
   users,
@@ -37,28 +37,29 @@ export function UserManagement({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-          Add user
-        </h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          Create accounts for dispatcher, cleaner, inspector, manager, and admin personas.
-        </p>
+      <ModuleCard
+        title="Add user"
+        description="Create accounts for dispatcher, cleaner, inspector, manager, and admin personas."
+      >
         <form
-          className="mt-4 grid gap-3 sm:grid-cols-2"
+          className="grid gap-3 sm:grid-cols-2"
           action={(fd) => run(createUserAction, fd)}
         >
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Name</label>
-            <Input name="name" required disabled={pending} />
+            <Label htmlFor="new-name" required>
+              Name
+            </Label>
+            <Input id="new-name" name="name" required disabled={pending} />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Email</label>
-            <Input name="email" type="email" required disabled={pending} />
+            <Label htmlFor="new-email" required>
+              Email
+            </Label>
+            <Input id="new-email" name="email" type="email" required disabled={pending} />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Role</label>
-            <Select name="role" defaultValue="PROPERTY_MANAGER" disabled={pending}>
+            <Label htmlFor="new-role">Role</Label>
+            <Select id="new-role" name="role" defaultValue="PROPERTY_MANAGER" disabled={pending}>
               {ROLES.map((role) => (
                 <option key={role} value={role}>
                   {ROLE_LABELS[role]}
@@ -67,10 +68,19 @@ export function UserManagement({
             </Select>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium">Temp password</label>
-            <Input name="password" type="password" required minLength={8} disabled={pending} />
+            <Label htmlFor="new-password" required>
+              Temp password
+            </Label>
+            <Input
+              id="new-password"
+              name="password"
+              type="password"
+              required
+              minLength={8}
+              disabled={pending}
+            />
           </div>
-          <label className="flex items-center gap-2 text-sm sm:col-span-2">
+          <label className="flex items-center gap-2 text-sm text-[var(--text-primary)] sm:col-span-2">
             <input type="checkbox" name="allProperties" value="1" defaultChecked disabled={pending} />
             Access all properties
           </label>
@@ -80,21 +90,21 @@ export function UserManagement({
             </Button>
           </div>
         </form>
-      </section>
+      </ModuleCard>
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-          Team members
-        </h2>
-        <ul className="mt-4 space-y-3">
+      <ModuleCard title="Team members" description="Edit roles, active state, and property access scope.">
+        <ul className="space-y-3">
           {users.map((u) => {
             const editing = editingId === u.id;
             return (
-              <li key={u.id} className="rounded-xl border border-[var(--border)] px-3 py-3">
+              <li
+                key={u.id}
+                className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-raised)] px-3 py-3"
+              >
                 {!editing ? (
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="font-medium">{u.name}</p>
+                      <p className="font-medium text-[var(--text-primary)]">{u.name}</p>
                       <p className="text-xs text-[var(--muted)]">{u.email}</p>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         <Badge tone="info">{u.roleLabel}</Badge>
@@ -124,12 +134,21 @@ export function UserManagement({
                   >
                     <input type="hidden" name="userId" value={u.id} />
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium">Name</label>
-                      <Input name="name" defaultValue={u.name} required disabled={pending} />
+                      <Label htmlFor={`name-${u.id}`} required>
+                        Name
+                      </Label>
+                      <Input
+                        id={`name-${u.id}`}
+                        name="name"
+                        defaultValue={u.name}
+                        required
+                        disabled={pending}
+                      />
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium">Role</label>
+                      <Label htmlFor={`role-${u.id}`}>Role</Label>
                       <Select
+                        id={`role-${u.id}`}
                         name="role"
                         defaultValue={u.role as Role}
                         disabled={pending}
@@ -141,7 +160,7 @@ export function UserManagement({
                         ))}
                       </Select>
                     </div>
-                    <label className="flex items-center gap-2 text-sm">
+                    <label className="flex items-center gap-2 text-sm text-[var(--text-primary)]">
                       <input
                         type="checkbox"
                         name="active"
@@ -151,7 +170,7 @@ export function UserManagement({
                       />
                       Active
                     </label>
-                    <label className="flex items-center gap-2 text-sm">
+                    <label className="flex items-center gap-2 text-sm text-[var(--text-primary)]">
                       <input
                         type="checkbox"
                         name="allProperties"
@@ -163,10 +182,11 @@ export function UserManagement({
                     </label>
                     {!u.accessScope.allProperties ? (
                       <div className="sm:col-span-2">
-                        <label className="mb-1.5 block text-sm font-medium">
+                        <Label htmlFor={`propertyIds-${u.id}`}>
                           Property IDs (comma-separated)
-                        </label>
+                        </Label>
                         <Input
+                          id={`propertyIds-${u.id}`}
                           name="propertyIds"
                           defaultValue={u.accessScope.propertyIds.join(",")}
                           placeholder={properties.map((p) => p.id).slice(0, 2).join(",")}
@@ -195,10 +215,10 @@ export function UserManagement({
             );
           })}
         </ul>
-      </section>
+      </ModuleCard>
 
-      {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
-      {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+      {message ? <p className="text-sm text-[var(--success)]">{message}</p> : null}
+      {error ? <p className="text-sm text-[var(--danger)]">{error}</p> : null}
     </div>
   );
 }

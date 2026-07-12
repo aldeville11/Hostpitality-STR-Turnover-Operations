@@ -9,14 +9,14 @@ import { cn } from "@/lib/utils";
 
 export function SettingsNav({ active }: { active?: SettingsSection | "overview" }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <nav aria-label="Settings sections" className="flex flex-wrap gap-2">
       <Link
         href="/settings"
         className={cn(
-          "rounded-lg px-3 py-1.5 text-sm font-medium",
+          "rounded-[var(--radius-md)] px-3 py-1.5 text-sm font-medium transition-colors",
           active === "overview" || !active
             ? "bg-[var(--accent)] text-white"
-            : "border border-[var(--border)] text-[var(--muted)] hover:bg-[var(--surface-2)]"
+            : "border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
         )}
       >
         Overview
@@ -27,15 +27,15 @@ export function SettingsNav({ active }: { active?: SettingsSection | "overview" 
           href={`/settings/${section}`}
           title={SETTINGS_SECTION_DESCRIPTIONS[section]}
           className={cn(
-            "rounded-lg px-3 py-1.5 text-sm font-medium",
+            "rounded-[var(--radius-md)] px-3 py-1.5 text-sm font-medium transition-colors",
             active === section
               ? "bg-[var(--accent)] text-white"
-              : "border border-[var(--border)] text-[var(--muted)] hover:bg-[var(--surface-2)]"
+              : "border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
           )}
         >
           {SETTINGS_SECTION_LABELS[section]}
         </Link>
       ))}
-    </div>
+    </nav>
   );
 }

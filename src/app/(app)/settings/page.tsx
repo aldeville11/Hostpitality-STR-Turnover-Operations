@@ -1,7 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { PageHeader, Badge, Button } from "@/components/ui";
+import {
+  PageHeader,
+  Badge,
+  Button,
+  Stat,
+  ModuleCard,
+  DetailFactGrid,
+  StatusBadge,
+} from "@/components/ui";
 import { SettingsNav } from "@/components/settings/settings-nav";
 import { getSettingsOverview, SETTINGS_SECTION_DESCRIPTIONS, SETTINGS_SECTIONS } from "@/lib/settings";
 import { processJobsAction } from "@/lib/actions";
@@ -22,103 +30,87 @@ export default async function SettingsPage() {
       <SettingsNav active="overview" />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Users" value={data.counts.users} />
-        <StatCard label="Active properties" value={data.counts.properties} />
-        <StatCard label="Connected integrations" value={data.counts.integrations} />
-        <StatCard label="Admin audit events" value={data.counts.auditCount} />
+        <Stat label="Users" value={data.counts.users} />
+        <Stat label="Active properties" value={data.counts.properties} />
+        <Stat label="Connected integrations" value={data.counts.integrations} />
+        <Stat label="Admin audit events" value={data.counts.auditCount} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-            Company
-          </h2>
-          <dl className="mt-3 space-y-2 text-sm">
-            <Row label="Name" value={data.company.name} />
-            <Row label="Brand" value={data.company.brandName ?? data.company.name} />
-            <Row label="Timezone" value={data.company.timezone} />
-            <Row
-              label="Support"
-              value={data.company.supportEmail ?? data.company.contactName ?? "—"}
-            />
-            <div className="flex justify-between gap-4">
-              <dt className="text-[var(--muted)]">Onboarded</dt>
-              <dd>
-                <Badge tone={data.company.onboardedAt ? "success" : "warning"}>
-                  {data.company.onboardedAt ? "Complete" : "Incomplete"}
-                </Badge>
-              </dd>
-            </div>
-          </dl>
-        </section>
+        <ModuleCard title="Company" description="Operating identity and onboarding state.">
+          <DetailFactGrid
+            items={[
+              { label: "Name", value: data.company.name },
+              { label: "Brand", value: data.company.brandName ?? data.company.name },
+              { label: "Timezone", value: data.company.timezone },
+              {
+                label: "Support",
+                value: data.company.supportEmail ?? data.company.contactName ?? "—",
+              },
+              {
+                label: "Onboarded",
+                value: (
+                  <StatusBadge status={data.company.onboardedAt ? "complete" : "needs_review"}>
+                    {data.company.onboardedAt ? "Complete" : "Incomplete"}
+                  </StatusBadge>
+                ),
+              },
+            ]}
+          />
+        </ModuleCard>
 
-        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-            Feature flags
-          </h2>
-          <ul className="mt-3 space-y-2 text-sm">
+        <ModuleCard
+          title="Feature flags"
+          description="Company-level capability toggles and background job control."
+          actions={
+            <form action={processJobsAction}>
+              <Button type="submit" variant="outline" size="sm">
+                Process due jobs
+              </Button>
+            </form>
+          }
+        >
+          <ul className="space-y-2 text-sm">
             {Object.entries(data.company.systemSettings.featureFlags).map(([key, on]) => (
-              <li key={key} className="flex items-center justify-between gap-2">
-                <span className="text-[var(--muted)]">{key}</span>
+              <li
+                key={key}
+                className="flex items-center justify-between gap-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-raised)] px-3 py-2"
+              >
+                <span className="text-[var(--text-secondary)]">{key}</span>
                 <Badge tone={on ? "success" : "neutral"}>{on ? "On" : "Off"}</Badge>
               </li>
             ))}
           </ul>
-          <form action={processJobsAction} className="mt-4">
-            <Button type="submit" variant="outline" size="sm">
-              Process due jobs
-            </Button>
-          </form>
-        </section>
+        </ModuleCard>
       </div>
 
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-            Settings areas
-          </h2>
+      <ModuleCard
+        title="Settings areas"
+        description="Open a section to manage company, branding, access, and system defaults."
+        actions={
           <Link
             href="/launch"
             className="text-sm font-medium text-[var(--accent-strong)] hover:underline"
           >
             Open launch readiness →
           </Link>
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        }
+      >
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {SETTINGS_SECTIONS.map((section) => (
             <Link
               key={section}
               href={`/settings/${section}`}
-              className="rounded-xl border border-[var(--border)] px-4 py-3 transition hover:border-[var(--accent)]/40"
+              className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-raised)] px-4 py-3 transition-colors hover:border-[var(--accent)]/40 hover:bg-[var(--surface)]"
             >
-              <p className="font-medium capitalize">{section}</p>
-              <p className="mt-1 text-sm text-[var(--muted)]">
+              <p className="font-medium capitalize text-[var(--text-primary)]">{section}</p>
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">
                 {SETTINGS_SECTION_DESCRIPTIONS[section]}
               </p>
             </Link>
           ))}
         </div>
-      </section>
-    </div>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">{label}</p>
-      <p className="mt-2 font-[family-name:var(--font-display)] text-2xl font-semibold tabular-nums">
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between gap-4">
-      <dt className="text-[var(--muted)]">{label}</dt>
-      <dd className="font-medium text-right">{value}</dd>
+      </ModuleCard>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+/** Enterprise shell for onboarding steps — mirrors ModuleCard structure/tokens. */
 export function StepCard({
   title,
   description,
@@ -12,15 +13,19 @@ export function StepCard({
   actions?: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-[var(--border)] bg-white/90 p-5 shadow-sm backdrop-blur sm:p-6">
-      <div className="mb-5">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight">
+    <section className="rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-sm)]">
+      <div className="border-b border-[var(--border)] px-5 py-4 sm:px-6">
+        <h1 className="font-[family-name:var(--font-display)] text-xl font-semibold tracking-tight text-[var(--text-primary)] sm:text-2xl">
           {title}
         </h1>
-        <p className="mt-1 text-sm text-[var(--muted)]">{description}</p>
+        <p className="mt-1 text-sm text-[var(--text-secondary)]">{description}</p>
       </div>
-      <div className="space-y-4">{children}</div>
-      {actions ? <div className="mt-6 flex flex-wrap gap-2 border-t border-[var(--border)] pt-4">{actions}</div> : null}
+      <div className="space-y-4 px-5 py-4 sm:px-6">{children}</div>
+      {actions ? (
+        <div className="flex flex-wrap gap-2 border-t border-[var(--border)] px-5 py-4 sm:px-6">
+          {actions}
+        </div>
+      ) : null}
     </section>
   );
 }

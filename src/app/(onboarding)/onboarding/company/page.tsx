@@ -30,7 +30,7 @@ export default async function OnboardingCompanyPage() {
             <option value="UTC">UTC</option>
           </Select>
         </div>
-        <p className="text-xs text-[var(--muted)]">
+        <p className="text-xs text-[var(--text-secondary)]">
           Created during signup. Update details here, then continue. Progress is saved to the
           database.
         </p>

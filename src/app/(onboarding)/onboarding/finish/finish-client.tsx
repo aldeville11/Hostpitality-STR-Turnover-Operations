@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { StepCard } from "@/components/onboarding/step-card";
-import { Button } from "@/components/ui";
+import { Button, StatusBadge } from "@/components/ui";
 import { activateWorkspaceAction } from "@/lib/onboarding-actions";
 
 export function FinishStepClient({
@@ -26,28 +26,36 @@ export function FinishStepClient({
       title="Activate workspace"
       description="Creates your first scheduled turnover from the setup data and opens the main app."
     >
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)]/40 px-4 py-3 text-sm">
-        <p className="font-semibold">{summary.company}</p>
-        <p className="mt-1 text-[var(--muted)]">
+      <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-raised)] px-4 py-3 text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="font-semibold text-[var(--text-primary)]">{summary.company}</p>
+          <StatusBadge status={blocked.length > 0 ? "needs_review" : "complete"}>
+            {blocked.length > 0 ? "Blocked" : "Ready to activate"}
+          </StatusBadge>
+        </div>
+        <p className="mt-1 text-[var(--text-secondary)]">
           {summary.properties} properties · {summary.sops} SOPs · {summary.sows} SOWs ·{" "}
           {summary.vendors} vendors
         </p>
       </div>
 
-      <ul className="list-disc space-y-1 pl-5 text-sm text-[var(--muted)]">
+      <ul className="list-disc space-y-1 pl-5 text-sm text-[var(--text-secondary)]">
         <li>Mark onboarding complete in the database</li>
         <li>Create a first turnover linked to your first property, SOP, SOW, and vendor</li>
         <li>Queue a reminder job for the turnover window</li>
-        <li>Enter the main app shell</li>
+        <li>
+          Enter the main app shell, then confirm go-live in Launch Readiness (`/launch`) under
+          Administration
+        </li>
       </ul>
 
       {blocked.length > 0 ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <div className="rounded-[var(--radius-md)] border border-amber-200/80 bg-[var(--warning-soft)] px-4 py-3 text-sm text-[var(--warning)]">
           {blocked.join(" ")}
         </div>
       ) : null}
 
-      {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+      {error ? <p className="text-sm text-[var(--danger)]">{error}</p> : null}
 
       <form
         action={() => {

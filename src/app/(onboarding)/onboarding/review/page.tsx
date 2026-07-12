@@ -7,7 +7,7 @@ import {
   type OnboardingStepId,
 } from "@/lib/onboarding";
 import { StepCard } from "@/components/onboarding/step-card";
-import { Badge, Button } from "@/components/ui";
+import { Button, StatusBadge } from "@/components/ui";
 import { continueReviewAction } from "@/lib/onboarding-actions";
 
 export default async function OnboardingReviewPage() {
@@ -95,19 +95,21 @@ export default async function OnboardingReviewPage() {
           <Link
             key={row.step}
             href={row.href}
-            className="flex items-center justify-between rounded-xl border border-[var(--border)] px-3 py-3 hover:bg-[var(--surface-2)]/40"
+            className="flex items-center justify-between rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-raised)] px-3 py-3 transition-colors hover:border-[var(--accent)]/40 hover:bg-[var(--surface)]"
           >
             <div>
-              <p className="font-medium">{row.label}</p>
-              <p className="text-xs text-[var(--muted)]">{row.value}</p>
+              <p className="font-medium text-[var(--text-primary)]">{row.label}</p>
+              <p className="text-xs text-[var(--text-secondary)]">{row.value}</p>
             </div>
-            <Badge tone={row.ok ? "success" : "warning"}>{row.ok ? "Ready" : "Needed"}</Badge>
+            <StatusBadge status={row.ok ? "complete" : "needs_review"}>
+              {row.ok ? "Ready" : "Needed"}
+            </StatusBadge>
           </Link>
         ))}
       </div>
 
       {errors.length > 0 ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <div className="rounded-[var(--radius-md)] border border-amber-200/80 bg-[var(--warning-soft)] px-4 py-3 text-sm text-[var(--warning)]">
           <p className="font-semibold">Still needed</p>
           <ul className="mt-1 list-disc pl-5">
             {errors.map((e) => (
@@ -116,8 +118,10 @@ export default async function OnboardingReviewPage() {
           </ul>
         </div>
       ) : (
-        <p className="text-sm text-emerald-700">
+        <p className="text-sm text-[var(--success)]">
           Setup looks complete. Next you will activate the workspace and create the first turnover.
+          After activation, confirm operational go-live in Launch Readiness (`/launch`) under
+          Administration.
         </p>
       )}
     </StepCard>
