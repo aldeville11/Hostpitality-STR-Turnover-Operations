@@ -174,7 +174,7 @@ model Turnover {
   sopId           String?
   sowId           String?
   vendorId        String?
-  status          String    @default("SCHEDULED")
+  status          String    @default("DRAFT")
   priority        String    @default("NORMAL")
   windowStart     DateTime
   windowEnd       DateTime
@@ -188,13 +188,61 @@ model Turnover {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  property Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  booking  Booking?  @relation(fields: [bookingId], references: [id])
-  sop      Sop?      @relation(fields: [sopId], references: [id])
-  sow      Sow?      @relation(fields: [sowId], references: [id])
-  vendor   Vendor?   @relation(fields: [vendorId], references: [id])
-  issues   Issue[]
+  company            Company                   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  property           Property                  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  booking            Booking?                  @relation(fields: [bookingId], references: [id])
+  sop                Sop?                      @relation(fields: [sopId], references: [id])
+  sow                Sow?                      @relation(fields: [sowId], references: [id])
+  vendor             Vendor?                   @relation(fields: [vendorId], references: [id])
+  issues             Issue[]
+  checklistItems     TurnoverChecklistItem[]
+  statusEvents       TurnoverStatusEvent[]
+  assignmentEvents   TurnoverAssignmentEvent[]
+}
+
+model TurnoverChecklistItem {
+  id          String    @id @default(cuid())
+  turnoverId  String
+  section     String
+  title       String
+  instructions String?
+  requiresPhoto Boolean @default(false)
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  completedBy String?
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  turnover Turnover @relation(fields: [turnoverId], references: [id], onDelete: Cascade)
+}
+
+model TurnoverStatusEvent {
+  id         String   @id @default(cuid())
+  turnoverId String
+  fromStatus String?
+  toStatus   String
+  note       String?
+  actorId    String?
+  actorName  String?
+  createdAt  DateTime @default(now())
+
+  turnover Turnover @relation(fields: [turnoverId], references: [id], onDelete: Cascade)
+}
+
+model TurnoverAssignmentEvent {
+  id           String   @id @default(cuid())
+  turnoverId   String
+  fromVendorId String?
+  toVendorId   String?
+  fromName     String?
+  toName       String?
+  note         String?
+  actorId      String?
+  actorName    String?
+  createdAt    DateTime @default(now())
+
+  turnover Turnover @relation(fields: [turnoverId], references: [id], onDelete: Cascade)
 }
 
 model Issue {

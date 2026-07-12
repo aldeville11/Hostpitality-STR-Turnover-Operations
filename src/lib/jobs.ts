@@ -115,15 +115,38 @@ async function remindTurnover(turnoverId: string, companyId: string | null) {
 
 async function markOverdueTurnovers(companyId: string | null) {
   const now = new Date();
-  const updated = await prisma.turnover.updateMany({
+  const due = await prisma.turnover.findMany({
     where: {
       ...(companyId ? { companyId } : {}),
       deadlineAt: { lt: now },
       status: { in: ["SCHEDULED", "ASSIGNED", "IN_PROGRESS"] },
     },
-    data: { status: "OVERDUE" },
   });
-  return { marked: updated.count };
+
+  for (const turnover of due) {
+    await prisma.turnover.update({
+      where: { id: turnover.id },
+      data: { status: "OVERDUE" },
+    });
+    await prisma.turnoverStatusEvent.create({
+      data: {
+        turnoverId: turnover.id,
+        fromStatus: turnover.status,
+        toStatus: "OVERDUE",
+        note: "Marked overdue by background job",
+        actorName: "system",
+      },
+    });
+    await writeAuditLog({
+      companyId: turnover.companyId,
+      action: "turnover.status_changed",
+      entityType: "Turnover",
+      entityId: turnover.id,
+      metadata: { from: turnover.status, to: "OVERDUE", source: "job" },
+    });
+  }
+
+  return { marked: due.length };
 }
 
 async function dispatchNotification(

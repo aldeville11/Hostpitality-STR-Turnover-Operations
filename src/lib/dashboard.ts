@@ -3,11 +3,12 @@ import { endOfDay, startOfDay } from "./utils";
 
 const OPEN_ISSUE_STATUSES = ["OPEN", "ESCALATED", "IN_PROGRESS"];
 const ACTIVE_TURNOVER_STATUSES = [
+  "DRAFT",
   "SCHEDULED",
   "ASSIGNED",
   "IN_PROGRESS",
-  "QA_PENDING",
-  "ISSUES_OPEN",
+  "READY_FOR_QA",
+  "BLOCKED",
   "OVERDUE",
 ];
 
@@ -48,7 +49,7 @@ export async function getDashboardData(companyId: string) {
           { status: "OVERDUE" },
           {
             deadlineAt: { lt: now },
-            status: { in: ["SCHEDULED", "ASSIGNED", "IN_PROGRESS", "QA_PENDING"] },
+            status: { in: ["SCHEDULED", "ASSIGNED", "IN_PROGRESS", "READY_FOR_QA", "DRAFT"] },
           },
         ],
       },
@@ -217,7 +218,7 @@ export async function getDashboardData(companyId: string) {
       completed: completedCount,
       total: totalRecent,
       inProgress: recentTurnovers.filter((t) =>
-        ["ASSIGNED", "IN_PROGRESS", "QA_PENDING"].includes(t.status)
+        ["ASSIGNED", "IN_PROGRESS", "READY_FOR_QA"].includes(t.status)
       ).length,
       overdue: recentTurnovers.filter((t) => t.status === "OVERDUE").length,
     },
@@ -249,13 +250,16 @@ export function turnoverStatusTone(
     case "COMPLETED":
       return "success";
     case "OVERDUE":
+    case "BLOCKED":
     case "ISSUES_OPEN":
       return "danger";
     case "IN_PROGRESS":
-    case "QA_PENDING":
+    case "READY_FOR_QA":
       return "info";
     case "ASSIGNED":
       return "accent";
+    case "DRAFT":
+      return "neutral";
     default:
       return "neutral";
   }

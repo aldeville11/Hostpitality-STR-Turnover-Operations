@@ -97,9 +97,24 @@ async function main() {
       name: "Standard Turnover SOP",
       description: "Foundation playbook",
       contentJson: JSON.stringify([
-        { section: "Pre-turnover prep", title: "Gather supplies" },
-        { section: "Room-by-room", title: "Clean kitchen and baths" },
-        { section: "Completion sign-off", title: "Sign off" },
+        {
+          section: "Pre-turnover prep",
+          title: "Gather supplies",
+          instructions: "Load caddy and linens",
+          requiresPhoto: false,
+        },
+        {
+          section: "Room-by-room",
+          title: "Clean kitchen and baths",
+          instructions: "Follow room playbook",
+          requiresPhoto: true,
+        },
+        {
+          section: "Completion sign-off",
+          title: "Sign off",
+          instructions: "Confirm ready for QA",
+          requiresPhoto: false,
+        },
       ]),
     },
   });
@@ -214,6 +229,34 @@ async function main() {
     },
   });
 
+  const sopSteps = [
+    { section: "Pre-turnover prep", title: "Gather supplies", instructions: "Load caddy and linens", requiresPhoto: false },
+    { section: "Room-by-room", title: "Clean kitchen and baths", instructions: "Follow room playbook", requiresPhoto: true },
+    { section: "Completion sign-off", title: "Sign off", instructions: "Confirm ready for QA", requiresPhoto: false },
+  ];
+
+  async function seedChecklist(
+    turnoverId: string,
+    opts?: { completeFirst?: boolean; completeAll?: boolean }
+  ) {
+    await prisma.turnoverChecklistItem.createMany({
+      data: sopSteps.map((step, idx) => {
+        const completed = Boolean(opts?.completeAll || (opts?.completeFirst && idx === 0));
+        return {
+          turnoverId,
+          section: step.section,
+          title: step.title,
+          instructions: step.instructions,
+          requiresPhoto: step.requiresPhoto,
+          sortOrder: idx,
+          completed,
+          completedAt: completed ? new Date(now.getTime() - 30 * 60 * 1000) : null,
+          completedBy: completed ? "Jordan Lee" : null,
+        };
+      }),
+    });
+  }
+
   const turnoverToday = await prisma.turnover.create({
     data: {
       companyId: company.id,
@@ -233,8 +276,49 @@ async function main() {
       notes: "Pet hair add-on",
     },
   });
+  await seedChecklist(turnoverToday.id, { completeFirst: true });
+  await prisma.turnoverStatusEvent.createMany({
+    data: [
+      {
+        turnoverId: turnoverToday.id,
+        fromStatus: null,
+        toStatus: "SCHEDULED",
+        note: "Created from Airbnb checkout",
+        actorName: "System",
+        createdAt: new Date(now.getTime() - 20 * 60 * 60 * 1000),
+      },
+      {
+        turnoverId: turnoverToday.id,
+        fromStatus: "SCHEDULED",
+        toStatus: "ASSIGNED",
+        note: "Default cleaner applied",
+        actorName: "Alex Morgan",
+        createdAt: new Date(now.getTime() - 18 * 60 * 60 * 1000),
+      },
+      {
+        turnoverId: turnoverToday.id,
+        fromStatus: "ASSIGNED",
+        toStatus: "IN_PROGRESS",
+        note: "Cleaner checked in",
+        actorName: "Jordan Lee",
+        createdAt: new Date(now.getTime() - 2 * 60 * 60 * 1000),
+      },
+    ],
+  });
+  await prisma.turnoverAssignmentEvent.create({
+    data: {
+      turnoverId: turnoverToday.id,
+      fromVendorId: null,
+      toVendorId: jordan.id,
+      fromName: null,
+      toName: jordan.name,
+      note: "Auto-assigned default property cleaner",
+      actorName: "Alex Morgan",
+      createdAt: new Date(now.getTime() - 18 * 60 * 60 * 1000),
+    },
+  });
 
-  await prisma.turnover.create({
+  const turnoverAssigned = await prisma.turnover.create({
     data: {
       companyId: company.id,
       propertyId: propertyC.id,
@@ -251,8 +335,35 @@ async function main() {
       photosVerified: 0,
     },
   });
+  await seedChecklist(turnoverAssigned.id);
+  await prisma.turnoverStatusEvent.createMany({
+    data: [
+      {
+        turnoverId: turnoverAssigned.id,
+        fromStatus: null,
+        toStatus: "SCHEDULED",
+        actorName: "System",
+      },
+      {
+        turnoverId: turnoverAssigned.id,
+        fromStatus: "SCHEDULED",
+        toStatus: "ASSIGNED",
+        note: "Assigned to Sam Rivera",
+        actorName: "Alex Morgan",
+      },
+    ],
+  });
+  await prisma.turnoverAssignmentEvent.create({
+    data: {
+      turnoverId: turnoverAssigned.id,
+      toVendorId: sam.id,
+      toName: sam.name,
+      note: "Initial assignment",
+      actorName: "Alex Morgan",
+    },
+  });
 
-  await prisma.turnover.create({
+  const turnoverScheduled = await prisma.turnover.create({
     data: {
       companyId: company.id,
       propertyId: propertyB.id,
@@ -267,6 +378,16 @@ async function main() {
       photosUploaded: 0,
       photosVerified: 0,
       notes: "Unassigned same-day rush",
+    },
+  });
+  await seedChecklist(turnoverScheduled.id);
+  await prisma.turnoverStatusEvent.create({
+    data: {
+      turnoverId: turnoverScheduled.id,
+      fromStatus: null,
+      toStatus: "SCHEDULED",
+      note: "Created from calendar sync",
+      actorName: "System",
     },
   });
 
@@ -290,6 +411,102 @@ async function main() {
       escalatedAt: new Date(now.getTime() - 6 * 60 * 60 * 1000),
     },
   });
+  await seedChecklist(overdue.id, { completeFirst: true });
+  await prisma.turnoverStatusEvent.createMany({
+    data: [
+      {
+        turnoverId: overdue.id,
+        fromStatus: null,
+        toStatus: "ASSIGNED",
+        actorName: "System",
+        createdAt: new Date(now.getTime() - 30 * 60 * 60 * 1000),
+      },
+      {
+        turnoverId: overdue.id,
+        fromStatus: "ASSIGNED",
+        toStatus: "IN_PROGRESS",
+        actorName: "Sam Rivera",
+        createdAt: new Date(now.getTime() - 26 * 60 * 60 * 1000),
+      },
+      {
+        turnoverId: overdue.id,
+        fromStatus: "IN_PROGRESS",
+        toStatus: "OVERDUE",
+        note: "Marked overdue by background job",
+        actorName: "system",
+        createdAt: new Date(now.getTime() - 22 * 60 * 60 * 1000),
+      },
+    ],
+  });
+
+  const readyForQa = await prisma.turnover.create({
+    data: {
+      companyId: company.id,
+      propertyId: propertyA.id,
+      sopId: sop.id,
+      sowId: sow.id,
+      vendorId: jordan.id,
+      status: "READY_FOR_QA",
+      priority: "NORMAL",
+      windowStart: new Date(now.getTime() - 5 * 60 * 60 * 1000),
+      windowEnd: new Date(now.getTime() - 1 * 60 * 60 * 1000),
+      deadlineAt: new Date(now.getTime() + 1 * 60 * 60 * 1000),
+      photosRequired: 4,
+      photosUploaded: 4,
+      photosVerified: 0,
+      notes: "Checklist complete — awaiting QA phase",
+    },
+  });
+  await seedChecklist(readyForQa.id, { completeAll: true });
+  await prisma.turnoverStatusEvent.createMany({
+    data: [
+      {
+        turnoverId: readyForQa.id,
+        fromStatus: null,
+        toStatus: "ASSIGNED",
+        actorName: "System",
+      },
+      {
+        turnoverId: readyForQa.id,
+        fromStatus: "ASSIGNED",
+        toStatus: "IN_PROGRESS",
+        actorName: "Jordan Lee",
+      },
+      {
+        turnoverId: readyForQa.id,
+        fromStatus: "IN_PROGRESS",
+        toStatus: "READY_FOR_QA",
+        note: "All checklist items complete",
+        actorName: "Jordan Lee",
+      },
+    ],
+  });
+
+  const draftTurnover = await prisma.turnover.create({
+    data: {
+      companyId: company.id,
+      propertyId: propertyC.id,
+      sopId: sop.id,
+      sowId: sow.id,
+      status: "DRAFT",
+      priority: "LOW",
+      windowStart: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+      windowEnd: new Date(now.getTime() + 28 * 60 * 60 * 1000),
+      deadlineAt: new Date(now.getTime() + 28 * 60 * 60 * 1000),
+      photosRequired: 3,
+      notes: "Draft from upcoming booking change",
+    },
+  });
+  await seedChecklist(draftTurnover.id);
+  await prisma.turnoverStatusEvent.create({
+    data: {
+      turnoverId: draftTurnover.id,
+      fromStatus: null,
+      toStatus: "DRAFT",
+      note: "Draft created from booking change",
+      actorName: "Alex Morgan",
+    },
+  });
 
   const completedRecent = await prisma.turnover.create({
     data: {
@@ -308,6 +525,36 @@ async function main() {
       photosVerified: 4,
       ownerNotifiedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000),
     },
+  });
+  await seedChecklist(completedRecent.id, { completeAll: true });
+  await prisma.turnoverStatusEvent.createMany({
+    data: [
+      {
+        turnoverId: completedRecent.id,
+        fromStatus: null,
+        toStatus: "ASSIGNED",
+        actorName: "System",
+      },
+      {
+        turnoverId: completedRecent.id,
+        fromStatus: "ASSIGNED",
+        toStatus: "IN_PROGRESS",
+        actorName: "Jordan Lee",
+      },
+      {
+        turnoverId: completedRecent.id,
+        fromStatus: "IN_PROGRESS",
+        toStatus: "READY_FOR_QA",
+        actorName: "Jordan Lee",
+      },
+      {
+        turnoverId: completedRecent.id,
+        fromStatus: "READY_FOR_QA",
+        toStatus: "COMPLETED",
+        note: "Closed after QA (seed history)",
+        actorName: "Alex Morgan",
+      },
+    ],
   });
 
   await prisma.issue.createMany({
