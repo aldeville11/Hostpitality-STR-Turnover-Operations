@@ -92,6 +92,15 @@ export async function updateIssueStatusAction(formData: FormData) {
       status,
       note,
     });
+    const { notifyViaIntegrations } = await import("@/lib/integrations");
+    await notifyViaIntegrations({
+      companyId: user.companyId,
+      title: `Issue ${status.toLowerCase()}`,
+      body: `Issue status moved to ${status}${note ? `: ${note}` : ""}`,
+      type: "issue.update",
+      userId: user.id,
+      channels: ["EMAIL"],
+    }).catch(() => null);
     revalidateIssuePaths(issueId);
     return { ok: true as const };
   } catch (err) {

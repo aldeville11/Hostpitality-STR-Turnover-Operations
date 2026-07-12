@@ -126,6 +126,15 @@ export async function decideQaAction(formData: FormData) {
       decisionNote: decisionNote || undefined,
       overrideIncomplete,
     });
+    const { notifyViaIntegrations } = await import("@/lib/integrations");
+    await notifyViaIntegrations({
+      companyId: user.companyId,
+      title: `QA ${decision.toLowerCase().replace("_", " ")}`,
+      body: decisionNote || `Inspection marked ${decision}`,
+      type: "qa.outcome",
+      userId: user.id,
+      channels: ["EMAIL", "SMS"],
+    }).catch(() => null);
     revalidateQaPaths(turnoverId || undefined, inspectionId);
     return { ok: true as const };
   } catch (err) {

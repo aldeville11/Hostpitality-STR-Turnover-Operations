@@ -30,6 +30,9 @@ model Company {
   auditLogs      AuditLog[]
   backgroundJobs BackgroundJob[]
   qaInspections  QaInspection[]
+  integrations   Integration[]
+  calendarEvents CalendarEvent[]
+  storedFiles    StoredFile[]
 }
 
 model User {
@@ -128,14 +131,18 @@ model Vendor {
 }
 
 model Booking {
-  id         String   @id @default(cuid())
-  propertyId String
-  externalId String?
-  guestName  String?
-  checkIn    DateTime
-  checkOut   DateTime
-  source     String   @default("manual")
-  createdAt  DateTime @default(now())
+  id           String    @id @default(cuid())
+  propertyId   String
+  externalId   String?
+  guestName    String?
+  checkIn      DateTime
+  checkOut     DateTime
+  source       String    @default("manual")
+  status       String    @default("CONFIRMED")
+  cancelledAt  DateTime?
+  lastSyncedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   property Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   turnover Turnover?
@@ -506,4 +513,108 @@ model BackgroundJob {
   createdAt   DateTime  @default(now())
 
   company Company? @relation(fields: [companyId], references: [id])
+}
+
+model Integration {
+  id              String    @id @default(cuid())
+  companyId       String
+  provider        String
+  category        String
+  name            String
+  status          String    @default("DISCONNECTED")
+  enabled         Boolean   @default(false)
+  externalAccount String?
+  configJson      String    @default("{}")
+  lastSyncAt      DateTime?
+  lastSuccessAt   DateTime?
+  lastError       String?
+  syncCursor      String?
+  connectedAt     DateTime?
+  disabledAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  company      Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  syncEvents   IntegrationSyncEvent[]
+  webhookLogs  IntegrationWebhookLog[]
+  calendarEvents CalendarEvent[]
+  storedFiles  StoredFile[]
+
+  @@unique([companyId, provider])
+}
+
+model IntegrationSyncEvent {
+  id             String    @id @default(cuid())
+  integrationId  String
+  type           String    @default("SYNC")
+  status         String    @default("SUCCESS")
+  summary        String
+  detailJson     String    @default("{}")
+  recordsCreated Int       @default(0)
+  recordsUpdated Int       @default(0)
+  recordsSkipped Int       @default(0)
+  error          String?
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+}
+
+model IntegrationWebhookLog {
+  id            String    @id @default(cuid())
+  companyId     String
+  integrationId String
+  eventType     String
+  externalId    String?
+  payloadJson   String    @default("{}")
+  status        String    @default("RECEIVED")
+  resultJson    String    @default("{}")
+  error         String?
+  processedAt   DateTime?
+  createdAt     DateTime  @default(now())
+
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+}
+
+model CalendarEvent {
+  id              String    @id @default(cuid())
+  companyId       String
+  integrationId   String
+  propertyId      String?
+  externalId      String
+  title           String
+  startsAt        DateTime
+  endsAt          DateTime
+  source          String
+  linkedTurnoverId String?
+  rawJson         String    @default("{}")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  company     Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@unique([integrationId, externalId])
+}
+
+model StoredFile {
+  id            String   @id @default(cuid())
+  companyId     String
+  integrationId String?
+  entityType    String
+  entityId      String
+  filename      String
+  mimeType      String   @default("application/octet-stream")
+  sizeBytes     Int      @default(0)
+  storageKey    String
+  url           String
+  source        String   @default("UPLOAD")
+  label         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  integration Integration? @relation(fields: [integrationId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
 }

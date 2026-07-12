@@ -12,6 +12,7 @@ import {
   FileText,
   LayoutDashboard,
   Package,
+  Plug,
   Settings,
   Users,
   X,
@@ -29,6 +30,7 @@ const NAV = [
   { href: "/issues", label: "Issues", icon: AlertTriangle },
   { href: "/inventory", label: "Inventory", icon: Package },
   { href: "/reports", label: "Reporting", icon: BarChart3 },
+  { href: "/integrations", label: "Integrations", icon: Plug },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

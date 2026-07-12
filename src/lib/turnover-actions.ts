@@ -141,6 +141,18 @@ export async function assignCleanerAction(formData: FormData) {
     return { error: result.error, conflicts: result.conflicts };
   }
 
+  const { notifyViaIntegrations } = await import("@/lib/integrations");
+  await notifyViaIntegrations({
+    companyId: user.companyId,
+    title: "Cleaner assignment updated",
+    body: vendorId
+      ? `A cleaner was assigned to turnover ${id}`
+      : `Cleaner unassigned from turnover ${id}`,
+    type: "assignment.update",
+    userId: user.id,
+    channels: ["EMAIL", "SMS"],
+  }).catch(() => null);
+
   revalidateTurnoverPaths(id);
   revalidatePath("/cleaners");
   revalidatePath("/assignments");

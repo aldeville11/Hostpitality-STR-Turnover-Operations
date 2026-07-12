@@ -7,6 +7,11 @@ async function main() {
   await prisma.backgroundJob.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.auditLog.deleteMany();
+  await prisma.storedFile.deleteMany();
+  await prisma.calendarEvent.deleteMany();
+  await prisma.integrationWebhookLog.deleteMany();
+  await prisma.integrationSyncEvent.deleteMany();
+  await prisma.integration.deleteMany();
   await prisma.issueComment.deleteMany();
   await prisma.issueEvent.deleteMany();
   await prisma.issue.deleteMany();
@@ -1317,6 +1322,218 @@ async function main() {
         propertyId: propertyA.id,
         completedTurnoverId: completedRecent.id,
       }),
+    },
+  });
+
+  // Integrations catalog + demo connections (Prisma-only; sync exercised via UI/actions)
+  const integrationDefs = [
+    {
+      provider: "AIRBNB",
+      category: "BOOKING",
+      name: "Airbnb",
+      status: "CONNECTED",
+      enabled: true,
+      externalAccount: "airbnb-pacific-stay",
+    },
+    {
+      provider: "VRBO",
+      category: "BOOKING",
+      name: "Vrbo",
+      status: "ERROR",
+      enabled: false,
+      externalAccount: null as string | null,
+      lastError: "OAuth token expired — reconnect required",
+    },
+    {
+      provider: "DIRECT",
+      category: "BOOKING",
+      name: "Direct bookings",
+      status: "DISCONNECTED",
+      enabled: false,
+      externalAccount: null as string | null,
+    },
+    {
+      provider: "GOOGLE_CALENDAR",
+      category: "CALENDAR",
+      name: "Google Calendar",
+      status: "CONNECTED",
+      enabled: true,
+      externalAccount: "ops@pacificstay.ops",
+    },
+    {
+      provider: "OUTLOOK",
+      category: "CALENDAR",
+      name: "Outlook Calendar",
+      status: "DISCONNECTED",
+      enabled: false,
+      externalAccount: null as string | null,
+    },
+    {
+      provider: "EMAIL",
+      category: "MESSAGING",
+      name: "Email notifications",
+      status: "CONNECTED",
+      enabled: true,
+      externalAccount: "alerts@pacificstay.ops",
+    },
+    {
+      provider: "SMS",
+      category: "MESSAGING",
+      name: "SMS notifications",
+      status: "DISCONNECTED",
+      enabled: false,
+      externalAccount: null as string | null,
+    },
+    {
+      provider: "STORAGE",
+      category: "STORAGE",
+      name: "File storage",
+      status: "CONNECTED",
+      enabled: true,
+      externalAccount: "s3://hostpitality-demo",
+    },
+  ];
+
+  const createdIntegrations: Record<string, string> = {};
+  for (const def of integrationDefs) {
+    const row = await prisma.integration.create({
+      data: {
+        companyId: company.id,
+        provider: def.provider,
+        category: def.category,
+        name: def.name,
+        status: def.status,
+        enabled: def.enabled,
+        externalAccount: def.externalAccount,
+        lastError: "lastError" in def ? (def as { lastError?: string }).lastError ?? null : null,
+        connectedAt: def.status === "CONNECTED" ? now : null,
+        disabledAt: def.status === "ERROR" ? new Date(now.getTime() - 24 * 60 * 60 * 1000) : null,
+        lastSyncAt:
+          def.status === "CONNECTED" || def.status === "ERROR"
+            ? new Date(now.getTime() - 60 * 60 * 1000)
+            : null,
+        lastSuccessAt: def.status === "CONNECTED" ? new Date(now.getTime() - 60 * 60 * 1000) : null,
+        configJson: JSON.stringify({ seeded: true }),
+      },
+    });
+    createdIntegrations[def.provider] = row.id;
+  }
+
+  await prisma.integrationSyncEvent.createMany({
+    data: [
+      {
+        integrationId: createdIntegrations.AIRBNB,
+        type: "SYNC",
+        status: "SUCCESS",
+        summary: "Synced Airbnb: 1 created, 0 updated, 0 skipped",
+        recordsCreated: 1,
+        detailJson: JSON.stringify({ fetched: 1 }),
+        completedAt: now,
+      },
+      {
+        integrationId: createdIntegrations.GOOGLE_CALENDAR,
+        type: "SYNC",
+        status: "SUCCESS",
+        summary: "Synced Google Calendar: 2 created, 0 updated, 0 skipped",
+        recordsCreated: 2,
+        completedAt: now,
+      },
+      {
+        integrationId: createdIntegrations.VRBO,
+        type: "SYNC",
+        status: "FAILED",
+        summary: "Vrbo sync failed",
+        error: "OAuth token expired — reconnect required",
+        startedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
+        completedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000 + 5000),
+      },
+    ],
+  });
+
+  await prisma.integrationWebhookLog.createMany({
+    data: [
+      {
+        companyId: company.id,
+        integrationId: createdIntegrations.AIRBNB,
+        eventType: "booking.created",
+        externalId: "airbnb-1001",
+        payloadJson: JSON.stringify({ guestName: "Guest Party" }),
+        status: "PROCESSED",
+        resultJson: JSON.stringify({ bookingExternalId: "airbnb-1001" }),
+        processedAt: now,
+      },
+      {
+        companyId: company.id,
+        integrationId: createdIntegrations.EMAIL,
+        eventType: "email.notify",
+        payloadJson: JSON.stringify({ title: "Cleaner assignment updated" }),
+        status: "PROCESSED",
+        resultJson: JSON.stringify({ queued: true }),
+        processedAt: now,
+      },
+    ],
+  });
+
+  await prisma.calendarEvent.createMany({
+    data: [
+      {
+        companyId: company.id,
+        integrationId: createdIntegrations.GOOGLE_CALENDAR,
+        propertyId: propertyA.id,
+        externalId: "gcal-SB-A1-block",
+        title: `Owner hold · ${propertyA.name}`,
+        startsAt: new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000),
+        endsAt: new Date(now.getTime() + 16 * 24 * 60 * 60 * 1000),
+        source: "GOOGLE_CALENDAR",
+      },
+      {
+        companyId: company.id,
+        integrationId: createdIntegrations.GOOGLE_CALENDAR,
+        propertyId: propertyA.id,
+        externalId: "gcal-SB-A1-turnover-window",
+        title: `Checkout window · ${propertyA.unitCode}`,
+        startsAt: todayMorning,
+        endsAt: new Date(todayMorning.getTime() + 4 * 60 * 60 * 1000),
+        source: "GOOGLE_CALENDAR",
+        linkedTurnoverId: turnoverToday.id,
+      },
+    ],
+  });
+
+  const latestIssue = await prisma.issue.findFirst({
+    where: { companyId: company.id },
+    orderBy: { createdAt: "desc" },
+  });
+  if (latestIssue) {
+    await prisma.storedFile.create({
+      data: {
+        companyId: company.id,
+        integrationId: createdIntegrations.STORAGE,
+        entityType: "Issue",
+        entityId: latestIssue.id,
+        filename: "vanity-crack.jpg",
+        mimeType: "image/jpeg",
+        sizeBytes: 240000,
+        storageKey: `${company.id}/Issue/${latestIssue.id}/vanity-crack.jpg`,
+        url: `https://files.hostpitality.app/${company.id}/Issue/${latestIssue.id}/vanity-crack.jpg`,
+        source: "ISSUE",
+        label: "Issue photo",
+      },
+    });
+  }
+  await prisma.storedFile.create({
+    data: {
+      companyId: company.id,
+      integrationId: createdIntegrations.STORAGE,
+      entityType: "Turnover",
+      entityId: turnoverToday.id,
+      filename: "access-instructions.pdf",
+      mimeType: "application/pdf",
+      sizeBytes: 128000,
+      storageKey: `${company.id}/Turnover/${turnoverToday.id}/access-instructions.pdf`,
+      url: `https://files.hostpitality.app/${company.id}/Turnover/${turnoverToday.id}/access-instructions.pdf`,
+      source: "DOCUMENT",
+      label: "Ops document",
     },
   });
 

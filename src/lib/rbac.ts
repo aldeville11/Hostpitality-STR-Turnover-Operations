@@ -31,6 +31,7 @@ export type Permission =
   | "inventory:manage"
   | "owners:report"
   | "settings:manage"
+  | "integrations:manage"
   | "onboarding:run";
 
 const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
@@ -46,6 +47,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "inventory:manage",
     "owners:report",
     "settings:manage",
+    "integrations:manage",
     "onboarding:run",
   ],
   PROPERTY_MANAGER: [
@@ -59,6 +61,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "issues:manage",
     "inventory:manage",
     "owners:report",
+    "integrations:manage",
   ],
   CLEANING_COORDINATOR: [
     "dashboard:view",
@@ -82,6 +85,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "inventory:manage",
     "owners:report",
     "settings:manage",
+    "integrations:manage",
     "onboarding:run",
   ],
 };
