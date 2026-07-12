@@ -1,10 +1,10 @@
 import { prisma } from "./db";
 import { writeAuditLog } from "./audit";
-import { parseJson } from "./json";
 import {
   parsePhotoRequirements,
   parseRestockDefaults,
 } from "./properties";
+import { flattenSopSteps, parseSopDocument } from "./sops";
 
 export const TURNOVER_STATUSES = [
   "DRAFT",
@@ -38,15 +38,9 @@ export function nextStatuses(from: string): TurnoverStatus[] {
   return TRANSITIONS[from] ?? [];
 }
 
-type SopStep = {
-  section?: string;
-  title: string;
-  instructions?: string;
-  requiresPhoto?: boolean;
-};
-
 export function buildChecklistFromSop(contentJson: string | null | undefined) {
-  const steps = parseJson<SopStep[]>(contentJson, []);
+  const doc = parseSopDocument(contentJson);
+  const steps = flattenSopSteps(doc);
   if (!steps.length) {
     return [
       {
@@ -73,13 +67,7 @@ export function buildChecklistFromSop(contentJson: string | null | undefined) {
     ];
   }
 
-  return steps.map((step, idx) => ({
-    section: step.section || "General",
-    title: step.title,
-    instructions: step.instructions || null,
-    requiresPhoto: Boolean(step.requiresPhoto),
-    sortOrder: idx,
-  }));
+  return steps;
 }
 
 export async function listTurnovers(

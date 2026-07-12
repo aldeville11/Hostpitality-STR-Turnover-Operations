@@ -226,19 +226,37 @@ export async function addSopStepAction(formData: FormData) {
     .split("\n")
     .map((l) => l.trim())
     .filter(Boolean);
-  const contentJson = JSON.stringify(
-    lines.length
-      ? lines.map((title, i) => ({
-          section: i === 0 ? "Pre-turnover prep" : "Room-by-room",
-          title,
-        }))
-      : [
-          { section: "Pre-turnover prep", title: "Gather supplies & confirm checkout" },
-          { section: "Room-by-room", title: "Clean all rooms" },
-          { section: "Photo documentation", title: "Capture proof photos" },
-          { section: "Completion sign-off", title: "Sign off turnover" },
-        ]
-  );
+  const titles = lines.length
+    ? lines
+    : [
+        "Gather supplies & confirm checkout",
+        "Clean all rooms",
+        "Capture proof photos",
+        "Sign off turnover",
+      ];
+  const { makeSection, makeStep, serializeSopDocument } = await import("@/lib/sops");
+  const contentJson = serializeSopDocument({
+    version: 1,
+    safetyNotes: "Follow property chemical and lockup rules.",
+    sections: [
+      makeSection({
+        title: "Pre-turnover prep",
+        kind: "prep",
+        steps: [makeStep({ title: titles[0] })],
+      }),
+      makeSection({
+        title: "Room-by-room",
+        kind: "room",
+        room: "Primary spaces",
+        steps: titles.slice(1, -1).map((title) => makeStep({ title, requiresPhoto: true })),
+      }),
+      makeSection({
+        title: "Completion sign-off",
+        kind: "signoff",
+        steps: [makeStep({ title: titles[titles.length - 1] || "Sign off", requiresPhoto: true })],
+      }),
+    ],
+  });
 
   const sop = await prisma.sop.create({
     data: {
@@ -246,6 +264,23 @@ export async function addSopStepAction(formData: FormData) {
       name,
       description: description || null,
       contentJson,
+      status: "DRAFT",
+      safetyNotes: "Follow property chemical and lockup rules.",
+      active: false,
+    },
+  });
+
+  await prisma.sopVersion.create({
+    data: {
+      sopId: sop.id,
+      version: 1,
+      name: sop.name,
+      description: sop.description,
+      contentJson,
+      safetyNotes: sop.safetyNotes,
+      changeNote: "Created during onboarding",
+      actorId: user.id,
+      actorName: user.name,
     },
   });
 

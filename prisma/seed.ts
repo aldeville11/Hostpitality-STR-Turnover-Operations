@@ -8,6 +8,7 @@ async function main() {
   await prisma.notification.deleteMany();
   await prisma.auditLog.deleteMany();
   await prisma.issue.deleteMany();
+  await prisma.sopVersion.deleteMany();
   await prisma.turnover.deleteMany();
   await prisma.booking.deleteMany();
   await prisma.inventoryItem.deleteMany();
@@ -91,31 +92,77 @@ async function main() {
     },
   });
 
+  const { getTemplate, serializeSopDocument } = await import("../src/lib/sops");
+  const apartmentTemplate = getTemplate("apartment_2br")!;
+  const studioTemplate = getTemplate("studio_turnover")!;
+  const now = new Date();
+
   const sop = await prisma.sop.create({
     data: {
       companyId: company.id,
       name: "Standard Turnover SOP",
-      description: "Foundation playbook",
-      contentJson: JSON.stringify([
-        {
-          section: "Pre-turnover prep",
-          title: "Gather supplies",
-          instructions: "Load caddy and linens",
-          requiresPhoto: false,
-        },
-        {
-          section: "Room-by-room",
-          title: "Clean kitchen and baths",
-          instructions: "Follow room playbook",
-          requiresPhoto: true,
-        },
-        {
-          section: "Completion sign-off",
-          title: "Sign off",
-          instructions: "Confirm ready for QA",
-          requiresPhoto: false,
-        },
-      ]),
+      description: "Foundation playbook for 2BR apartments",
+      version: 2,
+      contentJson: serializeSopDocument(apartmentTemplate.document),
+      status: "PUBLISHED",
+      publishedAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
+      templateKey: apartmentTemplate.key,
+      unitType: "apartment",
+      safetyNotes: apartmentTemplate.safetyNotes,
+      active: true,
+    },
+  });
+  await prisma.sopVersion.createMany({
+    data: [
+      {
+        sopId: sop.id,
+        version: 1,
+        name: "Standard Turnover SOP",
+        description: "Initial draft",
+        contentJson: serializeSopDocument(studioTemplate.document),
+        safetyNotes: studioTemplate.safetyNotes,
+        changeNote: "Initial draft from studio starter",
+        actorName: "Alex Morgan",
+        createdAt: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000),
+      },
+      {
+        sopId: sop.id,
+        version: 2,
+        name: "Standard Turnover SOP",
+        description: "Foundation playbook for 2BR apartments",
+        contentJson: serializeSopDocument(apartmentTemplate.document),
+        safetyNotes: apartmentTemplate.safetyNotes,
+        changeNote: "Published apartment playbook",
+        actorName: "Alex Morgan",
+        createdAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
+      },
+    ],
+  });
+
+  const draftSop = await prisma.sop.create({
+    data: {
+      companyId: company.id,
+      name: "Studio express clean",
+      description: "Draft playbook for compact units",
+      version: 1,
+      contentJson: serializeSopDocument(studioTemplate.document),
+      status: "DRAFT",
+      templateKey: studioTemplate.key,
+      unitType: "studio",
+      safetyNotes: studioTemplate.safetyNotes,
+      active: false,
+    },
+  });
+  await prisma.sopVersion.create({
+    data: {
+      sopId: draftSop.id,
+      version: 1,
+      name: draftSop.name,
+      description: draftSop.description,
+      contentJson: draftSop.contentJson,
+      safetyNotes: draftSop.safetyNotes,
+      changeNote: "Created from studio template",
+      actorName: "Alex Morgan",
     },
   });
 
@@ -210,7 +257,6 @@ async function main() {
     },
   });
 
-  const now = new Date();
   const todayMorning = new Date(now);
   todayMorning.setHours(10, 0, 0, 0);
   const todayAfternoon = new Date(now);

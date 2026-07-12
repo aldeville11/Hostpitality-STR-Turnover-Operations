@@ -134,19 +134,43 @@ model Booking {
 }
 
 model Sop {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   companyId   String
   name        String
   description String?
-  version     Int      @default(1)
-  contentJson String   @default("[]")
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  version     Int       @default(1)
+  contentJson String    @default("{\"version\":1,\"sections\":[]}")
+  status      String    @default("DRAFT")
+  publishedAt DateTime?
+  templateKey String?
+  unitType    String?
+  safetyNotes String?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  company    Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company    Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
   properties Property[]
   turnovers  Turnover[]
+  versions   SopVersion[]
+}
+
+model SopVersion {
+  id          String   @id @default(cuid())
+  sopId       String
+  version     Int
+  name        String
+  description String?
+  contentJson String
+  safetyNotes String?
+  changeNote  String?
+  actorId     String?
+  actorName   String?
+  createdAt   DateTime @default(now())
+
+  sop Sop @relation(fields: [sopId], references: [id], onDelete: Cascade)
+
+  @@unique([sopId, version])
 }
 
 model Sow {

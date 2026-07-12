@@ -153,7 +153,7 @@ export async function getPropertyDetail(companyId: string, propertyId: string) {
 
   const [sops, sows, vendors] = await Promise.all([
     prisma.sop.findMany({
-      where: { companyId, active: true },
+      where: { companyId, status: "PUBLISHED" },
       orderBy: { name: "asc" },
     }),
     prisma.sow.findMany({
