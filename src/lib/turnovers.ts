@@ -129,6 +129,7 @@ export async function getTurnoverDetail(companyId: string, turnoverId: string) {
       checklistItems: { orderBy: { sortOrder: "asc" } },
       statusEvents: { orderBy: { createdAt: "asc" } },
       assignmentEvents: { orderBy: { createdAt: "desc" } },
+      issues: { orderBy: [{ blocking: "desc" }, { createdAt: "desc" }] },
     },
   });
 

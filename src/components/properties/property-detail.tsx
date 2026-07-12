@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Badge } from "@/components/ui";
 import type { getPropertyDetail } from "@/lib/properties";
 import { unitTypeLabel } from "@/lib/properties";
@@ -146,12 +147,16 @@ export function PropertyDetail({ data }: { data: Detail }) {
           ) : (
             <div className="space-y-2">
               {openIssues.map((issue) => (
-                <div key={issue.id} className="rounded-xl border border-[var(--border)] px-3 py-2">
+                <Link
+                  key={issue.id}
+                  href={`/issues/${issue.id}`}
+                  className="block rounded-xl border border-[var(--border)] px-3 py-2 transition hover:border-[var(--accent)]/40"
+                >
                   <p className="font-medium">{issue.title}</p>
                   <p className="text-xs text-[var(--muted)]">
                     {issue.severity} · {statusLabel(issue.status)} · {issue.category}
                   </p>
-                </div>
+                </Link>
               ))}
             </div>
           )}

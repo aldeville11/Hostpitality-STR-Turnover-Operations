@@ -7,6 +7,7 @@ import { PhotoReview } from "@/components/qa/photo-review";
 import { QaDecisionPanel } from "@/components/qa/qa-decision-panel";
 import { ReinspectionHistory } from "@/components/qa/reinspection-history";
 import { openQaInspectionAction } from "@/lib/qa-actions";
+import { createIssuesFromQaAction } from "@/lib/issue-actions";
 import { QA_STATUS_LABELS, qaStatusTone, type QaStatus } from "@/lib/qa";
 import { formatDateTime, statusLabel } from "@/lib/utils";
 import { priorityTone } from "@/lib/dashboard";
@@ -268,6 +269,45 @@ export function QaDetail({
             inspection={latestInspection}
             canDecide={canReview}
           />
+          {canReview &&
+          (latestInspection.items.some((i) => i.result === "FAIL") ||
+            latestInspection.photos.some((p) => p.result === "FAIL")) ? (
+            <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-4 sm:p-5">
+              <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
+                Create issues from failures
+              </h2>
+              <p className="mt-1 text-sm text-[var(--muted)]">
+                Open blocking issues for each failed checklist item and photo so ops can track
+                resolution.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={pending}
+                  onClick={() => {
+                    setError(null);
+                    startTransition(async () => {
+                      const fd = new FormData();
+                      fd.set("inspectionId", latestInspection.id);
+                      fd.set("turnoverId", turnover.id);
+                      const res = await createIssuesFromQaAction(fd);
+                      if (res?.error) setError(res.error);
+                      else router.push(`/issues?propertyId=${turnover.property.id}`);
+                    });
+                  }}
+                >
+                  {pending ? "Creating…" : "Create issues from QA failures"}
+                </Button>
+                <Link href={`/issues?propertyId=${turnover.property.id}`}>
+                  <Button type="button" size="sm" variant="ghost">
+                    View issues
+                  </Button>
+                </Link>
+              </div>
+              {error ? <p className="mt-2 text-sm text-rose-600">{error}</p> : null}
+            </section>
+          ) : null}
         </>
       ) : (
         <div className="rounded-2xl border border-dashed border-[var(--border)] px-6 py-10 text-center text-sm text-[var(--muted)]">

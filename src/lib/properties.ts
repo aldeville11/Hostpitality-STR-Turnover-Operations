@@ -132,7 +132,9 @@ export async function getPropertyDetail(companyId: string, propertyId: string) {
       turnovers: {
         include: {
           vendor: true,
-          issues: { where: { status: { in: ["OPEN", "ESCALATED", "IN_PROGRESS"] } } },
+          issues: {
+            where: { status: { in: ["OPEN", "TRIAGED", "ASSIGNED", "ESCALATED", "IN_PROGRESS"] } },
+          },
         },
         orderBy: { windowStart: "desc" },
         take: 8,

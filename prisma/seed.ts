@@ -7,6 +7,8 @@ async function main() {
   await prisma.backgroundJob.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.auditLog.deleteMany();
+  await prisma.issueComment.deleteMany();
+  await prisma.issueEvent.deleteMany();
   await prisma.issue.deleteMany();
   await prisma.qaInspectionEvent.deleteMany();
   await prisma.qaInspectionItem.deleteMany();
@@ -807,34 +809,160 @@ async function main() {
     ],
   });
 
-  await prisma.issue.createMany({
+  const dueSoon = new Date(Date.now() + 2 * 60 * 60 * 1000);
+  const overdueDue = new Date(Date.now() - 3 * 60 * 60 * 1000);
+
+  const issueVanity = await prisma.issue.create({
+    data: {
+      companyId: company.id,
+      propertyId: propertyA.id,
+      turnoverId: turnoverToday.id,
+      title: "Hairline crack in bathroom vanity",
+      description: "Small crack on left corner of vanity countertop. Not leaking.",
+      severity: "MEDIUM",
+      status: "OPEN",
+      category: "damage",
+      source: "TURNOVER_BLOCK",
+      blocking: true,
+      ownerUserId: manager.id,
+      ownerName: manager.name,
+      dueAt: dueSoon,
+      photosJson: JSON.stringify(["vanity-crack.jpg"]),
+    },
+  });
+
+  await prisma.issueEvent.create({
+    data: {
+      issueId: issueVanity.id,
+      type: "STATUS",
+      fromValue: null,
+      toValue: "OPEN",
+      note: "Created from turnover block",
+      actorId: manager.id,
+      actorName: manager.name,
+    },
+  });
+
+  await prisma.issueComment.create({
+    data: {
+      issueId: issueVanity.id,
+      body: "Guest checkout reported the crack. Confirm before next arrival.",
+      visibility: "INTERNAL",
+      actorId: manager.id,
+      actorName: manager.name,
+    },
+  });
+
+  const issueDryer = await prisma.issue.create({
+    data: {
+      companyId: company.id,
+      propertyId: propertyB.id,
+      turnoverId: overdue.id,
+      title: "Missing hair dryer",
+      description: "Bathroom amenity not found during turnover.",
+      severity: "HIGH",
+      status: "ESCALATED",
+      category: "missing",
+      source: "MANUAL",
+      blocking: true,
+      ownerUserId: manager.id,
+      ownerName: manager.name,
+      assigneeVendorId: jordan.id,
+      assigneeName: jordan.name,
+      dueAt: overdueDue,
+      escalatedAt: new Date(Date.now() - 60 * 60 * 1000),
+    },
+  });
+
+  await prisma.issueEvent.createMany({
     data: [
       {
-        companyId: company.id,
-        turnoverId: turnoverToday.id,
-        title: "Hairline crack in bathroom vanity",
-        description: "Small crack on left corner of vanity countertop. Not leaking.",
-        severity: "MEDIUM",
-        status: "OPEN",
-        category: "damage",
+        issueId: issueDryer.id,
+        type: "STATUS",
+        toValue: "OPEN",
+        note: "Opened from field report",
+        actorName: manager.name,
       },
       {
-        companyId: company.id,
-        turnoverId: overdue.id,
-        title: "Missing hair dryer",
-        description: "Bathroom amenity not found during turnover.",
-        severity: "HIGH",
-        status: "ESCALATED",
-        category: "missing",
+        issueId: issueDryer.id,
+        type: "ASSIGNMENT",
+        toValue: jordan.name,
+        note: "Assigned to on-site cleaner",
+        actorName: manager.name,
       },
       {
-        companyId: company.id,
-        turnoverId: overdue.id,
-        title: "Kitchen photo rejected",
-        description: "QA failed — framing incomplete, re-shoot required.",
-        severity: "LOW",
-        status: "IN_PROGRESS",
-        category: "qa",
+        issueId: issueDryer.id,
+        type: "ESCALATION",
+        fromValue: "ASSIGNED",
+        toValue: "ESCALATED",
+        note: "Past SLA — guest arrival soon",
+        actorName: manager.name,
+      },
+    ],
+  });
+
+  await prisma.issueComment.create({
+    data: {
+      issueId: issueDryer.id,
+      body: "Replacement ordered; ETA this afternoon.",
+      visibility: "EXTERNAL",
+      actorId: manager.id,
+      actorName: manager.name,
+    },
+  });
+
+  const issueKitchen = await prisma.issue.create({
+    data: {
+      companyId: company.id,
+      propertyId: propertyB.id,
+      turnoverId: overdue.id,
+      title: "Kitchen photo rejected",
+      description: "QA failed — framing incomplete, re-shoot required.",
+      severity: "LOW",
+      status: "ASSIGNED",
+      category: "qa",
+      source: "QA_FAILURE",
+      blocking: false,
+      ownerUserId: manager.id,
+      ownerName: manager.name,
+      assigneeVendorId: sam.id,
+      assigneeName: sam.name,
+      dueAt: new Date(Date.now() + 20 * 60 * 60 * 1000),
+      photosJson: JSON.stringify(["kitchen-wide"]),
+    },
+  });
+
+  await prisma.issueEvent.createMany({
+    data: [
+      {
+        issueId: issueKitchen.id,
+        type: "STATUS",
+        toValue: "OPEN",
+        note: "Created from QA failure",
+        actorName: manager.name,
+      },
+      {
+        issueId: issueKitchen.id,
+        type: "STATUS",
+        fromValue: "OPEN",
+        toValue: "TRIAGED",
+        note: "Confirmed photo framing issue",
+        actorName: manager.name,
+      },
+      {
+        issueId: issueKitchen.id,
+        type: "ASSIGNMENT",
+        toValue: sam.name,
+        note: "Re-shoot assigned",
+        actorName: manager.name,
+      },
+      {
+        issueId: issueKitchen.id,
+        type: "STATUS",
+        fromValue: "TRIAGED",
+        toValue: "ASSIGNED",
+        note: "Status updated with assignment",
+        actorName: manager.name,
       },
     ],
   });

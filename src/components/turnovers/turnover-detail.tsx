@@ -164,6 +164,50 @@ export function TurnoverDetail({
             restockDefaults={restockDefaults}
           />
 
+          <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
+                Issues
+              </h2>
+              <Link
+                href={`/issues?propertyId=${turnover.propertyId}`}
+                className="text-sm text-[var(--accent)] hover:underline"
+              >
+                View all
+              </Link>
+            </div>
+            {turnover.issues.length === 0 ? (
+              <p className="mt-2 text-sm text-[var(--muted)]">No issues linked to this turnover.</p>
+            ) : (
+              <ul className="mt-3 space-y-2">
+                {turnover.issues.map((issue) => (
+                  <li key={issue.id}>
+                    <Link
+                      href={`/issues/${issue.id}`}
+                      className="block rounded-xl border border-[var(--border)] px-3 py-2 hover:border-[var(--accent)]/40"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-medium">{issue.title}</p>
+                        {issue.blocking ? <Badge tone="danger">Blocking</Badge> : null}
+                        <Badge tone="neutral">{statusLabel(issue.status)}</Badge>
+                      </div>
+                      <p className="mt-0.5 text-xs text-[var(--muted)]">
+                        {issue.severity} · {issue.category}
+                      </p>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="mt-3">
+              <Link href={`/issues?propertyId=${turnover.propertyId}`}>
+                <Button type="button" size="sm" variant="outline">
+                  Open issue tracker
+                </Button>
+              </Link>
+            </div>
+          </section>
+
           <StatusTimeline events={turnover.statusEvents} currentStatus={turnover.status} />
         </div>
       </div>

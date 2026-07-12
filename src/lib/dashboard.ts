@@ -1,7 +1,7 @@
 import { prisma } from "./db";
 import { endOfDay, startOfDay } from "./utils";
 
-const OPEN_ISSUE_STATUSES = ["OPEN", "ESCALATED", "IN_PROGRESS"];
+const OPEN_ISSUE_STATUSES = ["OPEN", "TRIAGED", "ASSIGNED", "ESCALATED", "IN_PROGRESS"];
 const ACTIVE_TURNOVER_STATUSES = [
   "DRAFT",
   "SCHEDULED",
