@@ -50,6 +50,53 @@ async function main() {
       name: "Pacific Stay Ops",
       slug: "pacific-stay-ops",
       timezone: "America/Los_Angeles",
+      brandName: "Pacific Stay",
+      accentColor: "#0F766E",
+      supportEmail: "ops@pacificstay.ops",
+      supportPhone: "+1-805-555-0100",
+      contactName: "Alex Rivera",
+      logoUrl: null,
+      notificationPrefsJson: JSON.stringify({
+        emailAssignments: true,
+        emailQaOutcomes: true,
+        emailIssueUpdates: true,
+        smsUrgentOnly: true,
+        digestDaily: false,
+      }),
+      workingHoursJson: JSON.stringify({
+        timezone: "America/Los_Angeles",
+        days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+        start: "08:00",
+        end: "18:00",
+      }),
+      systemSettingsJson: JSON.stringify({
+        issueCategories: ["damage", "missing", "qa", "access", "clean_miss", "restock", "other"],
+        issueSeverities: ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+        turnoverStatuses: [
+          "DRAFT",
+          "SCHEDULED",
+          "ASSIGNED",
+          "IN_PROGRESS",
+          "READY_FOR_QA",
+          "NEEDS_REWORK",
+          "COMPLETED",
+          "BLOCKED",
+          "OVERDUE",
+          "CANCELLED",
+        ],
+        slaHoursBySeverity: { CRITICAL: 4, HIGH: 12, MEDIUM: 24, LOW: 48 },
+        defaultTurnoverBufferMins: 60,
+        defaultSlaMinutes: 240,
+        featureFlags: {
+          calendarSync: true,
+          messagingHooks: true,
+          reportingExports: true,
+          integrations: true,
+          ownerSummaries: false,
+        },
+        defaultSopId: null,
+        defaultSowId: null,
+      }),
       onboardedAt: new Date(),
       onboardingStep: "finish",
       onboardingProgress: JSON.stringify(progress),
@@ -63,6 +110,7 @@ async function main() {
       passwordHash,
       role: "OPS_MANAGER",
       companyId: company.id,
+      accessScopeJson: JSON.stringify({ allProperties: true, propertyIds: [] }),
     },
   });
 
@@ -73,6 +121,29 @@ async function main() {
       passwordHash,
       role: "CLEANER",
       companyId: company.id,
+      accessScopeJson: JSON.stringify({ allProperties: true, propertyIds: [] }),
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      email: "dispatcher@hostpitality.app",
+      name: "Casey Nguyen",
+      passwordHash,
+      role: "CLEANING_COORDINATOR",
+      companyId: company.id,
+      accessScopeJson: JSON.stringify({ allProperties: true, propertyIds: [] }),
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      email: "inspector@hostpitality.app",
+      name: "Riley Quinn",
+      passwordHash,
+      role: "PROPERTY_MANAGER",
+      companyId: company.id,
+      accessScopeJson: JSON.stringify({ allProperties: true, propertyIds: [] }),
     },
   });
 

@@ -34,7 +34,7 @@ export type Permission =
   | "integrations:manage"
   | "onboarding:run";
 
-const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
+export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   OWNER_OPERATOR: [
     "dashboard:view",
     "properties:manage",

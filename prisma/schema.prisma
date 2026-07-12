@@ -12,6 +12,15 @@ model Company {
   name                String
   slug                String    @unique
   timezone            String    @default("America/Los_Angeles")
+  brandName           String?
+  logoUrl             String?
+  accentColor         String    @default("#0F766E")
+  supportEmail        String?
+  supportPhone        String?
+  contactName         String?
+  notificationPrefsJson String  @default("{}")
+  workingHoursJson    String    @default("{}")
+  systemSettingsJson  String    @default("{}")
   onboardedAt         DateTime?
   onboardingStep      String    @default("company")
   onboardingProgress  String    @default("{}")
@@ -36,15 +45,16 @@ model Company {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  name         String
-  role         String   @default("PROPERTY_MANAGER")
-  companyId    String?
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String   @id @default(cuid())
+  email           String   @unique
+  passwordHash    String
+  name            String
+  role            String   @default("PROPERTY_MANAGER")
+  companyId       String?
+  active          Boolean  @default(true)
+  accessScopeJson String   @default("{\"allProperties\":true,\"propertyIds\":[]}")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   company       Company?       @relation(fields: [companyId], references: [id])
   sessions      Session[]
