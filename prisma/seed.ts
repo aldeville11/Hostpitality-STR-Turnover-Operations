@@ -8,6 +8,10 @@ async function main() {
   await prisma.notification.deleteMany();
   await prisma.auditLog.deleteMany();
   await prisma.issue.deleteMany();
+  await prisma.qaInspectionEvent.deleteMany();
+  await prisma.qaInspectionItem.deleteMany();
+  await prisma.qaPhotoReview.deleteMany();
+  await prisma.qaInspection.deleteMany();
   await prisma.sopVersion.deleteMany();
   await prisma.sowVersion.deleteMany();
   await prisma.turnover.deleteMany();
@@ -656,6 +660,76 @@ async function main() {
         actorName: "Jordan Lee",
       },
     ],
+  });
+
+  const readyChecklist = await prisma.turnoverChecklistItem.findMany({
+    where: { turnoverId: readyForQa.id },
+    orderBy: { sortOrder: "asc" },
+  });
+  await prisma.qaInspection.create({
+    data: {
+      companyId: company.id,
+      turnoverId: readyForQa.id,
+      status: "PENDING",
+      inspectorId: manager.id,
+      inspectorName: manager.name,
+      startedAt: new Date(now.getTime() - 20 * 60 * 1000),
+      items: {
+        create: readyChecklist.map((item, idx) => ({
+          checklistItemId: item.id,
+          section: item.section,
+          title: item.title,
+          result: idx === 0 ? "PASS" : "PENDING",
+          reviewedAt: idx === 0 ? new Date(now.getTime() - 15 * 60 * 1000) : null,
+          sortOrder: idx,
+        })),
+      },
+      photos: {
+        create: [
+          {
+            label: "Kitchen after clean",
+            required: true,
+            uploaded: true,
+            result: "PASS",
+            reviewedAt: new Date(now.getTime() - 10 * 60 * 1000),
+            sortOrder: 0,
+          },
+          {
+            label: "Bathroom after clean",
+            required: true,
+            uploaded: true,
+            result: "PENDING",
+            sortOrder: 1,
+          },
+          {
+            label: "Bedroom staged",
+            required: true,
+            uploaded: true,
+            result: "PENDING",
+            sortOrder: 2,
+          },
+          {
+            label: "Final living room",
+            required: true,
+            uploaded: true,
+            result: "PENDING",
+            sortOrder: 3,
+          },
+        ],
+      },
+      events: {
+        create: [
+          {
+            turnoverId: readyForQa.id,
+            fromStatus: null,
+            toStatus: "PENDING",
+            note: "QA inspection opened",
+            actorName: manager.name,
+            createdAt: new Date(now.getTime() - 20 * 60 * 1000),
+          },
+        ],
+      },
+    },
   });
 
   const draftTurnover = await prisma.turnover.create({

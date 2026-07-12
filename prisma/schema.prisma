@@ -29,6 +29,7 @@ model Company {
   notifications  Notification[]
   auditLogs      AuditLog[]
   backgroundJobs BackgroundJob[]
+  qaInspections  QaInspection[]
 }
 
 model User {
@@ -266,23 +267,25 @@ model Turnover {
   checklistItems     TurnoverChecklistItem[]
   statusEvents       TurnoverStatusEvent[]
   assignmentEvents   TurnoverAssignmentEvent[]
+  qaInspections      QaInspection[]
 }
 
 model TurnoverChecklistItem {
-  id          String    @id @default(cuid())
-  turnoverId  String
-  section     String
-  title       String
-  instructions String?
-  requiresPhoto Boolean @default(false)
-  completed   Boolean   @default(false)
-  completedAt DateTime?
-  completedBy String?
-  sortOrder   Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  turnoverId    String
+  section       String
+  title         String
+  instructions  String?
+  requiresPhoto Boolean   @default(false)
+  completed     Boolean   @default(false)
+  completedAt   DateTime?
+  completedBy   String?
+  sortOrder     Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  turnover Turnover @relation(fields: [turnoverId], references: [id], onDelete: Cascade)
+  turnover   Turnover            @relation(fields: [turnoverId], references: [id], onDelete: Cascade)
+  qaItems    QaInspectionItem[]
 }
 
 model TurnoverStatusEvent {
@@ -311,6 +314,74 @@ model TurnoverAssignmentEvent {
   createdAt    DateTime @default(now())
 
   turnover Turnover @relation(fields: [turnoverId], references: [id], onDelete: Cascade)
+}
+
+model QaInspection {
+  id                 String    @id @default(cuid())
+  companyId          String
+  turnoverId         String
+  status             String    @default("PENDING")
+  inspectorId        String?
+  inspectorName      String?
+  decisionNote       String?
+  overrideIncomplete Boolean   @default(false)
+  startedAt          DateTime?
+  completedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  company  Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  turnover Turnover             @relation(fields: [turnoverId], references: [id], onDelete: Cascade)
+  items    QaInspectionItem[]
+  photos   QaPhotoReview[]
+  events   QaInspectionEvent[]
+}
+
+model QaInspectionItem {
+  id              String    @id @default(cuid())
+  inspectionId    String
+  checklistItemId String?
+  section         String
+  title           String
+  result          String    @default("PENDING")
+  comment         String?
+  reviewedAt      DateTime?
+  sortOrder       Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  inspection    QaInspection           @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  checklistItem TurnoverChecklistItem? @relation(fields: [checklistItemId], references: [id], onDelete: SetNull)
+}
+
+model QaPhotoReview {
+  id           String    @id @default(cuid())
+  inspectionId String
+  label        String
+  required     Boolean   @default(true)
+  uploaded     Boolean   @default(false)
+  result       String    @default("PENDING")
+  comment      String?
+  reviewedAt   DateTime?
+  sortOrder    Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  inspection QaInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+}
+
+model QaInspectionEvent {
+  id           String   @id @default(cuid())
+  inspectionId String
+  turnoverId   String
+  fromStatus   String?
+  toStatus     String
+  note         String?
+  actorId      String?
+  actorName    String?
+  createdAt    DateTime @default(now())
+
+  inspection QaInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
 }
 
 model Issue {

@@ -32,6 +32,7 @@ const OPEN_STATUSES = [
   "ASSIGNED",
   "IN_PROGRESS",
   "READY_FOR_QA",
+  "NEEDS_REWORK",
   "BLOCKED",
   "OVERDUE",
 ];

@@ -8,6 +8,7 @@ const ACTIVE_TURNOVER_STATUSES = [
   "ASSIGNED",
   "IN_PROGRESS",
   "READY_FOR_QA",
+  "NEEDS_REWORK",
   "BLOCKED",
   "OVERDUE",
 ];
@@ -256,6 +257,8 @@ export function turnoverStatusTone(
     case "IN_PROGRESS":
     case "READY_FOR_QA":
       return "info";
+    case "NEEDS_REWORK":
+      return "warning";
     case "ASSIGNED":
       return "accent";
     case "DRAFT":

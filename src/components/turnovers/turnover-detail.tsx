@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Badge, Button } from "@/components/ui";
@@ -40,6 +41,11 @@ export function TurnoverDetail({
         <Badge tone="info">
           Photos {turnover.photosUploaded}/{turnover.photosRequired}
         </Badge>
+        {["READY_FOR_QA", "NEEDS_REWORK", "COMPLETED"].includes(turnover.status) ? (
+          <Link href={`/qa/${turnover.id}`}>
+            <Badge tone="accent">Open QA</Badge>
+          </Link>
+        ) : null}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
