@@ -73,9 +73,17 @@ export default async function SettingsPage() {
       </div>
 
       <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 p-5">
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
-          Settings areas
-        </h2>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold">
+            Settings areas
+          </h2>
+          <Link
+            href="/launch"
+            className="text-sm font-medium text-[var(--accent-strong)] hover:underline"
+          >
+            Open launch checklist →
+          </Link>
+        </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {SETTINGS_SECTIONS.map((section) => (
             <Link

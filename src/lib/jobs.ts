@@ -1,10 +1,14 @@
 import { prisma } from "./db";
 import { writeAuditLog } from "./audit";
+import { parseJson } from "./json";
+import { captureError, log } from "./logger";
 
 export type JobType =
   | "turnover.remind"
   | "turnover.overdue_check"
   | "notification.dispatch";
+
+export const MAX_JOB_ATTEMPTS = 3;
 
 export async function enqueueJob(input: {
   companyId?: string | null;
@@ -40,28 +44,120 @@ export async function processDueJobs(limit = 20) {
     });
 
     try {
-      const payload = JSON.parse(job.payloadJson || "{}") as Record<string, unknown>;
+      const payload = parseJson<Record<string, unknown>>(job.payloadJson, {});
       const result = await handleJob(job.type, payload, job.companyId);
       await prisma.backgroundJob.update({
         where: { id: job.id },
         data: {
           status: "COMPLETED",
           completedAt: new Date(),
+          error: null,
           payloadJson: JSON.stringify({ ...payload, result }),
         },
       });
+      log.info("job.completed", { jobId: job.id, type: job.type, companyId: job.companyId });
       results.push({ id: job.id, ok: true as const, result });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Job failed";
+      const message = captureError(err, { jobId: job.id, type: job.type });
+      const attempts = job.attempts + 1;
+      const retryable = attempts < MAX_JOB_ATTEMPTS;
       await prisma.backgroundJob.update({
         where: { id: job.id },
-        data: { status: "FAILED", error: message, completedAt: new Date() },
+        data: {
+          status: retryable ? "PENDING" : "FAILED",
+          error: message,
+          completedAt: retryable ? null : new Date(),
+          runAt: retryable
+            ? new Date(Date.now() + attempts * 60 * 1000)
+            : job.runAt,
+        },
       });
-      results.push({ id: job.id, ok: false as const, error: message });
+      results.push({
+        id: job.id,
+        ok: false as const,
+        error: message,
+        retrying: retryable,
+      });
     }
   }
 
   return results;
+}
+
+/** Re-queue failed jobs that still have attempts remaining (or force one more try). */
+export async function retryFailedJobs(input: {
+  companyId: string;
+  limit?: number;
+  force?: boolean;
+}) {
+  const failed = await prisma.backgroundJob.findMany({
+    where: {
+      companyId: input.companyId,
+      status: "FAILED",
+      ...(input.force ? {} : { attempts: { lt: MAX_JOB_ATTEMPTS } }),
+    },
+    orderBy: { completedAt: "desc" },
+    take: input.limit ?? 20,
+  });
+
+  for (const job of failed) {
+    await prisma.backgroundJob.update({
+      where: { id: job.id },
+      data: {
+        status: "PENDING",
+        runAt: new Date(),
+        error: null,
+        completedAt: null,
+        ...(input.force ? { attempts: Math.max(0, job.attempts - 1) } : {}),
+      },
+    });
+  }
+
+  log.info("job.retry_queued", {
+    companyId: input.companyId,
+    count: failed.length,
+    force: Boolean(input.force),
+  });
+
+  return { requeued: failed.length, ids: failed.map((j) => j.id) };
+}
+
+export async function getJobObservability(companyId: string) {
+  const [pending, running, failed, completedRecent] = await Promise.all([
+    prisma.backgroundJob.count({ where: { companyId, status: "PENDING" } }),
+    prisma.backgroundJob.count({ where: { companyId, status: "RUNNING" } }),
+    prisma.backgroundJob.count({ where: { companyId, status: "FAILED" } }),
+    prisma.backgroundJob.count({
+      where: {
+        companyId,
+        status: "COMPLETED",
+        completedAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      },
+    }),
+  ]);
+
+  const recentFailed = await prisma.backgroundJob.findMany({
+    where: { companyId, status: "FAILED" },
+    orderBy: { completedAt: "desc" },
+    take: 10,
+    select: {
+      id: true,
+      type: true,
+      error: true,
+      attempts: true,
+      completedAt: true,
+      createdAt: true,
+    },
+  });
+
+  return {
+    pending,
+    running,
+    failed,
+    completedRecent,
+    recentFailed,
+    retryable: recentFailed.filter((j) => j.attempts < MAX_JOB_ATTEMPTS).length,
+  };
 }
 
 async function handleJob(

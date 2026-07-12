@@ -1608,8 +1608,38 @@ async function main() {
     },
   });
 
+  // Launch diagnostics sample jobs (observability / retry demos)
+  await prisma.backgroundJob.createMany({
+    data: [
+      {
+        companyId: company.id,
+        type: "notification.dispatch",
+        payloadJson: JSON.stringify({
+          title: "Launch diagnostic",
+          body: "Seeded failed job for retry demos",
+          type: "ops",
+        }),
+        status: "FAILED",
+        attempts: 3,
+        error: "SMTP unreachable (seeded for launch diagnostics)",
+        runAt: new Date(now.getTime() - 60 * 60 * 1000),
+        startedAt: new Date(now.getTime() - 60 * 60 * 1000),
+        completedAt: new Date(now.getTime() - 55 * 60 * 1000),
+      },
+      {
+        companyId: company.id,
+        type: "turnover.overdue_check",
+        payloadJson: JSON.stringify({}),
+        status: "PENDING",
+        attempts: 0,
+        runAt: new Date(now.getTime() + 2 * 60 * 60 * 1000),
+      },
+    ],
+  });
+
   console.log("Seeded Hostpitality demo data with dashboard workload");
   console.log("Login: manager@hostpitality.app / demo1234");
+  console.log("Launch diagnostics: /launch (settings:manage)");
 }
 
 main()
