@@ -157,7 +157,7 @@ export async function getPropertyDetail(companyId: string, propertyId: string) {
       orderBy: { name: "asc" },
     }),
     prisma.sow.findMany({
-      where: { companyId, active: true },
+      where: { companyId, status: "ACTIVE" },
       orderBy: { name: "asc" },
     }),
     prisma.vendor.findMany({

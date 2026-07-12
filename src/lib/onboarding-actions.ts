@@ -332,13 +332,61 @@ export async function addSowStepAction(formData: FormData) {
 
   if (!name || !standardScope) return { error: "Name and standard scope are required." };
 
+  const {
+    starterDocument,
+    serializeSowDocument,
+    scopeSummaryFromDocument,
+    addOnsJsonFromDocument,
+    makeScopeItem,
+    makeAddOn,
+  } = await import("@/lib/sows");
+
+  const document = starterDocument();
+  const scopeLines = standardScope
+    .split(/[.,;\n]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (scopeLines.length) {
+    document.scopeItems = scopeLines.map((title) => makeScopeItem({ title, required: true }));
+  }
+  if (addOns.length) {
+    document.addOns = addOns.map((name) => makeAddOn({ name }));
+  }
+
+  const contentJson = serializeSowDocument(document);
   const sow = await prisma.sow.create({
     data: {
       companyId: user.companyId,
       name,
-      standardScope,
+      standardScope: scopeSummaryFromDocument(document) || standardScope,
+      addOnsJson: addOnsJsonFromDocument(document),
+      contentJson,
       slaMinutes,
-      addOnsJson: JSON.stringify(addOns),
+      completionDeadlineMinutes: slaMinutes,
+      status: "DRAFT",
+      useCase: "Standard turnover",
+      active: false,
+    },
+  });
+
+  await prisma.sowVersion.create({
+    data: {
+      sowId: sow.id,
+      version: 1,
+      name: sow.name,
+      description: sow.description,
+      standardScope: sow.standardScope,
+      addOnsJson: sow.addOnsJson,
+      contentJson: sow.contentJson,
+      slaMinutes: sow.slaMinutes,
+      completionDeadlineMinutes: sow.completionDeadlineMinutes,
+      useCase: sow.useCase,
+      unitType: sow.unitType,
+      propertyGroup: sow.propertyGroup,
+      status: "DRAFT",
+      changeNote: "Created during onboarding",
+      actorId: user.id,
+      actorName: user.name,
     },
   });
 

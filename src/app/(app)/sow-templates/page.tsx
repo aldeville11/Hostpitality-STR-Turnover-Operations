@@ -1,10 +1,6 @@
-import PlaceholderPage from "@/components/placeholder-page";
+import { redirect } from "next/navigation";
 
-export default function SowTemplatesPage() {
-  return (
-    <PlaceholderPage
-      title="SOW Templates"
-      description="Scope templates with add-ons, photo proof, and SLAs."
-    />
-  );
+/** Legacy route — SOW templates now live at /sows */
+export default function SowTemplatesRedirectPage() {
+  redirect("/sows");
 }

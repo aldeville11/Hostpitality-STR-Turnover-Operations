@@ -23,7 +23,7 @@ const NAV = [
   { href: "/properties", label: "Properties", icon: Building2 },
   { href: "/turnovers", label: "Turnovers", icon: ClipboardList },
   { href: "/sops", label: "SOPs", icon: FileText },
-  { href: "/sow-templates", label: "SOW Templates", icon: CheckSquare },
+  { href: "/sows", label: "SOW Templates", icon: CheckSquare },
   { href: "/assignments", label: "Cleaner Assignments", icon: Users },
   { href: "/qa", label: "QA / Photo Review", icon: Camera },
   { href: "/issues", label: "Issues", icon: AlertTriangle },

@@ -174,20 +174,57 @@ model SopVersion {
 }
 
 model Sow {
-  id            String   @id @default(cuid())
-  companyId     String
-  name          String
-  description   String?
-  standardScope String
-  addOnsJson    String   @default("[]")
-  slaMinutes    Int      @default(240)
-  active        Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                        String    @id @default(cuid())
+  companyId                 String
+  name                      String
+  description               String?
+  standardScope             String    @default("")
+  addOnsJson                String    @default("[]")
+  contentJson               String    @default("{\"version\":1,\"scopeItems\":[],\"addOns\":[],\"restockItems\":[],\"photoRequirements\":[],\"escalationRules\":[],\"approvalGates\":[]}")
+  slaMinutes                Int       @default(240)
+  completionDeadlineMinutes Int       @default(240)
+  version                   Int       @default(1)
+  status                    String    @default("DRAFT")
+  unitType                  String?
+  useCase                   String?
+  propertyGroup             String?
+  approvedAt                DateTime?
+  approvedById              String?
+  approvedByName            String?
+  publishedAt               DateTime?
+  active                    Boolean   @default(true)
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
 
-  company    Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company    Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
   properties Property[]
   turnovers  Turnover[]
+  versions   SowVersion[]
+}
+
+model SowVersion {
+  id                        String   @id @default(cuid())
+  sowId                     String
+  version                   Int
+  name                      String
+  description               String?
+  standardScope             String
+  addOnsJson                String
+  contentJson               String
+  slaMinutes                Int
+  completionDeadlineMinutes Int
+  useCase                   String?
+  unitType                  String?
+  propertyGroup             String?
+  status                    String
+  changeNote                String?
+  actorId                   String?
+  actorName                 String?
+  createdAt                 DateTime @default(now())
+
+  sow Sow @relation(fields: [sowId], references: [id], onDelete: Cascade)
+
+  @@unique([sowId, version])
 }
 
 model Turnover {

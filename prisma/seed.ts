@@ -9,6 +9,7 @@ async function main() {
   await prisma.auditLog.deleteMany();
   await prisma.issue.deleteMany();
   await prisma.sopVersion.deleteMany();
+  await prisma.sowVersion.deleteMany();
   await prisma.turnover.deleteMany();
   await prisma.booking.deleteMany();
   await prisma.inventoryItem.deleteMany();
@@ -166,13 +167,124 @@ async function main() {
     },
   });
 
+  const {
+    starterDocument,
+    serializeSowDocument,
+    scopeSummaryFromDocument,
+    addOnsJsonFromDocument,
+  } = await import("../src/lib/sows");
+  const sowDoc = starterDocument();
+  const sowContentJson = serializeSowDocument(sowDoc);
+
   const sow = await prisma.sow.create({
     data: {
       companyId: company.id,
       name: "Standard SOW",
-      standardScope: "Full clean, linen change, restock, photo proof.",
-      addOnsJson: JSON.stringify(["Pet hair treatment", "Rush turnover"]),
+      description: "Default turnover scope for coastal apartments",
+      standardScope: scopeSummaryFromDocument(sowDoc),
+      addOnsJson: addOnsJsonFromDocument(sowDoc),
+      contentJson: sowContentJson,
       slaMinutes: 240,
+      completionDeadlineMinutes: 240,
+      version: 2,
+      status: "ACTIVE",
+      unitType: "apartment",
+      useCase: "Standard turnover",
+      propertyGroup: "Coastal units",
+      active: true,
+      approvedAt: new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000),
+      approvedById: manager.id,
+      approvedByName: manager.name,
+      publishedAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
+    },
+  });
+  await prisma.sowVersion.createMany({
+    data: [
+      {
+        sowId: sow.id,
+        version: 1,
+        name: "Standard SOW",
+        description: "Initial draft",
+        standardScope: sow.standardScope,
+        addOnsJson: sow.addOnsJson,
+        contentJson: sowContentJson,
+        slaMinutes: 240,
+        completionDeadlineMinutes: 240,
+        useCase: "Standard turnover",
+        unitType: "apartment",
+        propertyGroup: "Coastal units",
+        status: "DRAFT",
+        changeNote: "Initial draft",
+        actorName: manager.name,
+        createdAt: new Date(now.getTime() - 12 * 24 * 60 * 60 * 1000),
+      },
+      {
+        sowId: sow.id,
+        version: 2,
+        name: "Standard SOW",
+        description: sow.description,
+        standardScope: sow.standardScope,
+        addOnsJson: sow.addOnsJson,
+        contentJson: sowContentJson,
+        slaMinutes: 240,
+        completionDeadlineMinutes: 240,
+        useCase: "Standard turnover",
+        unitType: "apartment",
+        propertyGroup: "Coastal units",
+        status: "ACTIVE",
+        changeNote: "Approved and activated",
+        actorName: manager.name,
+        createdAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
+      },
+    ],
+  });
+
+  const rushDoc = starterDocument();
+  rushDoc.addOns = [
+    ...rushDoc.addOns,
+    {
+      id: "addon_same_day",
+      name: "Same-day buffer under 2h",
+      description: "Coordinator-approved rush only",
+      priceNote: "+$120",
+      requiresApproval: true,
+    },
+  ];
+  const rushSow = await prisma.sow.create({
+    data: {
+      companyId: company.id,
+      name: "Same-day rush SOW",
+      description: "Compressed SLA for same-day turnovers",
+      standardScope: scopeSummaryFromDocument(rushDoc),
+      addOnsJson: addOnsJsonFromDocument(rushDoc),
+      contentJson: serializeSowDocument(rushDoc),
+      slaMinutes: 180,
+      completionDeadlineMinutes: 180,
+      version: 1,
+      status: "PENDING_REVIEW",
+      unitType: "apartment",
+      useCase: "Same-day rush",
+      propertyGroup: "Coastal units",
+      active: false,
+    },
+  });
+  await prisma.sowVersion.create({
+    data: {
+      sowId: rushSow.id,
+      version: 1,
+      name: rushSow.name,
+      description: rushSow.description,
+      standardScope: rushSow.standardScope,
+      addOnsJson: rushSow.addOnsJson,
+      contentJson: rushSow.contentJson,
+      slaMinutes: rushSow.slaMinutes,
+      completionDeadlineMinutes: rushSow.completionDeadlineMinutes,
+      useCase: rushSow.useCase,
+      unitType: rushSow.unitType,
+      propertyGroup: rushSow.propertyGroup,
+      status: "PENDING_REVIEW",
+      changeNote: "Submitted for ops review",
+      actorName: manager.name,
     },
   });
 

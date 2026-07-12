@@ -252,7 +252,9 @@ export async function createTurnoverFromBooking(input: {
     });
   }
 
-  const slaMinutes = property.sow?.slaMinutes ?? 240;
+  const slaMinutes = property.sow
+    ? property.sow.completionDeadlineMinutes || property.sow.slaMinutes || 240
+    : 240;
   const buffer = property.turnoverBufferMins ?? 60;
   const windowStart = new Date(booking.checkOut.getTime() + buffer * 60 * 1000);
   const windowEnd = new Date(windowStart.getTime() + slaMinutes * 60 * 1000);
