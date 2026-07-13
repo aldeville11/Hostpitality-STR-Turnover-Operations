@@ -40,12 +40,7 @@ export async function GET(request: Request) {
   });
 
   if (!user || !user.active) {
-    return NextResponse.json(
-      {
-        error: `Demo user ${DEMO_MANAGER_EMAIL} not found. Run demo seed with ALLOW_DEMO_SEED=true.`,
-      },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Unavailable" }, { status: 404 });
   }
 
   await createSession(user.id, { revokeOthers: true });

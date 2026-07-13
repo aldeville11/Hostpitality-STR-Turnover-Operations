@@ -58,10 +58,12 @@ describe("auth bypass HTTP route", () => {
     isAuthBypassAllowedMock.mockReturnValue(true);
     const { GET } = await import("@/app/api/auth/bypass/route");
     const res = await GET(new Request("http://localhost/api/auth/bypass"));
-    // Without seeded demo user this is 404; body must not leak credentials
     expect([307, 404]).toContain(res.status);
     const body = await res.text();
     expect(body.toLowerCase()).not.toContain("password");
     expect(body).not.toMatch(/[a-f0-9]{64}/);
+    expect(body.toLowerCase()).not.toContain("manager@");
+    expect(body.toLowerCase()).not.toContain("hostpitality.app");
+    expect(body).not.toContain("ALLOW_DEMO_SEED");
   });
 });

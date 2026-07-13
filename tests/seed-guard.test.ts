@@ -75,4 +75,26 @@ describe("demo seed target safety", () => {
       "hunter2"
     );
   });
+
+  it("rejects RFC1918 hosts unless exact allowlist + remote confirmation", () => {
+    expect(() =>
+      assertDemoSeedAllowed({
+        NODE_ENV: "development",
+        ALLOW_DEMO_SEED: "true",
+        SEED_CONFIRM: "DESTROY_AND_SEED",
+        DATABASE_URL: "postgresql://u:p@10.0.0.5:5432/app",
+      })
+    ).toThrow(/refuses|remote/i);
+
+    expect(() =>
+      assertDemoSeedAllowed({
+        NODE_ENV: "development",
+        ALLOW_DEMO_SEED: "true",
+        SEED_CONFIRM: "DESTROY_AND_SEED",
+        DEMO_SEED_ALLOWED_HOSTS: "10.0.0.5",
+        SEED_CONFIRM_REMOTE: "DESTROY_REMOTE_SEED",
+        DATABASE_URL: "postgresql://u:p@10.0.0.5:5432/app",
+      })
+    ).not.toThrow();
+  });
 });

@@ -35,7 +35,10 @@ export function redactDatabaseUrl(url: string): string {
   }
 }
 
-export function assertDemoSeedTargetAllowed(databaseUrl: string | undefined) {
+export function assertDemoSeedTargetAllowed(
+  databaseUrl: string | undefined,
+  env: NodeJS.ProcessEnv = process.env
+) {
   if (!databaseUrl || !databaseUrl.trim()) {
     throw new Error("Demo seed requires DATABASE_URL");
   }
@@ -72,11 +75,20 @@ export function assertDemoSeedTargetAllowed(databaseUrl: string | undefined) {
   const isLocal =
     ALLOWED_LOCAL_HOSTS.has(host) ||
     host.endsWith(".local") ||
-    host === "postgres" || // docker-compose service name on local networks
-    host.startsWith("192.168.") ||
-    host.startsWith("10.");
+    host === "postgres"; // docker-compose / CI service hostname on local networks
 
-  if (!isLocal) {
+  // RFC1918 and other private hosts are refused by default — they may host
+  // staging/production data. Override only via exact allowlist:
+  // DEMO_SEED_ALLOWED_HOSTS=host1,host2 plus SEED_CONFIRM_REMOTE=DESTROY_REMOTE_SEED
+  const allowlist = (env.DEMO_SEED_ALLOWED_HOSTS ?? "")
+    .split(",")
+    .map((h) => h.trim().toLowerCase())
+    .filter(Boolean);
+  const remoteConfirm = env.SEED_CONFIRM_REMOTE?.trim();
+  const allowlistedRemote =
+    allowlist.includes(host) && remoteConfirm === "DESTROY_REMOTE_SEED";
+
+  if (!isLocal && !allowlistedRemote) {
     throw new Error(
       `Demo seed refuses remote/ambiguous database host (${redactDatabaseUrl(url)})`
     );
@@ -94,5 +106,5 @@ export function assertDemoSeedAllowed(env: NodeJS.ProcessEnv = process.env) {
   if (!confirm || confirm !== "DESTROY_AND_SEED") {
     throw new Error("Demo seed requires SEED_CONFIRM=DESTROY_AND_SEED");
   }
-  assertDemoSeedTargetAllowed(env.DATABASE_URL);
+  assertDemoSeedTargetAllowed(env.DATABASE_URL, env);
 }
