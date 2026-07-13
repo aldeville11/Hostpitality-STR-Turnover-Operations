@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getCurrentUser, isAuthBypassAllowed, isOnboarded } from "@/lib/auth";
+import { getCurrentUser, isAuthBypassAllowed, isAuthBypassActive, isOnboarded } from "@/lib/auth";
 import { AppShell } from "@/components/app-shell";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -20,6 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         role: user.role,
         companyName: user.company?.name ?? "Company",
       }}
+      devBypassActive={isAuthBypassActive()}
     >
       {children}
     </AppShell>

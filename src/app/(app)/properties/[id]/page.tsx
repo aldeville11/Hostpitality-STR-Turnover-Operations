@@ -14,7 +14,7 @@ export default async function PropertyDetailPage({
   const user = await requireUser({ permission: "properties:manage" });
   if (!user.companyId) redirect("/onboarding");
 
-  const data = await getPropertyDetail(user.companyId, id);
+  const data = await getPropertyDetail(user.companyId, id, user.accessScope);
   if (!data) notFound();
 
   return (

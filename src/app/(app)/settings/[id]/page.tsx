@@ -42,7 +42,7 @@ export default async function SettingsSectionPage({
     const company = await getCompanySettings(user.companyId);
     body = <BrandingPanel company={company} />;
   } else if (id === "properties") {
-    const properties = await listSettingsProperties(user.companyId);
+    const properties = await listSettingsProperties(user.companyId, user.accessScope);
     body = <SettingsPropertyPanel properties={properties} />;
   } else if (id === "users") {
     const [users, properties] = await Promise.all([

@@ -1,5 +1,11 @@
 import { prisma } from "./db";
 import { endOfDay, startOfDay } from "./utils";
+import {
+  COMPANY_WIDE_SCOPE,
+  issuePropertyScopeWhere,
+  propertyIdScopeWhere,
+  type AccessScope,
+} from "./access-scope";
 
 const OPEN_ISSUE_STATUSES = ["OPEN", "TRIAGED", "ASSIGNED", "ESCALATED", "IN_PROGRESS"];
 const ACTIVE_TURNOVER_STATUSES = [
@@ -15,11 +21,16 @@ const ACTIVE_TURNOVER_STATUSES = [
 
 export type DashboardData = Awaited<ReturnType<typeof getDashboardData>>;
 
-export async function getDashboardData(companyId: string) {
+export async function getDashboardData(
+  companyId: string,
+  scope: AccessScope = COMPANY_WIDE_SCOPE
+) {
   const todayStart = startOfDay();
   const todayEnd = endOfDay();
   const now = new Date();
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const propertyFilter = propertyIdScopeWhere(scope);
+  const issueFilter = issuePropertyScopeWhere(scope);
 
   const [
     todaysTurnoversRaw,
@@ -33,6 +44,7 @@ export async function getDashboardData(companyId: string) {
     prisma.turnover.findMany({
       where: {
         companyId,
+        ...propertyFilter,
         windowStart: { gte: todayStart, lte: todayEnd },
         status: { not: "CANCELLED" },
       },
@@ -46,6 +58,7 @@ export async function getDashboardData(companyId: string) {
     prisma.turnover.findMany({
       where: {
         companyId,
+        ...propertyFilter,
         OR: [
           { status: "OVERDUE" },
           {
@@ -65,6 +78,7 @@ export async function getDashboardData(companyId: string) {
     prisma.issue.findMany({
       where: {
         companyId,
+        ...issueFilter,
         status: { in: OPEN_ISSUE_STATUSES },
       },
       include: {
@@ -74,13 +88,14 @@ export async function getDashboardData(companyId: string) {
       take: 12,
     }),
     prisma.inventoryItem.findMany({
-      where: { companyId },
+      where: { companyId, ...issueFilter },
       include: { property: true },
       orderBy: { name: "asc" },
     }),
     prisma.turnover.findMany({
       where: {
         companyId,
+        ...propertyFilter,
         createdAt: { gte: thirtyDaysAgo },
         status: { not: "CANCELLED" },
       },
@@ -101,7 +116,10 @@ export async function getDashboardData(companyId: string) {
       where: { companyId, active: true, type: { in: ["CLEANER", "COORDINATOR"] } },
       include: {
         assignments: {
-          where: { status: { in: ACTIVE_TURNOVER_STATUSES } },
+          where: {
+            status: { in: ACTIVE_TURNOVER_STATUSES },
+            ...propertyFilter,
+          },
           include: { property: true },
           orderBy: { windowStart: "asc" },
         },
@@ -111,6 +129,7 @@ export async function getDashboardData(companyId: string) {
     prisma.turnover.count({
       where: {
         companyId,
+        ...propertyFilter,
         ownerNotifiedAt: { not: null },
         updatedAt: { gte: thirtyDaysAgo },
       },

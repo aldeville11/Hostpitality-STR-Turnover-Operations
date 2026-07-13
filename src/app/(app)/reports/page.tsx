@@ -26,9 +26,9 @@ export default async function ReportsPage({
   const sp = await searchParams;
   const filters = parseReportFilters(sp);
   const [options, data, dataset] = await Promise.all([
-    getReportFilterOptions(user.companyId),
-    getReportingDashboard(user.companyId, filters),
-    getReportDataset(user.companyId, "overview", filters),
+    getReportFilterOptions(user.companyId, user.accessScope),
+    getReportingDashboard(user.companyId, filters, user.accessScope),
+    getReportDataset(user.companyId, "overview", filters, user.accessScope),
   ]);
 
   const period = formatReportPeriod(data.range.from, data.range.to);

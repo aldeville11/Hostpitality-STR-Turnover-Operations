@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { can } from "@/lib/rbac";
 import { listIssues } from "@/lib/issues";
 import { prisma } from "@/lib/db";
+import { propertyIdScopeWhere, propertyScopeWhere } from "@/lib/access-scope";
 import { PageHeader } from "@/components/ui";
 import { IssueList } from "@/components/issues/issue-list";
 import { IssueForm } from "@/components/issues/issue-form";
@@ -29,18 +30,23 @@ export default async function IssuesPage({
   };
 
   const [issues, properties, turnovers, vendors] = await Promise.all([
-    listIssues(user.companyId, {
-      ...filters,
-      blocking: filters.blocking === "1" ? true : undefined,
-    }),
+    listIssues(
+      user.companyId,
+      {
+        ...filters,
+        blocking: filters.blocking === "1" ? true : undefined,
+      },
+      user.accessScope
+    ),
     prisma.property.findMany({
-      where: { companyId: user.companyId, active: true },
+      where: { companyId: user.companyId, active: true, ...propertyScopeWhere(user.accessScope) },
       select: { id: true, name: true, unitCode: true },
       orderBy: { name: "asc" },
     }),
     prisma.turnover.findMany({
       where: {
         companyId: user.companyId,
+        ...propertyIdScopeWhere(user.accessScope),
         status: {
           in: [
             "SCHEDULED",

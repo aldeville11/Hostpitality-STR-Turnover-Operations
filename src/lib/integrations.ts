@@ -1,5 +1,6 @@
 import { prisma } from "./db";
 import { writeAuditLog } from "./audit";
+import { validateEntityOwnership } from "./tenant";
 import { parseJson } from "./json";
 import { enqueueJob } from "./jobs";
 
@@ -1085,6 +1086,7 @@ export async function listFilesForEntity(input: {
   entityType: string;
   entityId: string;
 }) {
+  await validateEntityOwnership(input.companyId, input.entityType, input.entityId);
   return prisma.storedFile.findMany({
     where: {
       companyId: input.companyId,
@@ -1115,6 +1117,8 @@ export async function attachStoredFile(input: {
     },
   });
   if (!storage) throw new Error("Connect and enable file storage first");
+
+  await validateEntityOwnership(input.companyId, input.entityType, input.entityId);
 
   const safeName = input.filename.trim().replace(/[^a-zA-Z0-9._-]/g, "_");
   const storageKey = `${input.companyId}/${input.entityType}/${input.entityId}/${Date.now()}-${safeName}`;

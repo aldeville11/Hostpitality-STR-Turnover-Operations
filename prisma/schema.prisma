@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -63,13 +63,19 @@ model User {
 }
 
 model Session {
-  id        String   @id @default(cuid())
-  token     String   @unique
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
   userId    String
   expiresAt DateTime
-  createdAt DateTime @default(now())
+  revokedAt DateTime?
+  rotatedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model Property {
@@ -287,6 +293,10 @@ model Turnover {
   statusEvents       TurnoverStatusEvent[]
   assignmentEvents   TurnoverAssignmentEvent[]
   qaInspections      QaInspection[]
+
+  @@index([companyId, status])
+  @@index([companyId, deadlineAt])
+  @@index([companyId, windowStart])
 }
 
 model TurnoverChecklistItem {
@@ -437,6 +447,8 @@ model Issue {
   assignee     Vendor?        @relation(fields: [assigneeVendorId], references: [id])
   comments     IssueComment[]
   events       IssueEvent[]
+
+  @@index([companyId, status])
 }
 
 model IssueComment {
@@ -507,22 +519,30 @@ model AuditLog {
 
   company Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
   user    User?    @relation(fields: [userId], references: [id])
+
+  @@index([companyId, createdAt])
 }
 
 model BackgroundJob {
-  id          String    @id @default(cuid())
-  companyId   String?
-  type        String
-  payloadJson String    @default("{}")
-  status      String    @default("PENDING")
-  runAt       DateTime  @default(now())
-  startedAt   DateTime?
-  completedAt DateTime?
-  error       String?
-  attempts    Int       @default(0)
-  createdAt   DateTime  @default(now())
+  id             String    @id @default(cuid())
+  companyId      String?
+  type           String
+  payloadJson    String    @default("{}")
+  status         String    @default("PENDING")
+  runAt          DateTime  @default(now())
+  startedAt      DateTime?
+  leaseExpiresAt DateTime?
+  claimToken     String?
+  completedAt    DateTime?
+  error          String?
+  attempts       Int       @default(0)
+  createdAt      DateTime  @default(now())
 
   company Company? @relation(fields: [companyId], references: [id])
+
+  @@index([status, runAt])
+  @@index([companyId, status])
+  @@index([status, leaseExpiresAt])
 }
 
 model Integration {

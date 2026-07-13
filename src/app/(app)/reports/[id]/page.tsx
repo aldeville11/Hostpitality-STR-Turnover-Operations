@@ -42,8 +42,8 @@ export default async function ReportDetailPage({
 
   const sp = await searchParams;
   const filters = parseReportFilters(sp);
-  const options = await getReportFilterOptions(user.companyId);
-  const dataset = await getReportDataset(user.companyId, view, filters);
+  const options = await getReportFilterOptions(user.companyId, user.accessScope);
+  const dataset = await getReportDataset(user.companyId, view, filters, user.accessScope);
 
   const turnoverStatuses = [
     "SCHEDULED",
@@ -71,19 +71,19 @@ export default async function ReportDetailPage({
   };
 
   if (view === "property") {
-    const data = await getPropertyReport(user.companyId, filters);
+    const data = await getPropertyReport(user.companyId, filters, user.accessScope);
     range = data.range;
     body = <PropertyReportView data={data} />;
   } else if (view === "qa") {
-    const data = await getQaIssueReport(user.companyId, filters);
+    const data = await getQaIssueReport(user.companyId, filters, user.accessScope);
     range = data.range;
     body = <QaReport data={data} />;
   } else if (view === "cleaners") {
-    const data = await getCleanerReport(user.companyId, filters);
+    const data = await getCleanerReport(user.companyId, filters, user.accessScope);
     range = data.range;
     body = <CleanerReportView data={data} />;
   } else {
-    const data = await getReportingDashboard(user.companyId, filters);
+    const data = await getReportingDashboard(user.companyId, filters, user.accessScope);
     range = data.range;
     body = <ReportDashboard data={data} />;
   }

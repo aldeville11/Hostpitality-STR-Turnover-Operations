@@ -5,6 +5,22 @@ import {
   parseRestockDefaults,
 } from "./properties";
 import { flattenSopSteps, parseSopDocument } from "./sops";
+import {
+  COMPANY_WIDE_SCOPE,
+  composePropertyIdFilter,
+  composePropertyPrimaryIdFilter,
+  propertyIdScopeWhere,
+  type AccessScope,
+} from "./access-scope";
+
+function scopedTurnoverWhere(scope: AccessScope, turnoverId: string) {
+  if (scope.allProperties) {
+    return { id: turnoverId };
+  }
+  return {
+    AND: [{ id: turnoverId }, propertyIdScopeWhere(scope)],
+  };
+}
 
 export const TURNOVER_STATUSES = [
   "DRAFT",
@@ -76,13 +92,17 @@ export function buildChecklistFromSop(contentJson: string | null | undefined) {
 
 export async function listTurnovers(
   companyId: string,
-  filters?: { status?: string; propertyId?: string; q?: string }
+  filters?: { status?: string; propertyId?: string; q?: string },
+  scope: AccessScope = COMPANY_WIDE_SCOPE
 ) {
+  const propertyFilter = composePropertyIdFilter(scope, filters?.propertyId);
+  if (propertyFilter.kind === "empty") return [];
+
   const turnovers = await prisma.turnover.findMany({
     where: {
       companyId,
+      ...propertyFilter.where,
       ...(filters?.status ? { status: filters.status } : {}),
-      ...(filters?.propertyId ? { propertyId: filters.propertyId } : {}),
       ...(filters?.q
         ? {
             OR: [
@@ -117,9 +137,13 @@ export async function listTurnovers(
   });
 }
 
-export async function getTurnoverDetail(companyId: string, turnoverId: string) {
+export async function getTurnoverDetail(
+  companyId: string,
+  turnoverId: string,
+  scope: AccessScope = COMPANY_WIDE_SCOPE
+) {
   const turnover = await prisma.turnover.findFirst({
-    where: { id: turnoverId, companyId },
+    where: { companyId, ...scopedTurnoverWhere(scope, turnoverId) },
     include: {
       property: {
         include: { defaultVendor: true },
@@ -327,11 +351,17 @@ export async function syncTurnoversFromCalendars(input: {
   companyId: string;
   userId: string;
   actorName?: string;
+  accessScope?: AccessScope;
 }) {
+  const scope = input.accessScope ?? COMPANY_WIDE_SCOPE;
+  const scopeFilter = composePropertyPrimaryIdFilter(scope);
+  if (scopeFilter.kind === "empty") return [];
+
   const properties = await prisma.property.findMany({
     where: {
       companyId: input.companyId,
       active: true,
+      ...scopeFilter.where,
       OR: [
         { calendarUrl: { not: null } },
         { bookingSource: { not: "manual" } },

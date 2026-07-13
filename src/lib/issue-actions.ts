@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import {
   addIssueComment,
   assignIssue,
@@ -13,6 +14,11 @@ import {
   type IssueSource,
   type IssueStatus,
 } from "@/lib/issues";
+import {
+  assertIssueInScope,
+  assertPropertyInScope,
+  assertTurnoverInScope,
+} from "@/lib/access-scope";
 
 function revalidateIssuePaths(issueId?: string, turnoverId?: string) {
   revalidatePath("/issues");
@@ -47,6 +53,10 @@ export async function createIssueAction(formData: FormData) {
   const redirectTo = String(formData.get("redirectTo") || "");
 
   try {
+    if (propertyId) await assertPropertyInScope(user.accessScope, propertyId);
+    if (turnoverId) {
+      await assertTurnoverInScope(user.companyId, user.accessScope, turnoverId);
+    }
     const issue = await createIssue({
       companyId: user.companyId,
       userId: user.id,
@@ -84,6 +94,7 @@ export async function updateIssueStatusAction(formData: FormData) {
   if (!issueId || !status) return { error: "Status required" };
 
   try {
+    await assertIssueInScope(user.companyId, user.accessScope, issueId);
     await updateIssueStatus({
       companyId: user.companyId,
       userId: user.id,
@@ -119,6 +130,7 @@ export async function assignIssueAction(formData: FormData) {
   if (!issueId) return { error: "Issue required" };
 
   try {
+    await assertIssueInScope(user.companyId, user.accessScope, issueId);
     await assignIssue({
       companyId: user.companyId,
       userId: user.id,
@@ -144,6 +156,7 @@ export async function escalateIssueAction(formData: FormData) {
   if (!issueId) return { error: "Issue required" };
 
   try {
+    await assertIssueInScope(user.companyId, user.accessScope, issueId);
     await escalateIssue({
       companyId: user.companyId,
       userId: user.id,
@@ -170,6 +183,7 @@ export async function addIssueCommentAction(formData: FormData) {
   if (!issueId || !body) return { error: "Comment required" };
 
   try {
+    await assertIssueInScope(user.companyId, user.accessScope, issueId);
     await addIssueComment({
       companyId: user.companyId,
       userId: user.id,
@@ -190,17 +204,29 @@ export async function createIssuesFromQaAction(formData: FormData) {
   if (!user.companyId) return { error: "No company" };
 
   const inspectionId = String(formData.get("inspectionId") || "");
-  const turnoverId = String(formData.get("turnoverId") || "");
+  const postedTurnoverId = String(formData.get("turnoverId") || "") || null;
   if (!inspectionId) return { error: "Inspection required" };
 
   try {
+    const inspection = await prisma.qaInspection.findFirst({
+      where: { id: inspectionId, companyId: user.companyId },
+      select: { id: true, turnoverId: true, turnover: { select: { propertyId: true } } },
+    });
+    if (!inspection) return { error: "Not found" };
+
+    if (postedTurnoverId && postedTurnoverId !== inspection.turnoverId) {
+      return { error: "Not found" };
+    }
+
+    await assertTurnoverInScope(user.companyId, user.accessScope, inspection.turnoverId);
+
     const ids = await createIssuesFromQaFailures({
       companyId: user.companyId,
       userId: user.id,
       actorName: user.name,
       inspectionId,
     });
-    revalidateIssuePaths(ids[0], turnoverId || undefined);
+    revalidateIssuePaths(ids[0], inspection.turnoverId);
     return { ok: true as const, count: ids.length };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Could not create issues" };

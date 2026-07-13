@@ -9,6 +9,7 @@ import {
   updateCleanerProfile,
   type AvailabilityStatus,
 } from "@/lib/cleaners";
+import { assertTurnoverInScope } from "@/lib/access-scope";
 
 function revalidateCleanerPaths(cleanerId?: string, turnoverId?: string) {
   revalidatePath("/cleaners");
@@ -32,6 +33,7 @@ export async function assignFromCleanersAction(formData: FormData) {
   if (!turnoverId) return { error: "Turnover required" };
 
   try {
+    await assertTurnoverInScope(user.companyId, user.accessScope, turnoverId);
     const result = await assignCleanerToTurnover({
       companyId: user.companyId,
       userId: user.id,
@@ -65,6 +67,12 @@ export async function previewAssignmentConflictsAction(formData: FormData) {
   const turnoverId = String(formData.get("turnoverId") || "");
   const vendorId = String(formData.get("vendorId") || "");
   if (!turnoverId || !vendorId) return { conflicts: [] };
+
+  try {
+    await assertTurnoverInScope(user.companyId, user.accessScope, turnoverId);
+  } catch {
+    return { conflicts: [] };
+  }
 
   const { conflicts } = await evaluateAssignmentConflicts({
     companyId: user.companyId,

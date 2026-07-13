@@ -1,6 +1,19 @@
 import { prisma } from "./db";
 import { writeAuditLog } from "./audit";
 import { parseJson } from "./json";
+import {
+  validatePropertyId,
+  validateQaInspectionId,
+  validateTurnoverId,
+  validateVendorId,
+} from "./tenant";
+import {
+  COMPANY_WIDE_SCOPE,
+  composePropertyIdFilter,
+  issuePropertyScopeWhere,
+  propertyScopeWhere,
+  type AccessScope,
+} from "./access-scope";
 
 export const ISSUE_STATUSES = [
   "OPEN",
@@ -219,18 +232,22 @@ export async function listIssues(
     to?: string;
     q?: string;
     blocking?: boolean;
-  }
+  },
+  scope: AccessScope = COMPANY_WIDE_SCOPE
 ) {
   const fromDate = filters?.from ? new Date(filters.from) : undefined;
   const toDate = filters?.to ? new Date(filters.to) : undefined;
   if (toDate) toDate.setHours(23, 59, 59, 999);
 
+  const propertyFilter = composePropertyIdFilter(scope, filters?.propertyId);
+  if (propertyFilter.kind === "empty") return [];
+
   const issues = await prisma.issue.findMany({
     where: {
       companyId,
+      ...propertyFilter.where,
       ...(filters?.status ? { status: filters.status } : {}),
       ...(filters?.severity ? { severity: filters.severity } : {}),
-      ...(filters?.propertyId ? { propertyId: filters.propertyId } : {}),
       ...(filters?.blocking ? { blocking: true } : {}),
       ...(fromDate || toDate
         ? {
@@ -280,9 +297,18 @@ export async function listIssues(
   });
 }
 
-export async function getIssueDetail(companyId: string, issueId: string) {
+export async function getIssueDetail(
+  companyId: string,
+  issueId: string,
+  scope: AccessScope = COMPANY_WIDE_SCOPE
+) {
   const issue = await prisma.issue.findFirst({
-    where: { id: issueId, companyId },
+    where: {
+      companyId,
+      ...(scope.allProperties
+        ? { id: issueId }
+        : { AND: [{ id: issueId }, issuePropertyScopeWhere(scope)] }),
+    },
     include: {
       property: {
         include: {
@@ -313,6 +339,12 @@ export async function getIssueDetail(companyId: string, issueId: string) {
   });
   if (!issue) return null;
 
+  const turnoverPickFilter = composePropertyIdFilter(scope);
+  const turnoverScopeWhere =
+    turnoverPickFilter.kind === "empty"
+      ? { id: "__none__" }
+      : turnoverPickFilter.where;
+
   const [vendors, users, properties, turnovers] = await Promise.all([
     prisma.vendor.findMany({
       where: { companyId, active: true },
@@ -324,13 +356,14 @@ export async function getIssueDetail(companyId: string, issueId: string) {
       orderBy: { name: "asc" },
     }),
     prisma.property.findMany({
-      where: { companyId, active: true },
+      where: { companyId, active: true, ...propertyScopeWhere(scope) },
       select: { id: true, name: true, unitCode: true },
       orderBy: { name: "asc" },
     }),
     prisma.turnover.findMany({
       where: {
         companyId,
+        ...turnoverScopeWhere,
         status: {
           in: [
             "SCHEDULED",
@@ -391,15 +424,23 @@ export async function createIssue(input: {
   let propertyId = input.propertyId ?? null;
   let assigneeName: string | null = null;
 
-  if (input.turnoverId && !propertyId) {
+  propertyId = await validatePropertyId(input.companyId, propertyId);
+  const turnoverId = await validateTurnoverId(input.companyId, input.turnoverId ?? null);
+  const qaInspectionId = await validateQaInspectionId(
+    input.companyId,
+    input.qaInspectionId ?? null
+  );
+
+  if (turnoverId && !propertyId) {
     const turnover = await prisma.turnover.findFirst({
-      where: { id: input.turnoverId, companyId: input.companyId },
+      where: { id: turnoverId, companyId: input.companyId },
       select: { propertyId: true },
     });
     propertyId = turnover?.propertyId ?? null;
   }
 
   if (input.assigneeVendorId) {
+    await validateVendorId(input.companyId, input.assigneeVendorId);
     const vendor = await prisma.vendor.findFirst({
       where: { id: input.assigneeVendorId, companyId: input.companyId },
     });
@@ -417,8 +458,8 @@ export async function createIssue(input: {
     data: {
       companyId: input.companyId,
       propertyId,
-      turnoverId: input.turnoverId ?? null,
-      qaInspectionId: input.qaInspectionId ?? null,
+      turnoverId,
+      qaInspectionId,
       title: input.title.trim(),
       description: input.description.trim(),
       severity,
@@ -457,12 +498,11 @@ export async function createIssue(input: {
     });
   }
 
-  if (input.blocking && input.turnoverId) {
+  if (input.blocking && turnoverId) {
     const turnover = await prisma.turnover.findFirst({
-      where: { id: input.turnoverId, companyId: input.companyId },
+      where: { id: turnoverId, companyId: input.companyId },
     });
     if (turnover && !["COMPLETED", "BLOCKED"].includes(turnover.status)) {
-      // Soft signal: escalate turnover timestamp; don't force BLOCKED unless already blocked source
       await prisma.turnover.update({
         where: { id: turnover.id },
         data: { escalatedAt: turnover.escalatedAt ?? new Date() },
@@ -669,8 +709,8 @@ export async function escalateIssue(input: {
   });
 
   if (issue.turnoverId) {
-    await prisma.turnover.update({
-      where: { id: issue.turnoverId },
+    await prisma.turnover.updateMany({
+      where: { id: issue.turnoverId, companyId: input.companyId },
       data: { escalatedAt: new Date() },
     });
   }

@@ -3,6 +3,13 @@ import { writeAuditLog } from "./audit";
 import { parsePhotoRequirements } from "./properties";
 import { parseSowDocument } from "./sows";
 import { recordStatusChange } from "./turnovers";
+import {
+  COMPANY_WIDE_SCOPE,
+  composePropertyIdFilter,
+  propertyIdScopeWhere,
+  propertyScopeWhere,
+  type AccessScope,
+} from "./access-scope";
 
 export const QA_STATUSES = ["PENDING", "APPROVED", "REJECTED", "NEEDS_REWORK"] as const;
 export type QaStatus = (typeof QA_STATUSES)[number];
@@ -65,7 +72,8 @@ export async function listQaQueue(
     propertyId?: string;
     inspectorId?: string;
     q?: string;
-  }
+  },
+  scope: AccessScope = COMPANY_WIDE_SCOPE
 ) {
   // Queue shows turnovers awaiting/in QA, plus recent closed QA for context when filtered
   const qaStatusFilter = filters?.status
@@ -84,11 +92,14 @@ export async function listQaQueue(
             : {}
     : { status: { in: [...QUEUE_TURNOVER_STATUSES] } };
 
+  const propertyFilter = composePropertyIdFilter(scope, filters?.propertyId);
+  if (propertyFilter.kind === "empty") return [];
+
   const turnovers = await prisma.turnover.findMany({
     where: {
       companyId,
+      ...propertyFilter.where,
       ...qaStatusFilter,
-      ...(filters?.propertyId ? { propertyId: filters.propertyId } : {}),
       ...(filters?.inspectorId
         ? {
             qaInspections: {
@@ -273,9 +284,18 @@ export async function ensureQaInspection(input: {
   return inspection;
 }
 
-export async function getQaDetail(companyId: string, turnoverId: string) {
+export async function getQaDetail(
+  companyId: string,
+  turnoverId: string,
+  scope: AccessScope = COMPANY_WIDE_SCOPE
+) {
   const turnover = await prisma.turnover.findFirst({
-    where: { id: turnoverId, companyId },
+    where: {
+      companyId,
+      ...(scope.allProperties
+        ? { id: turnoverId }
+        : { AND: [{ id: turnoverId }, propertyIdScopeWhere(scope)] }),
+    },
     include: {
       property: { include: { defaultVendor: true } },
       vendor: true,
@@ -315,7 +335,7 @@ export async function getQaDetail(companyId: string, turnoverId: string) {
   });
 
   const properties = await prisma.property.findMany({
-    where: { companyId, active: true },
+    where: { companyId, active: true, ...propertyScopeWhere(scope) },
     select: { id: true, name: true, unitCode: true },
     orderBy: { name: "asc" },
   });

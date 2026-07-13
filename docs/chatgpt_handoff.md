@@ -1,12 +1,39 @@
 # Hostpitality — Project Handoff
 
+## Production Foundation v1 (2026-07-13)
+
+**Branch:** `cursor/production-foundation-v1`
+
+**Database:** PostgreSQL via Prisma migrations (`baseline_postgresql`, `query_indexes`, `session_hmac_additive`, `session_drop_raw_token_contract`, `job_claim_fencing`). SQLite is not a production runtime.
+
+**Security hardening:**
+- `src/lib/env.server.ts` — lazy validation, fail-closed production; `JOB_LEASE_SECONDS` bounded 60–3600 (default 900)
+- Session HMAC-SHA-256 (`SESSION_PEPPER`), no raw token storage
+- Auth bypass requires `ALLOW_AUTH_BYPASS=true` in development only; bypass 404 does not disclose demo email
+- `POST /api/jobs/process` requires `CRON_SECRET`; customer global job trigger removed
+- Redis rate limiting on login/signup (fail closed in production)
+- **Source-derived** tenant audit: `docs/audits/tenant-isolation.csv` via `npm run audit:authorization` (**281 paths**: 248 Verified safe, 28 Fixed, 5 Not tenant-owned, **0 Unresolved**; 75 server actions)
+- **accessScope (Option A):** `composePropertyIdFilter` + SOP/SOW `assertPropertyIdsAuthorizedForLink` (atomic)
+- Job claim fencing: `claimToken` + `leaseExpiresAt`; terminal updates require matching claim. Fencing does **not** imply exactly-once side effects — `turnover.remind` / `notification.dispatch` are **at-least-once** with best-effort audit-key suppression; `turnover.overdue_check` is effectively-once for status. See `docs/ops/database.md`.
+- Demo seed: local disposable hosts only; RFC1918 requires exact allowlist + `SEED_CONFIRM_REMOTE`
+- Rate-limit IP identity: `TRUST_PROXY=none|vercel|single-hop` (`docs/ops/rate-limiting.md`)
+- Vitest + `.github/workflows/ci.yml` includes `audit:authorization`
+
+**Monitoring:** Provider-neutral logger adapter only. External alerting is an accepted operational risk.
+
+**F-L1 disposition:** `revokeSessionsOnPasswordChange` is a documented future-hook helper — no password-change product path in v1.
+
+**Verification:** see PR #16 CI and local `npm run verify`.
+
+---
+
 ## 1. Product Summary
 
 Hostpitality is a Next.js web application for **short-term rental (STR) turnover operations** — coordinating cleaning windows, field staff, quality assurance, issues, and operational standards across a property portfolio. Evidence: `README.md`, `package.json` description, and UI copy in `src/components/sidebar.tsx`.
 
 It serves **property managers, cleaning coordinators, ops managers, and field vendors/cleaners** via role-based access (`src/lib/rbac.ts`). The core problem is running repeatable guest-ready turnovers: schedule jobs from bookings, assign cleaners, execute SOP/SOW checklists, pass QA/photo review, track defects, and report portfolio health.
 
-The main workflow: **onboard a company → configure properties, SOPs, SOWs, and vendors → run daily turnovers → assign cleaners → complete checklists → QA review → resolve issues → report and notify owners**. Data persists in SQLite via Prisma (`prisma/schema.prisma`). The intended outcome is a single **enterprise operations command center** (dashboard, lists, detail pages, launch readiness) with auditable status transitions and background jobs for reminders and overdue checks (`src/lib/jobs.ts`).
+The main workflow: **onboard a company → configure properties, SOPs, SOWs, and vendors → run daily turnovers → assign cleaners → complete checklists → QA review → resolve issues → report and notify owners**. Data persists in **PostgreSQL** via Prisma (`prisma/schema.prisma`).
 
 ## 2. Current User Experience
 
@@ -24,7 +51,7 @@ Users can list/filter/sort operational entities, open detail pages, run server a
 
 Verified in code:
 
-- **Auth & RBAC:** Session cookies, bcrypt passwords, six roles, permission gates (`src/lib/auth.ts`, `src/lib/rbac.ts`)
+- **Auth & RBAC:** Session cookies (HMAC `tokenHash` only), bcrypt passwords, six roles, permission gates (`src/lib/auth.ts`, `src/lib/rbac.ts`), plus optional property `accessScope` enforced after company tenancy (`src/lib/access-scope.ts`)
 - **Audit logging:** `AuditLog` model + `writeAuditLog` (`src/lib/audit.ts`)
 - **Onboarding:** Multi-step wizard, `markStep`, `activateWorkspace` (`src/lib/onboarding.ts`, `src/lib/onboarding-actions.ts`)
 - **Dashboard:** Live metrics from `getDashboardData` (`src/lib/dashboard.ts`, `src/app/(app)/dashboard/page.tsx`)
@@ -49,7 +76,7 @@ Verified in code:
 | **Framework** | Next.js 16 App Router, React 19, TypeScript, Tailwind v4 (`package.json`) |
 | **Frontend** | `src/app/**` routes; `src/components/**` UI; shared tokens in `src/app/globals.css`; enterprise shell in `src/components/app-shell.tsx`, `src/components/sidebar.tsx` |
 | **Backend** | Server Components + `"use server"` actions in `src/lib/*-actions.ts`; minimal API routes under `src/app/api/` |
-| **Database** | Prisma 5 + **SQLite** (`prisma/schema.prisma`, `DATABASE_URL`) |
+| **Database** | Prisma 5 + **PostgreSQL** (`prisma/schema.prisma`, `DATABASE_URL`); SQLite only as offline transfer source |
 | **Auth** | Cookie sessions (`Session` model); `requireUser({ permission })` redirects |
 | **Integrations** | Prisma `Integration` records; `ensureIntegrations` seeds catalog; `runIntegrationSync` writes bookings/calendar events/files via **mock data** |
 | **Deploy config** | `next build` / `next start`; `next.config.ts` sets `allowedDevOrigins` for cloud preview; no Docker/k8s in repo |
@@ -113,7 +140,8 @@ Verified in code:
 - `README.md` lists only Phases 1–4; git history includes Phases 5–14 (docs drift).
 
 **Operational notes:**
-- SQLite + file DB (`file:./dev.db`) — not a multi-tenant production datastore without migration.
+- PostgreSQL is required for production; see `docs/ops/database.md` for migration and transfer procedures.
+- **Accepted (v1):** `turnover.remind` / `notification.dispatch` are at-least-once; audit keys are best-effort. A crash between the side effect and the audit-marker write can create a duplicate guest/vendor notification. Operators and providers should tolerate duplicates. Stronger guarantees need a transactional outbox or provider idempotency (not in v1). See `docs/ops/database.md`.
 - Smoke reports “1 failed remaining” background job after processing (`scripts/smoke-core.ts` output) while still passing all checks.
 - Inventory page does not enforce `inventory:manage` permission despite RBAC defining it.
 

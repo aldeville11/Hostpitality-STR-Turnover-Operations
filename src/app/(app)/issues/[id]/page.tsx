@@ -15,7 +15,7 @@ export default async function IssueDetailPage({
   const user = await requireUser({ permission: "issues:manage" });
   if (!user.companyId) redirect("/onboarding");
 
-  const data = await getIssueDetail(user.companyId, id);
+  const data = await getIssueDetail(user.companyId, id, user.accessScope);
   if (!data) notFound();
 
   return (

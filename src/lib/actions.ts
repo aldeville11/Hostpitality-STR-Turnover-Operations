@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
@@ -9,16 +10,23 @@ import {
   getCurrentUser,
   hashPassword,
   loginWithCredentials,
-  requireUser,
 } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/audit";
 import { slugify } from "@/lib/utils";
-import { processDueJobs } from "@/lib/jobs";
+import { checkSignupRateLimits } from "@/lib/rate-limit";
+import { getServerEnv } from "@/lib/env.server";
+import { resolveClientIp } from "@/lib/client-ip";
+
+async function clientIp(): Promise<string> {
+  const h = await headers();
+  return resolveClientIp(h).ip;
+}
 
 export async function loginAction(formData: FormData) {
   const email = String(formData.get("email") || "");
   const password = String(formData.get("password") || "");
-  const result = await loginWithCredentials(email, password);
+  const ip = await clientIp();
+  const result = await loginWithCredentials(email, password, { ip });
   if ("error" in result && result.error) {
     return { error: result.error };
   }
@@ -63,6 +71,20 @@ export async function signupAction(formData: FormData) {
 
   if (!parsed.success) {
     return { error: "Please fill all fields correctly." };
+  }
+
+  const env = getServerEnv();
+  if (env.isProduction || env.redisUrl) {
+    const rate = await checkSignupRateLimits({
+      email: parsed.data.email,
+      ip: await clientIp(),
+    });
+    if (!rate.ok) {
+      if (rate.reason === "RATE_LIMITED") {
+        return { error: "Too many signup attempts. Please try again later." };
+      }
+      return { error: "Service temporarily unavailable. Please try again later." };
+    }
   }
 
   const email = parsed.data.email.toLowerCase().trim();
@@ -114,9 +136,4 @@ export async function signupAction(formData: FormData) {
 
   await createSession(user.id);
   redirect("/onboarding/company");
-}
-
-export async function processJobsAction() {
-  await requireUser({ permission: "settings:manage" });
-  await processDueJobs(25);
 }

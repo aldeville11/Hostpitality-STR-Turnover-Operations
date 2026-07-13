@@ -18,7 +18,7 @@ export default async function CleanerDetailPage({
     redirect("/dashboard");
   }
 
-  const data = await getCleanerDetail(user.companyId, id);
+  const data = await getCleanerDetail(user.companyId, id, user.accessScope);
   if (!data) notFound();
 
   return (

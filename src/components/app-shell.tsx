@@ -8,9 +8,11 @@ import { cn } from "@/lib/utils";
 export function AppShell({
   children,
   user,
+  devBypassActive,
 }: {
   children: React.ReactNode;
   user: { name: string; email: string; role: string; companyName: string };
+  devBypassActive?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -26,6 +28,8 @@ export function AppShell({
           onToggleCollapsed={() => setCollapsed((v) => !v)}
           userName={user.name}
           companyName={user.companyName}
+          userRole={user.role}
+          devBypassActive={devBypassActive}
         />
         <main
           className={cn(

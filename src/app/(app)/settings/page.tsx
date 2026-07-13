@@ -4,7 +4,6 @@ import { requireUser } from "@/lib/auth";
 import {
   PageHeader,
   Badge,
-  Button,
   Stat,
   ModuleCard,
   DetailFactGrid,
@@ -12,7 +11,6 @@ import {
 } from "@/components/ui";
 import { SettingsNav } from "@/components/settings/settings-nav";
 import { getSettingsOverview, SETTINGS_SECTION_DESCRIPTIONS, SETTINGS_SECTIONS } from "@/lib/settings";
-import { processJobsAction } from "@/lib/actions";
 
 export default async function SettingsPage() {
   const user = await requireUser({ permission: "settings:manage" });
@@ -61,14 +59,7 @@ export default async function SettingsPage() {
 
         <ModuleCard
           title="Feature flags"
-          description="Company-level capability toggles and background job control."
-          actions={
-            <form action={processJobsAction}>
-              <Button type="submit" variant="outline" size="sm">
-                Process due jobs
-              </Button>
-            </form>
-          }
+          description="Company-level capability toggles."
         >
           <ul className="space-y-2 text-sm">
             {Object.entries(data.company.systemSettings.featureFlags).map(([key, on]) => (

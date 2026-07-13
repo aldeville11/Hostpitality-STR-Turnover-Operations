@@ -1,6 +1,11 @@
 import { prisma } from "./db";
 import { writeAuditLog } from "./audit";
 import { parseJson } from "./json";
+import {
+  assertPropertyIdsAuthorizedForLink,
+  propertyLinkMutationScopeWhere,
+  type AccessScope,
+} from "./access-scope";
 
 export const SOW_STATUSES = [
   "DRAFT",
@@ -914,30 +919,36 @@ export async function linkPropertiesToSow(input: {
   sowId: string;
   propertyIds: string[];
   userId: string;
+  accessScope: AccessScope;
 }) {
   const sow = await prisma.sow.findFirst({
     where: { id: input.sowId, companyId: input.companyId },
   });
   if (!sow) throw new Error("SOW template not found");
 
-  const properties = await prisma.property.findMany({
-    where: { companyId: input.companyId, id: { in: input.propertyIds } },
-    select: { id: true },
-  });
-  const ids = properties.map((p) => p.id);
+  const ids = await assertPropertyIdsAuthorizedForLink(
+    input.companyId,
+    input.accessScope,
+    input.propertyIds
+  );
 
   await prisma.property.updateMany({
     where: {
       companyId: input.companyId,
       sowId: input.sowId,
       id: { notIn: ids.length ? ids : ["__none__"] },
+      ...propertyLinkMutationScopeWhere(input.accessScope),
     },
     data: { sowId: null },
   });
 
   if (ids.length) {
     await prisma.property.updateMany({
-      where: { companyId: input.companyId, id: { in: ids } },
+      where: {
+        companyId: input.companyId,
+        id: { in: ids },
+        ...propertyLinkMutationScopeWhere(input.accessScope),
+      },
       data: { sowId: input.sowId },
     });
   }

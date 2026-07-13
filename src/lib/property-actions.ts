@@ -4,6 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
+import {
+  validateSopId,
+  validateSowId,
+  validateVendorId,
+} from "@/lib/tenant";
+import { assertPropertyInScope } from "@/lib/access-scope";
 import { writeAuditLog } from "@/lib/audit";
 import {
   DEFAULT_PHOTO_REQUIREMENTS,
@@ -46,6 +52,10 @@ function parseLinesToRestock(raw: string): RestockDefault[] {
 export async function createPropertyAction(formData: FormData) {
   const user = await requireUser({ permission: "properties:manage" });
   if (!user.companyId) return { error: "No company" };
+  // Restricted property scopes cannot widen portfolio via create
+  if (!user.accessScope.allProperties) {
+    return { error: "Not found" };
+  }
 
   const name = String(formData.get("name") || "").trim();
   const unitCode = String(formData.get("unitCode") || "").trim();
@@ -104,6 +114,11 @@ export async function updatePropertyProfileAction(formData: FormData) {
     where: { id, companyId: user.companyId },
   });
   if (!property) return { error: "Property not found" };
+  try {
+    await assertPropertyInScope(user.accessScope, property.id);
+  } catch {
+    return { error: "Not found" };
+  }
 
   const name = String(formData.get("name") || "").trim();
   const unitCode = String(formData.get("unitCode") || "").trim();
@@ -166,10 +181,18 @@ export async function updatePropertySettingsAction(formData: FormData) {
     where: { id, companyId: user.companyId },
   });
   if (!property) return { error: "Property not found" };
+  try {
+    await assertPropertyInScope(user.accessScope, property.id);
+  } catch {
+    return { error: "Not found" };
+  }
 
-  const sopId = String(formData.get("sopId") || "") || null;
-  const sowId = String(formData.get("sowId") || "") || null;
-  const defaultVendorId = String(formData.get("defaultVendorId") || "") || null;
+  const sopId = await validateSopId(user.companyId, String(formData.get("sopId") || "") || null);
+  const sowId = await validateSowId(user.companyId, String(formData.get("sowId") || "") || null);
+  const defaultVendorId = await validateVendorId(
+    user.companyId,
+    String(formData.get("defaultVendorId") || "") || null
+  );
   const accessNotes = String(formData.get("accessNotes") || "").trim() || null;
   const turnoverBufferMins = Number(formData.get("turnoverBufferMins") || 60);
   const sameDayTurnover = String(formData.get("sameDayTurnover") || "true") === "true";
@@ -216,6 +239,12 @@ export async function updatePropertyCalendarAction(formData: FormData) {
     where: { id, companyId: user.companyId },
   });
   if (!property) return { error: "Property not found" };
+
+  try {
+    await assertPropertyInScope(user.accessScope, property.id);
+  } catch {
+    return { error: "Not found" };
+  }
 
   const calendarUrl = String(formData.get("calendarUrl") || "").trim() || null;
   const bookingSource = String(formData.get("bookingSource") || "manual");

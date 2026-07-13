@@ -1,9 +1,11 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { assertDemoSeedAllowed } from "../src/lib/seed-guard";
 
 const prisma = new PrismaClient();
 
 async function main() {
+  assertDemoSeedAllowed();
   await prisma.backgroundJob.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.auditLog.deleteMany();

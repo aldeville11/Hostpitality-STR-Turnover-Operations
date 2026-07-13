@@ -14,7 +14,7 @@ export default async function PropertiesPage({
   if (!user.companyId) redirect("/onboarding");
 
   const filters = await searchParams;
-  const properties = await listProperties(user.companyId);
+  const properties = await listProperties(user.companyId, user.accessScope);
 
   return (
     <div className="space-y-4">

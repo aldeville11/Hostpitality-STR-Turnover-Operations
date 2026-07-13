@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "cursor/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: hostpitality
+          POSTGRES_PASSWORD: hostpitality_test
+          POSTGRES_DB: hostpitality_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hostpitality -d hostpitality_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://hostpitality:hostpitality_test@localhost:5432/hostpitality_test?schema=public
+      TEST_DATABASE_URL: postgresql://hostpitality:hostpitality_test@localhost:5432/hostpitality_test?schema=public
+      SESSION_PEPPER: ci-session-pepper-32-characters-minimum
+      CRON_SECRET: ci-cron-secret
+      REDIS_URL: redis://localhost:6379
+      RATE_LIMIT_PEPPER: ci-rate-limit-pepper
+      LOG_LEVEL: error
+      JOB_BATCH_SIZE: "25"
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma validate
+        run: npx prisma validate
+
+      - name: Prisma generate
+        run: npx prisma generate
+
+      - name: Prisma migrate deploy
+        run: npx prisma migrate deploy
+
+      - name: Authorization audit inventory
+        run: npm run audit:authorization
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests
+        run: npm run test:ci
+
+      - name: Security tests
+        run: npm run test:security
+
+      - name: Smoke tests
+        run: npm run smoke
+
+      - name: Production build
+        run: npm run build
+
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
