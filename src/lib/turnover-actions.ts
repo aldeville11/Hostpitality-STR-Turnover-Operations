@@ -30,6 +30,7 @@ export async function syncTurnoversAction() {
     companyId: user.companyId,
     userId: user.id,
     actorName: user.name,
+    accessScope: user.accessScope,
   });
 
   revalidateTurnoverPaths();
@@ -135,6 +136,12 @@ export async function assignCleanerAction(formData: FormData) {
 
   if (!id) return { error: "Turnover required" };
 
+  try {
+    await assertTurnoverInScope(user.companyId, user.accessScope, id);
+  } catch {
+    return { error: "Not found" };
+  }
+
   const { assignCleanerToTurnover } = await import("@/lib/cleaners");
 
   // Turnover detail stays fast: override warnings by default, but still record them.
@@ -187,6 +194,12 @@ export async function toggleChecklistItemAction(formData: FormData) {
     return { error: "Checklist item not found" };
   }
 
+  try {
+    await assertTurnoverInScope(user.companyId, user.accessScope, item.turnoverId);
+  } catch {
+    return { error: "Not found" };
+  }
+
   const completed = !item.completed;
   await prisma.turnoverChecklistItem.update({
     where: { id: itemId },
@@ -215,6 +228,12 @@ export async function regenerateChecklistAction(formData: FormData) {
   if (!user.companyId) return { error: "No company" };
 
   const id = String(formData.get("id") || "");
+  try {
+    await assertTurnoverInScope(user.companyId, user.accessScope, id);
+  } catch {
+    return { error: "Not found" };
+  }
+
   const turnover = await prisma.turnover.findFirst({
     where: { id, companyId: user.companyId },
     include: { sop: true },

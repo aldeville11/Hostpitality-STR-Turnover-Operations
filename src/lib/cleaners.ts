@@ -5,6 +5,8 @@ import { recordAssignmentChange, recordStatusChange } from "./turnovers";
 import { endOfDay, startOfDay } from "./utils";
 import {
   COMPANY_WIDE_SCOPE,
+  composePropertyIdFilter,
+  isPropertyInScope,
   propertyIdScopeWhere,
   propertyScopeWhere,
   type AccessScope,
@@ -314,12 +316,27 @@ export async function listCleaners(
   });
 }
 
-export async function getCleanerDetail(companyId: string, cleanerId: string) {
+export async function getCleanerDetail(
+  companyId: string,
+  cleanerId: string,
+  scope: AccessScope = COMPANY_WIDE_SCOPE
+) {
+  const assignmentScope = composePropertyIdFilter(scope);
+  if (assignmentScope.kind === "empty") {
+    // Vendor identity may still be visible company-wide when permitted by RBAC page gate,
+    // but property-linked workloads are empty for empty restricted scopes.
+  }
+
   const vendor = await prisma.vendor.findFirst({
     where: { id: cleanerId, companyId },
     include: {
       assignments: {
-        where: { status: { in: OPEN_STATUSES } },
+        where: {
+          status: { in: OPEN_STATUSES },
+          ...(assignmentScope.kind === "empty"
+            ? { id: "__none__" }
+            : assignmentScope.where),
+        },
         include: {
           property: true,
           sop: true,
@@ -329,7 +346,7 @@ export async function getCleanerDetail(companyId: string, cleanerId: string) {
         orderBy: { windowStart: "asc" },
       },
       defaultProperties: {
-        where: { active: true },
+        where: { active: true, ...propertyScopeWhere(scope) },
         select: {
           id: true,
           name: true,
@@ -344,21 +361,26 @@ export async function getCleanerDetail(companyId: string, cleanerId: string) {
   if (!vendor) return null;
 
   const horizon = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
-  const unassigned = await prisma.turnover.findMany({
-    where: {
-      companyId,
-      vendorId: null,
-      status: { in: ["DRAFT", "SCHEDULED", "BLOCKED", "OVERDUE"] },
-      windowStart: { lte: horizon },
-    },
-    include: { property: true, sow: true },
-    orderBy: { windowStart: "asc" },
-    take: 20,
-  });
+  const unassigned =
+    assignmentScope.kind === "empty"
+      ? []
+      : await prisma.turnover.findMany({
+          where: {
+            companyId,
+            vendorId: null,
+            status: { in: ["DRAFT", "SCHEDULED", "BLOCKED", "OVERDUE"] },
+            windowStart: { lte: horizon },
+            ...assignmentScope.where,
+          },
+          include: { property: true, sow: true },
+          orderBy: { windowStart: "asc" },
+          take: 20,
+        });
 
-  const assignmentHistory = await prisma.turnoverAssignmentEvent.findMany({
+  const assignmentHistoryRaw = await prisma.turnoverAssignmentEvent.findMany({
     where: {
       OR: [{ toVendorId: vendor.id }, { fromVendorId: vendor.id }],
+      turnover: { companyId },
     },
     include: {
       turnover: {
@@ -366,8 +388,11 @@ export async function getCleanerDetail(companyId: string, cleanerId: string) {
       },
     },
     orderBy: { createdAt: "desc" },
-    take: 40,
+    take: 80,
   });
+  const assignmentHistory = assignmentHistoryRaw
+    .filter((e) => isPropertyInScope(scope, e.turnover.propertyId))
+    .slice(0, 40);
 
   // Workload by date for next 7 days
   const days: Array<{

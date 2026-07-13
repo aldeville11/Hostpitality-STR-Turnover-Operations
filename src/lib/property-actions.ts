@@ -240,6 +240,12 @@ export async function updatePropertyCalendarAction(formData: FormData) {
   });
   if (!property) return { error: "Property not found" };
 
+  try {
+    await assertPropertyInScope(user.accessScope, property.id);
+  } catch {
+    return { error: "Not found" };
+  }
+
   const calendarUrl = String(formData.get("calendarUrl") || "").trim() || null;
   const bookingSource = String(formData.get("bookingSource") || "manual");
   const markSynced = String(formData.get("markSynced") || "") === "true";

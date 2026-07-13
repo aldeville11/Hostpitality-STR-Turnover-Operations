@@ -76,6 +76,58 @@ export function issuePropertyScopeWhere(
   return { propertyId: { in: scope.propertyIds } };
 }
 
+/**
+ * Safe propertyId filter composition.
+ * Never authorize via duplicate object-key overwrite / spread order.
+ *
+ * - company-wide + optional exact id → exact id (caller still enforces companyId)
+ * - restricted + no id → { in: allowed }
+ * - restricted + allowed id → exact id
+ * - restricted + out-of-scope / empty scope → empty (fail closed)
+ */
+export type ScopedPropertyFilter =
+  | { kind: "empty" }
+  | { kind: "where"; where: Record<string, never> | { propertyId: string } | { propertyId: { in: string[] } } };
+
+export function composePropertyIdFilter(
+  scope: AccessScope,
+  requestedPropertyId?: string | null
+): ScopedPropertyFilter {
+  const requested = requestedPropertyId?.trim() || null;
+
+  if (requested) {
+    if (!isPropertyInScope(scope, requested)) {
+      return { kind: "empty" };
+    }
+    return { kind: "where", where: { propertyId: requested } };
+  }
+
+  if (scope.allProperties) {
+    return { kind: "where", where: {} };
+  }
+
+  if (scope.propertyIds.length === 0) {
+    return { kind: "empty" };
+  }
+
+  return { kind: "where", where: { propertyId: { in: scope.propertyIds } } };
+}
+
+/** Same composition for Property.id field (lists of properties). */
+export function composePropertyPrimaryIdFilter(
+  scope: AccessScope,
+  requestedPropertyId?: string | null
+): { kind: "empty" } | { kind: "where"; where: Record<string, never> | { id: string } | { id: { in: string[] } } } {
+  const requested = requestedPropertyId?.trim() || null;
+  if (requested) {
+    if (!isPropertyInScope(scope, requested)) return { kind: "empty" };
+    return { kind: "where", where: { id: requested } };
+  }
+  if (scope.allProperties) return { kind: "where", where: {} };
+  if (scope.propertyIds.length === 0) return { kind: "empty" };
+  return { kind: "where", where: { id: { in: scope.propertyIds } } };
+}
+
 export function isPropertyInScope(scope: AccessScope, propertyId: string | null | undefined): boolean {
   if (scope.allProperties) return true;
   if (!propertyId) return false;

@@ -15,6 +15,7 @@ import {
   type SystemSettings,
   type WorkingHours,
 } from "@/lib/settings";
+import { assertPropertyInScope } from "@/lib/access-scope";
 
 function revalidateSettings(section?: string) {
   revalidatePath("/settings");
@@ -107,6 +108,7 @@ export async function updatePropertyDefaultsAction(formData: FormData) {
   if (!propertyId) return { error: "Property required" };
 
   try {
+    await assertPropertyInScope(user.accessScope, propertyId);
     await updatePropertyAdminDefaults({
       companyId: user.companyId,
       userId: user.id,

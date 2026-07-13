@@ -5,7 +5,9 @@ import { parseSowDocument } from "./sows";
 import { recordStatusChange } from "./turnovers";
 import {
   COMPANY_WIDE_SCOPE,
+  composePropertyIdFilter,
   propertyIdScopeWhere,
+  propertyScopeWhere,
   type AccessScope,
 } from "./access-scope";
 
@@ -90,12 +92,14 @@ export async function listQaQueue(
             : {}
     : { status: { in: [...QUEUE_TURNOVER_STATUSES] } };
 
+  const propertyFilter = composePropertyIdFilter(scope, filters?.propertyId);
+  if (propertyFilter.kind === "empty") return [];
+
   const turnovers = await prisma.turnover.findMany({
     where: {
       companyId,
-      ...propertyIdScopeWhere(scope),
+      ...propertyFilter.where,
       ...qaStatusFilter,
-      ...(filters?.propertyId ? { propertyId: filters.propertyId } : {}),
       ...(filters?.inspectorId
         ? {
             qaInspections: {
@@ -331,7 +335,7 @@ export async function getQaDetail(
   });
 
   const properties = await prisma.property.findMany({
-    where: { companyId, active: true },
+    where: { companyId, active: true, ...propertyScopeWhere(scope) },
     select: { id: true, name: true, unitCode: true },
     orderBy: { name: "asc" },
   });

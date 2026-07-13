@@ -2,8 +2,7 @@ import { prisma } from "./db";
 import { endOfDay, startOfDay } from "./utils";
 import {
   COMPANY_WIDE_SCOPE,
-  issuePropertyScopeWhere,
-  propertyIdScopeWhere,
+  composePropertyIdFilter,
   propertyScopeWhere,
   type AccessScope,
 } from "./access-scope";
@@ -229,11 +228,23 @@ async function loadReportSource(
       ? { status: filters.status }
       : {};
 
+  const propertyFilter = composePropertyIdFilter(scope, filters.propertyId);
+  if (propertyFilter.kind === "empty") {
+    return {
+      from,
+      to,
+      turnovers: [],
+      inspections: [],
+      issues: [],
+      inventory: [],
+      vendors: [],
+    };
+  }
+
   const turnoverWhere = {
     companyId,
-    ...propertyIdScopeWhere(scope),
+    ...propertyFilter.where,
     windowStart: { gte: from, lte: to },
-    ...(filters.propertyId ? { propertyId: filters.propertyId } : {}),
     ...(filters.cleanerId ? { vendorId: filters.cleanerId } : {}),
     ...turnoverStatusFilter,
   };
@@ -278,8 +289,7 @@ async function loadReportSource(
         companyId,
         createdAt: { gte: from, lte: to },
         turnover: {
-          ...propertyIdScopeWhere(scope),
-          ...(filters.propertyId ? { propertyId: filters.propertyId } : {}),
+          ...propertyFilter.where,
           ...(filters.cleanerId ? { vendorId: filters.cleanerId } : {}),
         },
       },
@@ -301,9 +311,8 @@ async function loadReportSource(
     prisma.issue.findMany({
       where: {
         companyId,
-        ...issuePropertyScopeWhere(scope),
+        ...propertyFilter.where,
         createdAt: { gte: from, lte: to },
-        ...(filters.propertyId ? { propertyId: filters.propertyId } : {}),
         ...(filters.cleanerId
           ? {
               OR: [
@@ -323,8 +332,7 @@ async function loadReportSource(
     prisma.inventoryItem.findMany({
       where: {
         companyId,
-        ...issuePropertyScopeWhere(scope),
-        ...(filters.propertyId ? { propertyId: filters.propertyId } : {}),
+        ...propertyFilter.where,
       },
       select: {
         id: true,

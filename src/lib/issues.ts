@@ -9,8 +9,9 @@ import {
 } from "./tenant";
 import {
   COMPANY_WIDE_SCOPE,
+  composePropertyIdFilter,
   issuePropertyScopeWhere,
-  isPropertyInScope,
+  propertyScopeWhere,
   type AccessScope,
 } from "./access-scope";
 
@@ -238,17 +239,15 @@ export async function listIssues(
   const toDate = filters?.to ? new Date(filters.to) : undefined;
   if (toDate) toDate.setHours(23, 59, 59, 999);
 
-  if (filters?.propertyId && !isPropertyInScope(scope, filters.propertyId)) {
-    return [];
-  }
+  const propertyFilter = composePropertyIdFilter(scope, filters?.propertyId);
+  if (propertyFilter.kind === "empty") return [];
 
   const issues = await prisma.issue.findMany({
     where: {
       companyId,
-      ...issuePropertyScopeWhere(scope),
+      ...propertyFilter.where,
       ...(filters?.status ? { status: filters.status } : {}),
       ...(filters?.severity ? { severity: filters.severity } : {}),
-      ...(filters?.propertyId ? { propertyId: filters.propertyId } : {}),
       ...(filters?.blocking ? { blocking: true } : {}),
       ...(fromDate || toDate
         ? {
@@ -340,6 +339,12 @@ export async function getIssueDetail(
   });
   if (!issue) return null;
 
+  const turnoverPickFilter = composePropertyIdFilter(scope);
+  const turnoverScopeWhere =
+    turnoverPickFilter.kind === "empty"
+      ? { id: "__none__" }
+      : turnoverPickFilter.where;
+
   const [vendors, users, properties, turnovers] = await Promise.all([
     prisma.vendor.findMany({
       where: { companyId, active: true },
@@ -351,13 +356,14 @@ export async function getIssueDetail(
       orderBy: { name: "asc" },
     }),
     prisma.property.findMany({
-      where: { companyId, active: true },
+      where: { companyId, active: true, ...propertyScopeWhere(scope) },
       select: { id: true, name: true, unitCode: true },
       orderBy: { name: "asc" },
     }),
     prisma.turnover.findMany({
       where: {
         companyId,
+        ...turnoverScopeWhere,
         status: {
           in: [
             "SCHEDULED",

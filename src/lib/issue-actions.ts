@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import {
   addIssueComment,
   assignIssue,
@@ -203,20 +204,29 @@ export async function createIssuesFromQaAction(formData: FormData) {
   if (!user.companyId) return { error: "No company" };
 
   const inspectionId = String(formData.get("inspectionId") || "");
-  const turnoverId = String(formData.get("turnoverId") || "");
+  const postedTurnoverId = String(formData.get("turnoverId") || "") || null;
   if (!inspectionId) return { error: "Inspection required" };
 
   try {
-    if (turnoverId) {
-      await assertTurnoverInScope(user.companyId, user.accessScope, turnoverId);
+    const inspection = await prisma.qaInspection.findFirst({
+      where: { id: inspectionId, companyId: user.companyId },
+      select: { id: true, turnoverId: true, turnover: { select: { propertyId: true } } },
+    });
+    if (!inspection) return { error: "Not found" };
+
+    if (postedTurnoverId && postedTurnoverId !== inspection.turnoverId) {
+      return { error: "Not found" };
     }
+
+    await assertTurnoverInScope(user.companyId, user.accessScope, inspection.turnoverId);
+
     const ids = await createIssuesFromQaFailures({
       companyId: user.companyId,
       userId: user.id,
       actorName: user.name,
       inspectionId,
     });
-    revalidateIssuePaths(ids[0], turnoverId || undefined);
+    revalidateIssuePaths(ids[0], inspection.turnoverId);
     return { ok: true as const, count: ids.length };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Could not create issues" };

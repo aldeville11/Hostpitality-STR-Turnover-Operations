@@ -7,6 +7,8 @@ import {
 import { flattenSopSteps, parseSopDocument } from "./sops";
 import {
   COMPANY_WIDE_SCOPE,
+  composePropertyIdFilter,
+  composePropertyPrimaryIdFilter,
   propertyIdScopeWhere,
   type AccessScope,
 } from "./access-scope";
@@ -93,12 +95,14 @@ export async function listTurnovers(
   filters?: { status?: string; propertyId?: string; q?: string },
   scope: AccessScope = COMPANY_WIDE_SCOPE
 ) {
+  const propertyFilter = composePropertyIdFilter(scope, filters?.propertyId);
+  if (propertyFilter.kind === "empty") return [];
+
   const turnovers = await prisma.turnover.findMany({
     where: {
       companyId,
-      ...propertyIdScopeWhere(scope),
+      ...propertyFilter.where,
       ...(filters?.status ? { status: filters.status } : {}),
-      ...(filters?.propertyId ? { propertyId: filters.propertyId } : {}),
       ...(filters?.q
         ? {
             OR: [
@@ -347,11 +351,17 @@ export async function syncTurnoversFromCalendars(input: {
   companyId: string;
   userId: string;
   actorName?: string;
+  accessScope?: AccessScope;
 }) {
+  const scope = input.accessScope ?? COMPANY_WIDE_SCOPE;
+  const scopeFilter = composePropertyPrimaryIdFilter(scope);
+  if (scopeFilter.kind === "empty") return [];
+
   const properties = await prisma.property.findMany({
     where: {
       companyId: input.companyId,
       active: true,
+      ...scopeFilter.where,
       OR: [
         { calendarUrl: { not: null } },
         { bookingSource: { not: "manual" } },
