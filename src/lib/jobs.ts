@@ -39,17 +39,19 @@ export async function processDueJobs(limit?: number) {
     const pending = await tx.backgroundJob.findMany({
       where: { status: "PENDING", runAt: { lte: now }, companyId: { not: null } },
       orderBy: { runAt: "asc" },
-      take: batchSize,
+      take: Math.min(batchSize, getServerEnv().jobBatchSize),
     });
 
+    const claimed = [];
     for (const job of pending) {
-      await tx.backgroundJob.update({
-        where: { id: job.id },
+      const updated = await tx.backgroundJob.updateMany({
+        where: { id: job.id, status: "PENDING" },
         data: { status: "RUNNING", startedAt: new Date(), attempts: { increment: 1 } },
       });
+      if (updated.count === 1) claimed.push(job);
     }
 
-    return pending;
+    return claimed;
   });
 
   const results = [];
