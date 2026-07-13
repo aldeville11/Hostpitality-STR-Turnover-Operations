@@ -524,22 +524,25 @@ model AuditLog {
 }
 
 model BackgroundJob {
-  id          String    @id @default(cuid())
-  companyId   String?
-  type        String
-  payloadJson String    @default("{}")
-  status      String    @default("PENDING")
-  runAt       DateTime  @default(now())
-  startedAt   DateTime?
-  completedAt DateTime?
-  error       String?
-  attempts    Int       @default(0)
-  createdAt   DateTime  @default(now())
+  id             String    @id @default(cuid())
+  companyId      String?
+  type           String
+  payloadJson    String    @default("{}")
+  status         String    @default("PENDING")
+  runAt          DateTime  @default(now())
+  startedAt      DateTime?
+  leaseExpiresAt DateTime?
+  claimToken     String?
+  completedAt    DateTime?
+  error          String?
+  attempts       Int       @default(0)
+  createdAt      DateTime  @default(now())
 
   company Company? @relation(fields: [companyId], references: [id])
 
   @@index([status, runAt])
   @@index([companyId, status])
+  @@index([status, leaseExpiresAt])
 }
 
 model Integration {

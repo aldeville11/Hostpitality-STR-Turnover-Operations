@@ -32,4 +32,27 @@ describe("environment validation", () => {
 
     expect(() => getServerEnv()).toThrow(/ALLOW_AUTH_BYPASS/);
   });
+
+  it("bounds JOB_LEASE_SECONDS", () => {
+    setNodeEnv("test");
+    process.env.TEST_DATABASE_URL = "postgresql://u:p@localhost:5432/db";
+    process.env.JOB_LEASE_SECONDS = "1";
+    expect(() => getServerEnv()).toThrow(/JOB_LEASE_SECONDS/);
+
+    resetServerEnvForTests();
+    process.env.JOB_LEASE_SECONDS = "99999";
+    expect(() => getServerEnv()).toThrow(/JOB_LEASE_SECONDS/);
+
+    resetServerEnvForTests();
+    process.env.JOB_LEASE_SECONDS = "nope";
+    expect(() => getServerEnv()).toThrow(/JOB_LEASE_SECONDS/);
+
+    resetServerEnvForTests();
+    delete process.env.JOB_LEASE_SECONDS;
+    expect(getServerEnv().jobLeaseSeconds).toBe(900);
+
+    resetServerEnvForTests();
+    process.env.JOB_LEASE_SECONDS = "120";
+    expect(getServerEnv().jobLeaseSeconds).toBe(120);
+  });
 });

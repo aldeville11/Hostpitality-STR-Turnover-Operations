@@ -68,13 +68,15 @@ Legacy SQLite `Session` rows store raw bearer tokens. The transfer script **excl
 
 Migration `session_drop_raw_token_contract` removes the legacy `Session.token` column. **Application rollback is not safe** after this migration. Restore from backup if rollback is required.
 
-## Background job leases
+## Background job leases and claim fencing
 
-`processDueJobs` claims `PENDING` jobs and may reclaim `RUNNING` jobs whose `startedAt` is older than `JOB_LEASE_SECONDS` (default 900). Concurrent processors use status-guarded `updateMany` so the same job is not double-processed. Stale reclaim is logged as `job.stale_reclaimed` without payloads or secrets.
+`processDueJobs` atomically claims jobs with a random `claimToken` and `leaseExpiresAt` (`JOB_LEASE_SECONDS`, default **900**, bounds **60–3600**). Only the owning claim token may renew, complete, or fail a job. Stale `RUNNING` jobs whose lease expired may be reclaimed. Lost-claim attempts log `job.lost_claim` without payloads. Handlers check ownership before irreversible side effects; reminders and notification dispatch use durable audit idempotency keys (at-most-once for those paths). Overdue marking uses conditional status updates.
+
+Migration `20260713030545_job_claim_fencing` adds `claimToken` and `leaseExpiresAt` (additive; M1–M4 unchanged).
 
 ## Demo seed target safety
 
-Demo seed requires `ALLOW_DEMO_SEED=true`, `SEED_CONFIRM=DESTROY_AND_SEED`, non-production `NODE_ENV`, and a local/disposable PostgreSQL `DATABASE_URL` (localhost/loopback/private LAN). Remote and staging/production-like hosts are refused before any destructive SQL runs.
+Demo seed requires `ALLOW_DEMO_SEED=true`, `SEED_CONFIRM=DESTROY_AND_SEED`, non-production `NODE_ENV`, and a **local disposable** PostgreSQL host (`localhost`, `127.0.0.1`, `::1`, `host.docker.internal`, `postgres`, `*.local`). RFC1918/private hosts are **refused by default** (may hold staging/production data). Exact-host override requires `DEMO_SEED_ALLOWED_HOSTS` plus `SEED_CONFIRM_REMOTE=DESTROY_REMOTE_SEED`. Remote and staging/production-like hosts are refused before any destructive SQL runs.
 
 ## SESSION_PEPPER rotation
 

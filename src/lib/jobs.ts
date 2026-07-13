@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import { prisma } from "./db";
 import { writeAuditLog } from "./audit";
 import { parseJson } from "./json";
@@ -10,6 +11,31 @@ export type JobType =
   | "notification.dispatch";
 
 export const MAX_JOB_ATTEMPTS = 3;
+
+/** Handler runtime expectations (seconds). Keep well under JOB_LEASE_SECONDS. */
+export const JOB_HANDLER_TIMEOUT_SECONDS: Record<string, number> = {
+  "turnover.remind": 30,
+  "turnover.overdue_check": 120,
+  "notification.dispatch": 30,
+};
+
+type ClaimedJob = {
+  id: string;
+  companyId: string | null;
+  type: string;
+  payloadJson: string;
+  attempts: number;
+  claimToken: string;
+  runAt: Date;
+};
+
+function newClaimToken(): string {
+  return randomBytes(24).toString("hex");
+}
+
+function leaseExpiry(from: Date, leaseSeconds: number): Date {
+  return new Date(from.getTime() + leaseSeconds * 1000);
+}
 
 export async function enqueueJob(input: {
   companyId: string;
@@ -31,12 +57,87 @@ export async function enqueueJob(input: {
   });
 }
 
+/** Renew lease for the owning claim. Returns false if ownership was lost. */
+export async function renewJobLease(jobId: string, claimToken: string): Promise<boolean> {
+  const env = getServerEnv();
+  const now = new Date();
+  const updated = await prisma.backgroundJob.updateMany({
+    where: {
+      id: jobId,
+      status: "RUNNING",
+      claimToken,
+    },
+    data: {
+      startedAt: now,
+      leaseExpiresAt: leaseExpiry(now, env.jobLeaseSeconds),
+    },
+  });
+  return updated.count === 1;
+}
+
+/** True when this claim still owns the RUNNING job. */
+export async function ownsJobClaim(jobId: string, claimToken: string): Promise<boolean> {
+  const job = await prisma.backgroundJob.findFirst({
+    where: { id: jobId, status: "RUNNING", claimToken },
+    select: { id: true },
+  });
+  return Boolean(job);
+}
+
+async function completeJobWithClaim(
+  jobId: string,
+  claimToken: string,
+  data: { payloadJson?: string }
+): Promise<boolean> {
+  const updated = await prisma.backgroundJob.updateMany({
+    where: { id: jobId, status: "RUNNING", claimToken },
+    data: {
+      status: "COMPLETED",
+      completedAt: new Date(),
+      error: null,
+      claimToken: null,
+      leaseExpiresAt: null,
+      ...(data.payloadJson ? { payloadJson: data.payloadJson } : {}),
+    },
+  });
+  if (updated.count !== 1) {
+    log.warn("job.lost_claim", { jobId, outcome: "complete_rejected" });
+    return false;
+  }
+  return true;
+}
+
+async function failJobWithClaim(
+  jobId: string,
+  claimToken: string,
+  input: { error: string; attempts: number; runAt: Date }
+): Promise<"retry" | "failed" | "lost"> {
+  const retryable = input.attempts < MAX_JOB_ATTEMPTS;
+  const updated = await prisma.backgroundJob.updateMany({
+    where: { id: jobId, status: "RUNNING", claimToken },
+    data: {
+      status: retryable ? "PENDING" : "FAILED",
+      error: input.error,
+      completedAt: retryable ? null : new Date(),
+      claimToken: null,
+      leaseExpiresAt: null,
+      startedAt: null,
+      runAt: retryable
+        ? new Date(Date.now() + input.attempts * 60 * 1000)
+        : input.runAt,
+    },
+  });
+  if (updated.count !== 1) {
+    log.warn("job.lost_claim", { jobId, outcome: "fail_rejected" });
+    return "lost";
+  }
+  return retryable ? "retry" : "failed";
+}
+
 export async function processDueJobs(limit?: number) {
   const env = getServerEnv();
   const batchSize = Math.min(limit ?? env.jobBatchSize, env.jobBatchSize);
   const now = new Date();
-  const leaseMs = env.jobLeaseSeconds * 1000;
-  const staleBefore = new Date(now.getTime() - leaseMs);
 
   const jobs = await prisma.$transaction(async (tx) => {
     const candidates = await tx.backgroundJob.findMany({
@@ -44,24 +145,48 @@ export async function processDueJobs(limit?: number) {
         companyId: { not: null },
         OR: [
           { status: "PENDING", runAt: { lte: now } },
-          { status: "RUNNING", startedAt: { lt: staleBefore } },
+          {
+            status: "RUNNING",
+            OR: [
+              { leaseExpiresAt: { lt: now } },
+              // Legacy rows without leaseExpiresAt: fall back to startedAt age
+              { leaseExpiresAt: null, startedAt: { lt: new Date(now.getTime() - env.jobLeaseSeconds * 1000) } },
+            ],
+          },
         ],
       },
       orderBy: { runAt: "asc" },
       take: batchSize,
     });
 
-    const claimed = [];
+    const claimed: ClaimedJob[] = [];
     for (const job of candidates) {
+      const claimToken = newClaimToken();
+      const startedAt = new Date();
       const updated = await tx.backgroundJob.updateMany({
         where: {
           id: job.id,
           OR: [
             { status: "PENDING" },
-            { status: "RUNNING", startedAt: { lt: staleBefore } },
+            {
+              status: "RUNNING",
+              OR: [
+                { leaseExpiresAt: { lt: now } },
+                {
+                  leaseExpiresAt: null,
+                  startedAt: { lt: new Date(now.getTime() - env.jobLeaseSeconds * 1000) },
+                },
+              ],
+            },
           ],
         },
-        data: { status: "RUNNING", startedAt: new Date(), attempts: { increment: 1 } },
+        data: {
+          status: "RUNNING",
+          startedAt,
+          leaseExpiresAt: leaseExpiry(startedAt, env.jobLeaseSeconds),
+          claimToken,
+          attempts: { increment: 1 },
+        },
       });
       if (updated.count === 1) {
         if (job.status === "RUNNING") {
@@ -73,7 +198,15 @@ export async function processDueJobs(limit?: number) {
             leaseSeconds: env.jobLeaseSeconds,
           });
         }
-        claimed.push({ ...job, attempts: job.attempts });
+        claimed.push({
+          id: job.id,
+          companyId: job.companyId,
+          type: job.type,
+          payloadJson: job.payloadJson,
+          attempts: job.attempts,
+          claimToken,
+          runAt: job.runAt,
+        });
       }
     }
 
@@ -84,52 +217,52 @@ export async function processDueJobs(limit?: number) {
 
   for (const job of jobs) {
     if (!job.companyId) {
-      await prisma.backgroundJob.update({
-        where: { id: job.id },
-        data: {
-          status: "FAILED",
-          error: "Missing companyId",
-          completedAt: new Date(),
-        },
+      await failJobWithClaim(job.id, job.claimToken, {
+        error: "Missing companyId",
+        attempts: MAX_JOB_ATTEMPTS,
+        runAt: job.runAt,
       });
       results.push({ id: job.id, ok: false as const, error: "Missing companyId" });
       continue;
     }
 
     try {
+      await renewJobLease(job.id, job.claimToken);
       const payload = parseJson<Record<string, unknown>>(job.payloadJson, {});
-      const result = await handleJob(job.type, payload, job.companyId);
-      await prisma.backgroundJob.update({
-        where: { id: job.id },
-        data: {
-          status: "COMPLETED",
-          completedAt: new Date(),
-          error: null,
-          payloadJson: JSON.stringify({ ...payload, result }),
-        },
+      const result = await handleJob(job.type, payload, job.companyId, {
+        jobId: job.id,
+        claimToken: job.claimToken,
       });
+
+      if (!(await ownsJobClaim(job.id, job.claimToken))) {
+        log.warn("job.lost_claim", { jobId: job.id, outcome: "aborted_before_complete" });
+        results.push({ id: job.id, ok: false as const, error: "Lost claim", lostClaim: true });
+        continue;
+      }
+
+      const completed = await completeJobWithClaim(job.id, job.claimToken, {
+        payloadJson: JSON.stringify({ ...payload, result }),
+      });
+      if (!completed) {
+        results.push({ id: job.id, ok: false as const, error: "Lost claim", lostClaim: true });
+        continue;
+      }
       log.info("job.completed", { jobId: job.id, type: job.type, companyId: job.companyId });
       results.push({ id: job.id, ok: true as const, result });
     } catch (err) {
       const message = captureError(err, { jobId: job.id, type: job.type });
       const attempts = job.attempts + 1;
-      const retryable = attempts < MAX_JOB_ATTEMPTS;
-      await prisma.backgroundJob.update({
-        where: { id: job.id },
-        data: {
-          status: retryable ? "PENDING" : "FAILED",
-          error: message,
-          completedAt: retryable ? null : new Date(),
-          runAt: retryable
-            ? new Date(Date.now() + attempts * 60 * 1000)
-            : job.runAt,
-        },
+      const outcome = await failJobWithClaim(job.id, job.claimToken, {
+        error: message,
+        attempts,
+        runAt: job.runAt,
       });
       results.push({
         id: job.id,
         ok: false as const,
         error: message,
-        retrying: retryable,
+        retrying: outcome === "retry",
+        lostClaim: outcome === "lost",
       });
     }
   }
@@ -161,6 +294,9 @@ export async function retryFailedJobs(input: {
         runAt: new Date(),
         error: null,
         completedAt: null,
+        claimToken: null,
+        leaseExpiresAt: null,
+        startedAt: null,
         ...(input.force ? { attempts: Math.max(0, job.attempts - 1) } : {}),
       },
     });
@@ -213,25 +349,44 @@ export async function getJobObservability(companyId: string) {
   };
 }
 
+type JobClaimContext = { jobId: string; claimToken: string };
+
 async function handleJob(
   type: string,
   payload: Record<string, unknown>,
-  companyId: string
+  companyId: string,
+  claim: JobClaimContext
 ) {
   switch (type) {
     case "turnover.remind":
-      return remindTurnover(String(payload.turnoverId ?? ""), companyId);
+      return remindTurnover(String(payload.turnoverId ?? ""), companyId, claim);
     case "turnover.overdue_check":
-      return markOverdueTurnovers(companyId);
+      return markOverdueTurnovers(companyId, claim);
     case "notification.dispatch":
-      return dispatchNotification(payload, companyId);
+      return dispatchNotification(payload, companyId, claim);
     default:
       return { skipped: true, type };
   }
 }
 
-async function remindTurnover(turnoverId: string, companyId: string) {
+async function remindTurnover(
+  turnoverId: string,
+  companyId: string,
+  claim: JobClaimContext
+) {
   if (!turnoverId) return { skipped: true, reason: "missing turnoverId" };
+
+  // Idempotent: one reminder audit per turnover (at-most-once across retries/duplicates)
+  const prior = await prisma.auditLog.findFirst({
+    where: {
+      companyId,
+      action: "job.turnover.remind",
+      entityType: "Turnover",
+      entityId: turnoverId,
+    },
+    select: { id: true },
+  });
+  if (prior) return { skipped: true, reason: "already_reminded" };
 
   const turnover = await prisma.turnover.findFirst({
     where: { id: turnoverId, companyId },
@@ -240,6 +395,10 @@ async function remindTurnover(turnoverId: string, companyId: string) {
 
   if (!turnover || turnover.status === "COMPLETED" || turnover.status === "CANCELLED") {
     return { skipped: true };
+  }
+
+  if (!(await ownsJobClaim(claim.jobId, claim.claimToken))) {
+    return { skipped: true, reason: "lost_claim" };
   }
 
   await prisma.notification.create({
@@ -261,7 +420,9 @@ async function remindTurnover(turnoverId: string, companyId: string) {
   return { reminded: true };
 }
 
-async function markOverdueTurnovers(companyId: string) {
+async function markOverdueTurnovers(companyId: string, claim: JobClaimContext) {
+  await renewJobLease(claim.jobId, claim.claimToken);
+
   const now = new Date();
   const due = await prisma.turnover.findMany({
     where: {
@@ -271,11 +432,22 @@ async function markOverdueTurnovers(companyId: string) {
     },
   });
 
+  let marked = 0;
   for (const turnover of due) {
-    await prisma.turnover.update({
-      where: { id: turnover.id },
+    if (!(await ownsJobClaim(claim.jobId, claim.claimToken))) {
+      return { marked, aborted: true, reason: "lost_claim" };
+    }
+    // Conditional update — natural idempotency if already OVERDUE
+    const updated = await prisma.turnover.updateMany({
+      where: {
+        id: turnover.id,
+        companyId,
+        status: { in: ["SCHEDULED", "ASSIGNED", "IN_PROGRESS"] },
+      },
       data: { status: "OVERDUE" },
     });
+    if (updated.count !== 1) continue;
+
     await prisma.turnoverStatusEvent.create({
       data: {
         turnoverId: turnover.id,
@@ -292,14 +464,16 @@ async function markOverdueTurnovers(companyId: string) {
       entityId: turnover.id,
       metadata: { from: turnover.status, to: "OVERDUE", source: "job" },
     });
+    marked += 1;
   }
 
-  return { marked: due.length };
+  return { marked };
 }
 
 async function dispatchNotification(
   payload: Record<string, unknown>,
-  companyId: string
+  companyId: string,
+  claim: JobClaimContext
 ) {
   const userId = payload.userId ? String(payload.userId) : null;
   if (userId) {
@@ -310,6 +484,18 @@ async function dispatchNotification(
     if (!user) return { skipped: true, reason: "invalid userId" };
   }
 
+  // Deterministic idempotency via job-scoped audit key when reprocessed
+  const idempotencyKey = `job.notification.dispatch:${claim.jobId}`;
+  const prior = await prisma.auditLog.findFirst({
+    where: { companyId, action: idempotencyKey },
+    select: { id: true },
+  });
+  if (prior) return { skipped: true, reason: "already_dispatched" };
+
+  if (!(await ownsJobClaim(claim.jobId, claim.claimToken))) {
+    return { skipped: true, reason: "lost_claim" };
+  }
+
   const notification = await prisma.notification.create({
     data: {
       companyId,
@@ -318,6 +504,14 @@ async function dispatchNotification(
       body: String(payload.body ?? ""),
       type: String(payload.type ?? "info"),
     },
+  });
+
+  await writeAuditLog({
+    companyId,
+    action: idempotencyKey,
+    entityType: "Notification",
+    entityId: notification.id,
+    metadata: { jobId: claim.jobId },
   });
 
   return { notificationId: notification.id };
@@ -337,5 +531,18 @@ export async function scheduleTurnoverReminder(input: {
     type: "turnover.remind",
     payload: { turnoverId: input.turnoverId },
     runAt: runAt < new Date() ? new Date() : runAt,
+  });
+}
+
+/** Test helper: attempt terminal update with an arbitrary claim token. */
+export async function tryCompleteJobWithToken(jobId: string, claimToken: string) {
+  return completeJobWithClaim(jobId, claimToken, {});
+}
+
+export async function tryFailJobWithToken(jobId: string, claimToken: string) {
+  return failJobWithClaim(jobId, claimToken, {
+    error: "forced",
+    attempts: 1,
+    runAt: new Date(),
   });
 }

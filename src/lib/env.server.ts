@@ -49,6 +49,27 @@ function parsePositiveInt(name: string, value: string | undefined, fallback: num
   return n;
 }
 
+/** JOB_LEASE_SECONDS: min 60 (avoid reclaim churn), max 3600 (avoid permanent RUNNING). Default 900. */
+export const JOB_LEASE_SECONDS_MIN = 60;
+export const JOB_LEASE_SECONDS_MAX = 3600;
+export const JOB_LEASE_SECONDS_DEFAULT = 900;
+
+function parseJobLeaseSeconds(value: string | undefined): number {
+  if (!value || !value.trim()) return JOB_LEASE_SECONDS_DEFAULT;
+  const n = Number.parseInt(value, 10);
+  if (!Number.isFinite(n) || String(n) !== value.trim()) {
+    throw new Error(
+      `Invalid JOB_LEASE_SECONDS: must be an integer between ${JOB_LEASE_SECONDS_MIN} and ${JOB_LEASE_SECONDS_MAX}`
+    );
+  }
+  if (n < JOB_LEASE_SECONDS_MIN || n > JOB_LEASE_SECONDS_MAX) {
+    throw new Error(
+      `Invalid JOB_LEASE_SECONDS: must be between ${JOB_LEASE_SECONDS_MIN} and ${JOB_LEASE_SECONDS_MAX} (got ${n})`
+    );
+  }
+  return n;
+}
+
 function parseLogLevel(value: string | undefined): ServerEnv["logLevel"] {
   const level = (value ?? "info").toLowerCase();
   if (level === "debug" || level === "info" || level === "warn" || level === "error") {
@@ -133,7 +154,7 @@ export function getServerEnv(): ServerEnv {
     rateLimitPepper: process.env.RATE_LIMIT_PEPPER ?? "",
     logLevel: parseLogLevel(process.env.LOG_LEVEL),
     jobBatchSize: parsePositiveInt("JOB_BATCH_SIZE", process.env.JOB_BATCH_SIZE, 25),
-    jobLeaseSeconds: parsePositiveInt("JOB_LEASE_SECONDS", process.env.JOB_LEASE_SECONDS, 900),
+    jobLeaseSeconds: parseJobLeaseSeconds(process.env.JOB_LEASE_SECONDS),
     trustProxyMode: parseTrustProxyMode(process.env.TRUST_PROXY),
     appBaseUrl: process.env.APP_BASE_URL?.trim() || undefined,
     allowAuthBypass,
