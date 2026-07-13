@@ -1,33 +1,125 @@
-File,Function or route,Required permission,Tenant-owned inputs,Source of companyId,Ownership validation,Relationship validation,Previous status,Final status,Test coverage
-src/lib/actions.ts,loginAction,none,email,N/A,N/A,N/A,safe,safe,tests/auth-bypass.test.ts
-src/lib/actions.ts,logoutAction,session,—,user.companyId,N/A,N/A,safe,safe,—
-src/lib/actions.ts,signupAction,none,email,creates company,N/A,N/A,safe,safe,tests/rate-limit.test.ts
-src/lib/issue-actions.ts,createIssueAction,issues:manage,propertyId/turnoverId/qaInspectionId,user.companyId,partial,partial,defect,fixed,tests/tenant-isolation.test.ts
-src/lib/issue-actions.ts,escalateIssueAction,issues:manage,issueId,user.companyId,yes,partial,defect,fixed,—
-src/lib/property-actions.ts,updatePropertySettingsAction,properties:manage,sopId/sowId/defaultVendorId,user.companyId,yes,partial,defect,fixed,—
-src/lib/settings-actions.ts,updateSystemSettingsAction,settings:manage,defaultSopId/defaultSowId,user.companyId,yes,yes,defect,fixed,—
-src/lib/settings-actions.ts,createUserAction,settings:manage,propertyIds[],user.companyId,N/A,partial,defect,fixed,—
-src/lib/settings-actions.ts,updateUserAction,settings:manage,propertyIds[],user.companyId,yes,partial,defect,fixed,—
-src/lib/settings.ts,updatePropertyAdminDefaults,settings:manage,propertyId,param,yes,partial,defect,fixed,—
-src/lib/settings.ts,updateSystemSettings,settings:manage,defaultSopId/defaultSowId,param,yes,yes,defect,fixed,—
-src/lib/settings.ts,createCompanyUser,settings:manage,propertyIds[],param,N/A,partial,defect,fixed,—
-src/lib/settings.ts,updateCompanyUser,settings:manage,propertyIds[],param,yes,partial,defect,fixed,—
-src/lib/issues.ts,createIssue,caller,propertyId/turnoverId/qaInspectionId,param,partial,partial,defect,fixed,tests/tenant-isolation.test.ts
-src/lib/issues.ts,escalateIssue,caller,issueId,param,yes,partial,defect,fixed,—
-src/lib/integrations.ts,attachStoredFile,integrations:manage,entityType/entityId,param,no,no,defect,fixed,—
-src/lib/integrations.ts,listFilesForEntity,caller,entityType/entityId,param,yes,yes,fixed-needed,fixed,—
-src/lib/jobs.ts,remindTurnover,internal,turnoverId,job.companyId,yes,yes,defect,fixed,—
-src/lib/jobs.ts,markOverdueTurnovers,internal,—,job.companyId,yes,N/A,defect,fixed,—
-src/lib/jobs.ts,processDueJobs,cron/internal,job ids,per-job,scoped,yes,defect,fixed,tests/security/jobs.test.ts
-src/app/api/jobs/process/route.ts,POST,CRON_SECRET,—,N/A,N/A,N/A,defect,fixed,tests/security/jobs.test.ts
-src/app/api/jobs/process/route.ts,GET,none,—,N/A,N/A,N/A,defect,fixed,tests/security/jobs.test.ts
-src/app/api/auth/bypass/route.ts,GET,dev-only,next path,demo user,N/A,N/A,safe,safe,tests/auth-bypass.test.ts
-src/lib/actions.ts,processJobsAction,settings:manage,—,session,removed,removed,defect,fixed,—
-src/app/(app)/inventory/page.tsx,InventoryPage,inventory:manage,filters,user.companyId,yes,N/A,defect,fixed,tests/rbac.test.ts
-src/app/(app)/owners/page.tsx,OwnersPage,owners:report,—,user.companyId,N/A,N/A,defect,fixed,tests/rbac.test.ts
-src/app/(onboarding)/layout.tsx,OnboardingLayout,onboarding:run,—,user.companyId,N/A,N/A,defect,fixed,tests/rbac.test.ts
-src/components/sidebar.tsx,navigation,role-based,—,user.role,N/A,N/A,defect,fixed,tests/rbac.test.ts
-src/lib/turnover-actions.ts,assignCleanerAction,assignments:manage,turnoverId/vendorId,user.companyId,yes,yes,safe,safe,—
-src/lib/qa-actions.ts,decideQaAction,qa:review,inspectionId,user.companyId,yes,yes,safe,safe,—
-src/lib/reports.ts,getReportDataset,owners:report,filters,param,yes,N/A,safe,safe,—
-src/lib/launch.ts,runSmokeTests,settings:manage,—,param,yes,N/A,safe,safe,scripts/smoke-core.ts
+File,Function or route,Required permission,Tenant-owned inputs,Source of companyId,Ownership validation,Relationship validation,Previous status,Final status,Test coverage,Notes
+src/lib/actions.ts,loginAction,none,email,N/A,N/A,N/A,safe,safe,tests/session-lifecycle.test.ts,
+src/lib/actions.ts,logoutAction,session,—,user.companyId,N/A,N/A,safe,safe,tests/session-lifecycle.test.ts,
+src/lib/actions.ts,signupAction,none,email,creates,N/A,N/A,safe,safe,tests/rate-limit.test.ts,
+src/lib/actions.ts,processJobsAction,settings:manage,—,removed,removed,removed,defect,removed,tests/security/jobs-route.test.ts,customer global processor deleted
+src/lib/property-actions.ts,createPropertyAction,properties:manage,unitCode,user.companyId,yes,N/A,safe,fixed,tests/access-scope.test.ts,restricted scopes cannot create
+src/lib/property-actions.ts,updatePropertyProfileAction,properties:manage,id,user.companyId,yes,yes,safe,fixed,tests/access-scope.test.ts,accessScope enforced
+src/lib/property-actions.ts,updatePropertySettingsAction,properties:manage,sopId/sowId/vendorId,user.companyId,yes,yes,defect,fixed,—,tenant validators + accessScope
+src/lib/property-actions.ts,updatePropertyCalendarAction,properties:manage,id,user.companyId,yes,yes,safe,fixed,—,accessScope enforced
+src/lib/issue-actions.ts,createIssueAction,issues:manage,property/turnover/qa ids,user.companyId,yes,yes,defect,fixed,tests/tenant-isolation.test.ts,
+src/lib/issue-actions.ts,updateIssueStatusAction,issues:manage,issueId,user.companyId,yes,yes,safe,fixed,—,accessScope enforced on mutation
+src/lib/issue-actions.ts,assignIssueAction,issues:manage,issueId/vendorId,user.companyId,yes,yes,safe,fixed,—,accessScope enforced on mutation
+src/lib/issue-actions.ts,escalateIssueAction,issues:manage,issueId,user.companyId,yes,yes,defect,fixed,—,tenant + accessScope
+src/lib/issue-actions.ts,addIssueCommentAction,issues:manage,issueId,user.companyId,yes,N/A,safe,fixed,—,accessScope enforced on mutation
+src/lib/issue-actions.ts,createIssuesFromQaAction,issues:manage,inspectionId,user.companyId,yes,yes,safe,fixed,—,accessScope via turnover
+src/lib/issues.ts,createIssue,caller,property/turnover/qa,param,yes,yes,defect,fixed,tests/tenant-isolation.test.ts,
+src/lib/issues.ts,escalateIssue,caller,issueId,param,yes,yes,defect,fixed,—,
+src/lib/issues.ts,listIssues,page,filters,param,yes,yes,safe,fixed,tests/access-scope.test.ts,accessScope
+src/lib/issues.ts,getIssueDetail,page,issueId,param,yes,yes,safe,fixed,tests/access-scope.test.ts,accessScope
+src/lib/settings-actions.ts,updateCompanyProfileAction,settings:manage,—,user.companyId,yes,N/A,safe,safe,—,
+src/lib/settings-actions.ts,updateNotificationsAction,settings:manage,—,user.companyId,yes,N/A,safe,safe,—,
+src/lib/settings-actions.ts,updateBrandingAction,settings:manage,—,user.companyId,yes,N/A,safe,safe,—,
+src/lib/settings-actions.ts,updatePropertyDefaultsAction,settings:manage,propertyId,user.companyId,yes,yes,defect,fixed,—,
+src/lib/settings-actions.ts,createUserAction,settings:manage,propertyIds,user.companyId,N/A,yes,defect,fixed,tests/access-scope.test.ts,
+src/lib/settings-actions.ts,updateUserAction,settings:manage,propertyIds,user.companyId,yes,yes,defect,fixed,tests/access-scope.test.ts,
+src/lib/settings-actions.ts,updateSystemSettingsAction,settings:manage,defaultSop/Sow,user.companyId,yes,yes,defect,fixed,—,
+src/lib/settings.ts,updatePropertyAdminDefaults,caller,propertyId,param,yes,yes,defect,fixed,—,
+src/lib/settings.ts,createCompanyUser,caller,propertyIds,param,N/A,yes,defect,fixed,tests/access-scope.test.ts,
+src/lib/settings.ts,updateCompanyUser,caller,propertyIds,param,yes,yes,defect,fixed,tests/access-scope.test.ts,
+src/lib/settings.ts,updateSystemSettings,caller,defaultSop/Sow,param,yes,yes,defect,fixed,—,
+src/lib/settings.ts,listSettingsProperties,page,—,param,yes,yes,safe,fixed,tests/access-scope.test.ts,accessScope
+src/lib/turnover-actions.ts,syncTurnoversAction,turnovers:manage,—,user.companyId,yes,N/A,safe,safe,—,
+src/lib/turnover-actions.ts,createTurnoverForPropertyAction,turnovers:manage,propertyId,user.companyId,yes,yes,safe,fixed,tests/access-scope.test.ts,
+src/lib/turnover-actions.ts,updateTurnoverStatusAction,turnovers:manage,id,user.companyId,yes,yes,safe,fixed,—,
+src/lib/turnover-actions.ts,assignCleanerAction,assignments:manage,id/vendorId,user.companyId,yes,yes,safe,safe,—,
+src/lib/turnover-actions.ts,toggleChecklistItemAction,turnovers:*,itemId,user.companyId,yes,N/A,safe,safe,—,
+src/lib/turnover-actions.ts,regenerateChecklistAction,turnovers:manage,id,user.companyId,yes,N/A,safe,safe,—,
+src/lib/turnovers.ts,listTurnovers,page,filters,param,yes,yes,safe,fixed,tests/access-scope.test.ts,
+src/lib/turnovers.ts,getTurnoverDetail,page,turnoverId,param,yes,yes,safe,fixed,tests/access-scope.test.ts,
+src/lib/qa-actions.ts,openQaInspectionAction,qa:review,turnoverId,user.companyId,yes,yes,safe,fixed,—,accessScope enforced
+src/lib/qa-actions.ts,reviewQaItemAction,qa:review,itemId,user.companyId,yes,N/A,safe,fixed,—,accessScope via inspection
+src/lib/qa-actions.ts,reviewQaPhotoAction,qa:review,photoId,user.companyId,yes,N/A,safe,fixed,—,accessScope via inspection
+src/lib/qa-actions.ts,decideQaAction,qa:review,inspectionId,user.companyId,yes,yes,safe,fixed,—,accessScope via inspection
+src/lib/qa-actions.ts,setQaOverrideAction,qa:review,inspectionId,user.companyId,yes,N/A,safe,fixed,—,accessScope via inspection
+src/lib/qa.ts,listQaQueue,page,filters,param,yes,yes,safe,fixed,—,accessScope
+src/lib/qa.ts,getQaDetail,page,turnoverId,param,yes,yes,safe,fixed,—,accessScope
+src/lib/cleaner-actions.ts,assignFromCleanersAction,assignments:manage,turnoverId/vendorId,user.companyId,yes,yes,safe,fixed,—,accessScope via turnover
+src/lib/cleaner-actions.ts,previewAssignmentConflictsAction,assignments:manage,turnoverId/vendorId,user.companyId,yes,yes,safe,fixed,—,accessScope via turnover
+src/lib/cleaner-actions.ts,updateAvailabilityAction,assignments:manage,vendorId,user.companyId,yes,N/A,safe,safe,—,vendor company-scoped
+src/lib/cleaner-actions.ts,updateCleanerProfileAction,assignments:manage,vendorId,user.companyId,yes,N/A,safe,safe,—,
+src/lib/cleaners.ts,listCleaners,page,filters,param,yes,yes,safe,fixed,—,assignment property scope
+src/lib/cleaners.ts,getDispatchBoard,page,—,param,yes,yes,safe,fixed,—,
+src/lib/sop-actions.ts,createSopFromTemplateAction,sops:manage,sopId,user.companyId,yes,N/A,safe,safe,—,company templates
+src/lib/sop-actions.ts,createBlankSopAction,sops:manage,sopId,user.companyId,yes,N/A,safe,safe,—,company templates
+src/lib/sop-actions.ts,duplicateSopAction,sops:manage,sopId,user.companyId,yes,N/A,safe,safe,—,company templates
+src/lib/sop-actions.ts,saveSopAction,sops:manage,sopId,user.companyId,yes,N/A,safe,safe,—,company templates
+src/lib/sop-actions.ts,publishSopAction,sops:manage,sopId,user.companyId,yes,N/A,safe,safe,—,company templates
+src/lib/sop-actions.ts,archiveSopAction,sops:manage,sopId,user.companyId,yes,N/A,safe,safe,—,company templates
+src/lib/sop-actions.ts,restoreSopDraftAction,sops:manage,sopId,user.companyId,yes,N/A,safe,safe,—,company templates
+src/lib/sop-actions.ts,restoreSopVersionAction,sops:manage,sopId,user.companyId,yes,N/A,safe,safe,—,company templates
+src/lib/sop-actions.ts,linkSopPropertiesAction,sops:manage,sopId/propertyIds,user.companyId,yes,yes,safe,safe,—,
+src/lib/sow-actions.ts,createBlankSowAction,sow:manage,sowId,user.companyId,yes,N/A,safe,safe,—,
+src/lib/sow-actions.ts,duplicateSowAction,sow:manage,sowId,user.companyId,yes,N/A,safe,safe,—,
+src/lib/sow-actions.ts,saveSowAction,sow:manage,sowId,user.companyId,yes,N/A,safe,safe,—,
+src/lib/sow-actions.ts,submitSowReviewAction,sow:manage,sowId,user.companyId,yes,N/A,safe,safe,—,
+src/lib/sow-actions.ts,approveSowAction,sow:manage,sowId,user.companyId,yes,N/A,safe,safe,—,
+src/lib/sow-actions.ts,activateSowAction,sow:manage,sowId,user.companyId,yes,N/A,safe,safe,—,
+src/lib/sow-actions.ts,archiveSowAction,sow:manage,sowId,user.companyId,yes,N/A,safe,safe,—,
+src/lib/sow-actions.ts,restoreSowDraftAction,sow:manage,sowId,user.companyId,yes,N/A,safe,safe,—,
+src/lib/sow-actions.ts,restoreSowVersionAction,sow:manage,sowId,user.companyId,yes,N/A,safe,safe,—,
+src/lib/sow-actions.ts,linkSowPropertiesAction,sow:manage,sowId/propertyIds,user.companyId,yes,yes,safe,safe,—,
+src/lib/integration-actions.ts,connectIntegrationAction,integrations:manage,integrationId,user.companyId,yes,N/A,safe,safe,—,
+src/lib/integration-actions.ts,setIntegrationEnabledAction,integrations:manage,integrationId,user.companyId,yes,N/A,safe,safe,—,
+src/lib/integration-actions.ts,syncIntegrationAction,integrations:manage,integrationId,user.companyId,yes,yes,safe,safe,—,
+src/lib/integration-actions.ts,attachFileAction,integrations:manage,entityType/entityId,user.companyId,yes,yes,defect,fixed,—,
+src/lib/integrations.ts,attachStoredFile,caller,entityType/entityId,param,yes,yes,defect,fixed,—,
+src/lib/integrations.ts,listFilesForEntity,caller,entityType/entityId,param,yes,yes,fixed-needed,fixed,—,
+src/lib/onboarding-actions.ts,saveCompanyStepAction,onboarding:run,varies,user.companyId,yes,yes,safe,safe,tests/rbac.test.ts,
+src/lib/onboarding-actions.ts,addPropertyStepAction,onboarding:run,varies,user.companyId,yes,yes,safe,safe,tests/rbac.test.ts,
+src/lib/onboarding-actions.ts,continuePropertiesAction,onboarding:run,varies,user.companyId,yes,yes,safe,safe,tests/rbac.test.ts,
+src/lib/onboarding-actions.ts,saveCalendarStepAction,onboarding:run,varies,user.companyId,yes,yes,safe,safe,tests/rbac.test.ts,
+src/lib/onboarding-actions.ts,continueCalendarsAction,onboarding:run,varies,user.companyId,yes,yes,safe,safe,tests/rbac.test.ts,
+src/lib/onboarding-actions.ts,skipStepAction,onboarding:run,varies,user.companyId,yes,yes,safe,safe,tests/rbac.test.ts,
+src/lib/onboarding-actions.ts,addSopStepAction,onboarding:run,varies,user.companyId,yes,yes,safe,safe,tests/rbac.test.ts,
+src/lib/onboarding-actions.ts,continueSopsAction,onboarding:run,varies,user.companyId,yes,yes,safe,safe,tests/rbac.test.ts,
+src/lib/onboarding-actions.ts,addSowStepAction,onboarding:run,varies,user.companyId,yes,yes,safe,safe,tests/rbac.test.ts,
+src/lib/onboarding-actions.ts,continueSowsAction,onboarding:run,varies,user.companyId,yes,yes,safe,safe,tests/rbac.test.ts,
+src/lib/onboarding-actions.ts,addVendorStepAction,onboarding:run,varies,user.companyId,yes,yes,safe,safe,tests/rbac.test.ts,
+src/lib/onboarding-actions.ts,continueVendorsAction,onboarding:run,varies,user.companyId,yes,yes,safe,safe,tests/rbac.test.ts,
+src/lib/onboarding-actions.ts,continueReviewAction,onboarding:run,varies,user.companyId,yes,yes,safe,safe,tests/rbac.test.ts,
+src/lib/onboarding-actions.ts,activateWorkspaceAction,onboarding:run,varies,user.companyId,yes,yes,safe,safe,tests/rbac.test.ts,
+src/lib/launch-actions.ts,repairIntegrityAction,settings:manage,—,user.companyId,yes,N/A,safe,safe,—,
+src/lib/launch-actions.ts,retryFailedJobsAction,settings:manage,—,user.companyId,yes,N/A,safe,safe,—,
+src/lib/launch-actions.ts,runSmokeTestsAction,settings:manage,—,user.companyId,yes,N/A,safe,safe,scripts/smoke-core.ts,
+src/app/api/jobs/process/route.ts,POST,CRON_SECRET,—,N/A,N/A,N/A,defect,fixed,tests/security/jobs-route.test.ts,
+src/app/api/jobs/process/route.ts,GET,none,—,N/A,N/A,N/A,defect,removed,tests/security/jobs-route.test.ts,returns 405
+src/app/api/auth/bypass/route.ts,GET,dev-only,next,demo user,N/A,N/A,safe,safe,tests/auth-bypass.test.ts,
+src/lib/jobs.ts,processDueJobs,cron,job ids,per-job,yes,yes,defect,fixed,tests/security/jobs-route.test.ts,
+src/lib/jobs.ts,remindTurnover,internal,turnoverId,job.companyId,yes,yes,defect,fixed,tests/security/jobs-route.test.ts,
+src/lib/jobs.ts,markOverdueTurnovers,internal,—,job.companyId,yes,N/A,defect,fixed,—,
+src/lib/jobs.ts,dispatchNotification,internal,userId,job.companyId,yes,yes,fixed-needed,fixed,—,
+src/lib/jobs.ts,enqueueJob,caller,companyId,required,yes,N/A,fixed-needed,fixed,—,
+src/lib/jobs.ts,retryFailedJobs,caller,—,param,yes,N/A,safe,safe,—,
+src/lib/jobs.ts,scheduleTurnoverReminder,caller,turnoverId,param,caller,N/A,safe,safe,—,
+src/lib/properties.ts,listProperties,page,—,param,yes,yes,safe,fixed,tests/access-scope.test.ts,
+src/lib/properties.ts,getPropertyDetail,page,propertyId,param,yes,yes,safe,fixed,tests/access-scope.test.ts,
+src/lib/dashboard.ts,getDashboardData,page,—,param,yes,yes,safe,fixed,—,accessScope
+src/lib/reports.ts,getReportFilterOptions,page,—,param,yes,yes,safe,fixed,—,
+src/lib/reports.ts,getReportingDashboard,page,filters,param,yes,yes,safe,fixed,—,
+src/lib/reports.ts,getPropertyReport,page,filters,param,yes,yes,safe,fixed,—,
+src/lib/reports.ts,getQaIssueReport,page,filters,param,yes,yes,safe,fixed,—,
+src/lib/reports.ts,getCleanerReport,page,filters,param,yes,yes,safe,fixed,—,
+src/lib/reports.ts,getReportDataset,export,filters,param,yes,yes,safe,fixed,—,
+src/app/(app)/inventory/page.tsx,InventoryPage,inventory:manage,filters,user.companyId,yes,yes,defect,fixed,tests/rbac.test.ts;tests/access-scope.test.ts,
+src/app/(app)/owners/page.tsx,OwnersPage,owners:report,—,user.companyId,yes,yes,defect,fixed,tests/rbac.test.ts,
+src/app/(onboarding)/layout.tsx,OnboardingLayout,onboarding:run,—,user.companyId,N/A,N/A,defect,fixed,tests/rbac.test.ts,
+src/components/sidebar.tsx,navigation,role-based,—,user.role,N/A,N/A,defect,fixed,tests/rbac.test.ts,
+src/lib/access-scope.ts,parseAccessScope/sanitize/assert*,N/A,propertyIds,param,yes,yes,defect,fixed,tests/access-scope.test.ts,Option A enforcement
+src/lib/launch.ts,runSmokeTests,settings:manage,—,param,yes,N/A,safe,safe,scripts/smoke-core.ts,
+src/lib/launch.ts,runDataIntegrityScan,settings:manage,—,param,yes,N/A,safe,safe,scripts/verify-sqlite-transfer.ts,
+src/lib/rbac.ts,can/requirePermission,N/A,—,N/A,N/A,N/A,safe,not-tenant-owned,tests/rbac.test.ts,
+src/lib/logger.ts,log/redactContext,N/A,—,N/A,N/A,N/A,safe,not-tenant-owned,tests/logger.test.ts,
+src/lib/env.server.ts,getServerEnv,N/A,—,N/A,N/A,N/A,safe,not-tenant-owned,tests/env.test.ts,
+src/lib/session-crypto.ts,hashSessionToken,N/A,—,N/A,N/A,N/A,safe,not-tenant-owned,tests/session.test.ts,
+src/lib/monitoring.ts,monitoring adapter,N/A,—,N/A,N/A,N/A,safe,not-tenant-owned,—,
