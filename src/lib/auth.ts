@@ -203,6 +203,13 @@ export async function loginWithCredentials(
   return { user };
 }
 
+/**
+ * Revoke all active sessions for a user.
+ *
+ * v1 note: There is no product password-change server action yet.
+ * Call this helper from any future password-reset / password-change path
+ * before returning success. Do not treat export presence as an implemented UX flow.
+ */
 export async function revokeSessionsOnPasswordChange(userId: string) {
   await revokeAllSessionsForUser(userId);
 }

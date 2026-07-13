@@ -15,14 +15,11 @@ import { writeAuditLog } from "@/lib/audit";
 import { slugify } from "@/lib/utils";
 import { checkSignupRateLimits } from "@/lib/rate-limit";
 import { getServerEnv } from "@/lib/env.server";
+import { resolveClientIp } from "@/lib/client-ip";
 
 async function clientIp(): Promise<string> {
   const h = await headers();
-  return (
-    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    h.get("x-real-ip") ||
-    "unknown"
-  );
+  return resolveClientIp(h).ip;
 }
 
 export async function loginAction(formData: FormData) {
