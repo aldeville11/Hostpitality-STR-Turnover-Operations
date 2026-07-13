@@ -1,12 +1,35 @@
 # Hostpitality — Project Handoff
 
+## Production Foundation v1 (2026-07-13)
+
+**Branch:** `cursor/production-foundation-v1`
+
+**Database:** PostgreSQL via Prisma migrations (`baseline_postgresql`, `query_indexes`, `session_hmac_additive`, `session_drop_raw_token_contract`). SQLite is not a production runtime.
+
+**Security hardening:**
+- `src/lib/env.server.ts` — lazy validation, fail-closed production
+- Session HMAC-SHA-256 (`SESSION_PEPPER`), no raw token storage
+- Auth bypass requires `ALLOW_AUTH_BYPASS=true` in development only
+- `POST /api/jobs/process` requires `CRON_SECRET`; customer global job trigger removed
+- Redis rate limiting on login/signup (fail closed in production)
+- Tenant isolation fixes + `docs/audits/tenant-isolation.csv`
+- Permission-aware sidebar; RBAC page guards for inventory, owners, onboarding
+- Demo seed requires `ALLOW_DEMO_SEED=true` + `SEED_CONFIRM=DESTROY_AND_SEED`
+- Vitest suite + `.github/workflows/ci.yml`
+
+**Monitoring:** Provider-neutral interface (`src/lib/monitoring.ts`) with logger adapter only. External alerting is an accepted operational risk until an adapter is installed.
+
+**Verification (branch state):** `typecheck`, `lint`, `test:ci` (26/26), `test:security` (14/14), `smoke` (8/8), `build` — all pass locally.
+
+---
+
 ## 1. Product Summary
 
 Hostpitality is a Next.js web application for **short-term rental (STR) turnover operations** — coordinating cleaning windows, field staff, quality assurance, issues, and operational standards across a property portfolio. Evidence: `README.md`, `package.json` description, and UI copy in `src/components/sidebar.tsx`.
 
 It serves **property managers, cleaning coordinators, ops managers, and field vendors/cleaners** via role-based access (`src/lib/rbac.ts`). The core problem is running repeatable guest-ready turnovers: schedule jobs from bookings, assign cleaners, execute SOP/SOW checklists, pass QA/photo review, track defects, and report portfolio health.
 
-The main workflow: **onboard a company → configure properties, SOPs, SOWs, and vendors → run daily turnovers → assign cleaners → complete checklists → QA review → resolve issues → report and notify owners**. Data persists in SQLite via Prisma (`prisma/schema.prisma`). The intended outcome is a single **enterprise operations command center** (dashboard, lists, detail pages, launch readiness) with auditable status transitions and background jobs for reminders and overdue checks (`src/lib/jobs.ts`).
+The main workflow: **onboard a company → configure properties, SOPs, SOWs, and vendors → run daily turnovers → assign cleaners → complete checklists → QA review → resolve issues → report and notify owners**. Data persists in **PostgreSQL** via Prisma (`prisma/schema.prisma`).
 
 ## 2. Current User Experience
 

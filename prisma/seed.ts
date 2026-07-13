@@ -1,9 +1,23 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
+function assertDemoSeedAllowed() {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Demo seeding is not permitted in production");
+  }
+  if (process.env.ALLOW_DEMO_SEED !== "true") {
+    throw new Error("Demo seed requires ALLOW_DEMO_SEED=true");
+  }
+  const confirm = process.env.SEED_CONFIRM?.trim();
+  if (!confirm || confirm !== "DESTROY_AND_SEED") {
+    throw new Error("Demo seed requires SEED_CONFIRM=DESTROY_AND_SEED");
+  }
+}
+
 const prisma = new PrismaClient();
 
 async function main() {
+  assertDemoSeedAllowed();
   await prisma.backgroundJob.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.auditLog.deleteMany();
