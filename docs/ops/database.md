@@ -68,6 +68,14 @@ Legacy SQLite `Session` rows store raw bearer tokens. The transfer script **excl
 
 Migration `session_drop_raw_token_contract` removes the legacy `Session.token` column. **Application rollback is not safe** after this migration. Restore from backup if rollback is required.
 
+## Background job leases
+
+`processDueJobs` claims `PENDING` jobs and may reclaim `RUNNING` jobs whose `startedAt` is older than `JOB_LEASE_SECONDS` (default 900). Concurrent processors use status-guarded `updateMany` so the same job is not double-processed. Stale reclaim is logged as `job.stale_reclaimed` without payloads or secrets.
+
+## Demo seed target safety
+
+Demo seed requires `ALLOW_DEMO_SEED=true`, `SEED_CONFIRM=DESTROY_AND_SEED`, non-production `NODE_ENV`, and a local/disposable PostgreSQL `DATABASE_URL` (localhost/loopback/private LAN). Remote and staging/production-like hosts are refused before any destructive SQL runs.
+
 ## SESSION_PEPPER rotation
 
 1. Deploy new pepper as `SESSION_PEPPER`.

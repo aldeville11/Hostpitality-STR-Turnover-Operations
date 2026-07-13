@@ -9,6 +9,15 @@ type ServerEnv = {
   rateLimitPepper: string;
   logLevel: "debug" | "info" | "warn" | "error";
   jobBatchSize: number;
+  /** Seconds before a RUNNING job claim may be reclaimed after worker failure. */
+  jobLeaseSeconds: number;
+  /**
+   * Trusted proxy mode for client IP resolution used by rate limiting.
+   * - vercel: trust platform-controlled forwarded headers (Vercel)
+   * - single-hop: trust x-real-ip / leftmost x-forwarded-for only when TRUST_PROXY=single-hop
+   * - none: never trust client-supplied proxy headers (IP identity = "unknown")
+   */
+  trustProxyMode: "vercel" | "single-hop" | "none";
   appBaseUrl?: string;
   allowAuthBypass: boolean;
   allowDemoSeed: boolean;
@@ -83,6 +92,14 @@ function validateProduction(env: ServerEnv) {
   }
 }
 
+function parseTrustProxyMode(value: string | undefined): ServerEnv["trustProxyMode"] {
+  const raw = (value ?? "").trim().toLowerCase();
+  if (raw === "vercel" || raw === "single-hop" || raw === "none") return raw;
+  // Auto-detect Vercel when unset
+  if (process.env.VERCEL === "1") return "vercel";
+  return "none";
+}
+
 /** Lazy, cached server environment validation. Fail closed in production. */
 export function getServerEnv(): ServerEnv {
   if (cached) return cached;
@@ -116,6 +133,8 @@ export function getServerEnv(): ServerEnv {
     rateLimitPepper: process.env.RATE_LIMIT_PEPPER ?? "",
     logLevel: parseLogLevel(process.env.LOG_LEVEL),
     jobBatchSize: parsePositiveInt("JOB_BATCH_SIZE", process.env.JOB_BATCH_SIZE, 25),
+    jobLeaseSeconds: parsePositiveInt("JOB_LEASE_SECONDS", process.env.JOB_LEASE_SECONDS, 900),
+    trustProxyMode: parseTrustProxyMode(process.env.TRUST_PROXY),
     appBaseUrl: process.env.APP_BASE_URL?.trim() || undefined,
     allowAuthBypass,
     allowDemoSeed,

@@ -32,23 +32,49 @@ export async function enqueueJob(input: {
 }
 
 export async function processDueJobs(limit?: number) {
-  const batchSize = limit ?? getServerEnv().jobBatchSize;
+  const env = getServerEnv();
+  const batchSize = Math.min(limit ?? env.jobBatchSize, env.jobBatchSize);
   const now = new Date();
+  const leaseMs = env.jobLeaseSeconds * 1000;
+  const staleBefore = new Date(now.getTime() - leaseMs);
 
   const jobs = await prisma.$transaction(async (tx) => {
-    const pending = await tx.backgroundJob.findMany({
-      where: { status: "PENDING", runAt: { lte: now }, companyId: { not: null } },
+    const candidates = await tx.backgroundJob.findMany({
+      where: {
+        companyId: { not: null },
+        OR: [
+          { status: "PENDING", runAt: { lte: now } },
+          { status: "RUNNING", startedAt: { lt: staleBefore } },
+        ],
+      },
       orderBy: { runAt: "asc" },
-      take: Math.min(batchSize, getServerEnv().jobBatchSize),
+      take: batchSize,
     });
 
     const claimed = [];
-    for (const job of pending) {
+    for (const job of candidates) {
       const updated = await tx.backgroundJob.updateMany({
-        where: { id: job.id, status: "PENDING" },
+        where: {
+          id: job.id,
+          OR: [
+            { status: "PENDING" },
+            { status: "RUNNING", startedAt: { lt: staleBefore } },
+          ],
+        },
         data: { status: "RUNNING", startedAt: new Date(), attempts: { increment: 1 } },
       });
-      if (updated.count === 1) claimed.push(job);
+      if (updated.count === 1) {
+        if (job.status === "RUNNING") {
+          log.warn("job.stale_reclaimed", {
+            jobId: job.id,
+            type: job.type,
+            companyId: job.companyId,
+            previousStartedAt: job.startedAt,
+            leaseSeconds: env.jobLeaseSeconds,
+          });
+        }
+        claimed.push({ ...job, attempts: job.attempts });
+      }
     }
 
     return claimed;
