@@ -241,6 +241,7 @@ export async function linkSopPropertiesAction(formData: FormData) {
       sopId,
       propertyIds,
       userId: user.id,
+      accessScope: user.accessScope,
     });
     revalidateSopPaths(sopId);
     return { ok: true as const };

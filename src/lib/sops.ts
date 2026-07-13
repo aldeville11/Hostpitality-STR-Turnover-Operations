@@ -1,6 +1,12 @@
 import { prisma } from "./db";
 import { writeAuditLog } from "./audit";
 import { parseJson } from "./json";
+import {
+  assertPropertyIdsAuthorizedForLink,
+  COMPANY_WIDE_SCOPE,
+  propertyLinkMutationScopeWhere,
+  type AccessScope,
+} from "./access-scope";
 
 export const SOP_STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED"] as const;
 export type SopStatus = (typeof SOP_STATUSES)[number];
@@ -585,6 +591,7 @@ export async function createSopFromTemplate(input: {
   templateKey: string;
   name?: string;
   propertyIds?: string[];
+  accessScope?: AccessScope;
 }) {
   const template = getTemplate(input.templateKey);
   if (!template) throw new Error("Template not found");
@@ -625,6 +632,7 @@ export async function createSopFromTemplate(input: {
       sopId: sop.id,
       propertyIds: input.propertyIds,
       userId: input.userId,
+      accessScope: input.accessScope ?? COMPANY_WIDE_SCOPE,
     });
   }
 
@@ -994,31 +1002,38 @@ export async function linkPropertiesToSop(input: {
   sopId: string;
   propertyIds: string[];
   userId: string;
+  accessScope: AccessScope;
 }) {
   const sop = await prisma.sop.findFirst({
     where: { id: input.sopId, companyId: input.companyId },
   });
   if (!sop) throw new Error("SOP not found");
 
-  const properties = await prisma.property.findMany({
-    where: { companyId: input.companyId, id: { in: input.propertyIds } },
-    select: { id: true },
-  });
-  const ids = properties.map((p) => p.id);
+  const ids = await assertPropertyIdsAuthorizedForLink(
+    input.companyId,
+    input.accessScope,
+    input.propertyIds
+  );
 
-  // Unlink properties currently pointing at this SOP but not in the new set
+  // Unlink only in-scope properties currently pointing at this SOP but not in the new set.
+  // Out-of-scope links are left untouched (fail closed for unauthorized unlink).
   await prisma.property.updateMany({
     where: {
       companyId: input.companyId,
       sopId: input.sopId,
       id: { notIn: ids.length ? ids : ["__none__"] },
+      ...propertyLinkMutationScopeWhere(input.accessScope),
     },
     data: { sopId: null },
   });
 
   if (ids.length) {
     await prisma.property.updateMany({
-      where: { companyId: input.companyId, id: { in: ids } },
+      where: {
+        companyId: input.companyId,
+        id: { in: ids },
+        ...propertyLinkMutationScopeWhere(input.accessScope),
+      },
       data: { sopId: input.sopId },
     });
   }

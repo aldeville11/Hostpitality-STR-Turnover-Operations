@@ -263,6 +263,7 @@ export async function linkSowPropertiesAction(formData: FormData) {
       sowId,
       propertyIds,
       userId: user.id,
+      accessScope: user.accessScope,
     });
     revalidateSowPaths(sowId);
     return { ok: true as const };

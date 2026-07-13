@@ -193,3 +193,36 @@ export async function sanitizeAccessScopeForCompany(
   }
   return { allProperties: false, propertyIds: requested };
 }
+
+/**
+ * Atomically authorize a property-id list for linking.
+ * Rejects the entire operation if any id is missing, foreign, or out of scope.
+ * Empty lists are allowed (unlink-in-scope-only callers).
+ */
+export async function assertPropertyIdsAuthorizedForLink(
+  companyId: string,
+  scope: AccessScope,
+  propertyIds: string[]
+): Promise<string[]> {
+  const requested = [...new Set(propertyIds.filter(Boolean))];
+  for (const id of requested) {
+    if (!isPropertyInScope(scope, id)) {
+      tenantNotFound();
+    }
+  }
+  if (requested.length === 0) return [];
+  const owned = await prisma.property.findMany({
+    where: { companyId, id: { in: requested } },
+    select: { id: true },
+  });
+  if (owned.length !== requested.length) {
+    tenantNotFound();
+  }
+  return requested;
+}
+
+/** Prisma where fragment limiting mutations to in-scope Property rows. */
+export function propertyLinkMutationScopeWhere(scope: AccessScope): Record<string, unknown> {
+  if (scope.allProperties) return {};
+  return { id: { in: scope.propertyIds } };
+}
