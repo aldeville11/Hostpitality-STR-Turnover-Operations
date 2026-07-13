@@ -9,7 +9,7 @@ export default async function InventoryPage({
 }: {
   searchParams: Promise<{ q?: string; propertyId?: string; lowStock?: string }>;
 }) {
-  const user = await requireUser();
+  const user = await requireUser({ permission: "inventory:manage" });
   if (!user.companyId) redirect("/onboarding");
 
   const filters = await searchParams;

@@ -18,15 +18,11 @@ import { formatDateTime } from "@/lib/utils";
  * This hub surfaces real owner-notification metrics and routes to Reports.
  */
 export default async function OwnersPage() {
-  const user = await requireUser();
+  const user = await requireUser({ permission: "owners:report" });
   if (!user.companyId) redirect("/onboarding");
 
-  const canReport = can(user.role, "owners:report");
+  const canReport = true;
   const canDashboard = can(user.role, "dashboard:view");
-
-  if (!canReport && !canDashboard) {
-    redirect("/dashboard");
-  }
 
   const ownerNotifications = canDashboard
     ? (await getDashboardData(user.companyId)).ownerNotifications

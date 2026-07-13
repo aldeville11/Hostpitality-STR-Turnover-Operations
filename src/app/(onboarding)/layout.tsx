@@ -12,6 +12,9 @@ export default async function OnboardingLayout({ children }: { children: React.R
   if (isOnboarded(user)) redirect("/dashboard");
   if (!user.companyId) redirect("/signup");
 
+  const { can } = await import("@/lib/rbac");
+  if (!can(user.role, "onboarding:run")) redirect("/dashboard");
+
   const ctx = await getOnboardingContext(user.companyId);
 
   return (

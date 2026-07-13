@@ -3,6 +3,12 @@ import { prisma } from "./db";
 import { writeAuditLog } from "./audit";
 import { parseJson } from "./json";
 import {
+  validatePropertyIds,
+  validateSopId,
+  validateSowId,
+  tenantNotFound,
+} from "./tenant";
+import {
   ROLE_LABELS,
   ROLE_PERMISSIONS,
   ROLES,
@@ -381,8 +387,12 @@ export async function updatePropertyAdminDefaults(input: {
   });
 
   if (input.slaMinutes != null && property.sowId) {
+    const sow = await prisma.sow.findFirst({
+      where: { id: property.sowId, companyId: input.companyId },
+    });
+    if (!sow) tenantNotFound();
     await prisma.sow.update({
-      where: { id: property.sowId },
+      where: { id: sow.id },
       data: {
         slaMinutes: Math.max(30, input.slaMinutes),
         completionDeadlineMinutes: Math.max(30, input.slaMinutes),
@@ -439,9 +449,13 @@ export async function createCompanyUser(input: {
   if (existing) throw new Error("Email already in use");
 
   const passwordHash = await bcrypt.hash(input.password, 10);
+  const propertyIds = input.allProperties
+    ? []
+    : await validatePropertyIds(input.companyId, input.propertyIds ?? []);
+
   const accessScope: AccessScope = {
     allProperties: input.allProperties ?? true,
-    propertyIds: input.propertyIds ?? [],
+    propertyIds,
   };
 
   const user = await prisma.user.create({
@@ -495,9 +509,13 @@ export async function updateCompanyUser(input: {
     throw new Error("You cannot remove your own settings access");
   }
 
+  const propertyIds = input.allProperties
+    ? []
+    : await validatePropertyIds(input.companyId, input.propertyIds ?? []);
+
   const accessScope: AccessScope = {
     allProperties: input.allProperties ?? true,
-    propertyIds: input.propertyIds ?? [],
+    propertyIds,
   };
 
   const updated = await prisma.user.update({
@@ -563,6 +581,8 @@ export async function updateSystemSettings(input: {
   const settings: SystemSettings = {
     ...DEFAULT_SYSTEM_SETTINGS,
     ...input.systemSettings,
+    defaultSopId: await validateSopId(input.companyId, input.systemSettings.defaultSopId),
+    defaultSowId: await validateSowId(input.companyId, input.systemSettings.defaultSowId),
     slaHoursBySeverity: {
       ...DEFAULT_SYSTEM_SETTINGS.slaHoursBySeverity,
       ...input.systemSettings.slaHoursBySeverity,

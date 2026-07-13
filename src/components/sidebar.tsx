@@ -24,10 +24,13 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BrandLockup, BrandMark } from "@/components/brand";
+import { can, type Permission } from "@/lib/rbac";
+
 type NavItem = {
   href: string;
   label: string;
   icon: typeof LayoutDashboard;
+  permission: Permission | Permission[];
 };
 
 type NavGroup = {
@@ -41,40 +44,47 @@ const GROUPS: NavGroup[] = [
     id: "operations",
     label: "Operations",
     items: [
-      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/properties", label: "Properties", icon: Building2 },
-      { href: "/turnovers", label: "Turnovers", icon: ClipboardList },
-      { href: "/cleaners", label: "Cleaner Assignments", icon: Users },
-      { href: "/inventory", label: "Inventory", icon: Package },
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "dashboard:view" },
+      { href: "/properties", label: "Properties", icon: Building2, permission: "properties:manage" },
+      { href: "/turnovers", label: "Turnovers", icon: ClipboardList, permission: ["turnovers:manage", "turnovers:execute"] },
+      { href: "/cleaners", label: "Cleaner Assignments", icon: Users, permission: "assignments:manage" },
+      { href: "/inventory", label: "Inventory", icon: Package, permission: "inventory:manage" },
     ],
   },
   {
     id: "quality",
     label: "Quality & Standards",
     items: [
-      { href: "/sops", label: "SOPs", icon: FileText },
-      { href: "/sows", label: "SOW Templates", icon: CheckSquare },
-      { href: "/qa", label: "QA / Photo Review", icon: Camera },
-      { href: "/issues", label: "Issues", icon: AlertTriangle },
+      { href: "/sops", label: "SOPs", icon: FileText, permission: "sops:manage" },
+      { href: "/sows", label: "SOW Templates", icon: CheckSquare, permission: "sow:manage" },
+      { href: "/qa", label: "QA / Photo Review", icon: Camera, permission: "qa:review" },
+      { href: "/issues", label: "Issues", icon: AlertTriangle, permission: "issues:manage" },
     ],
   },
   {
     id: "intelligence",
     label: "Intelligence",
     items: [
-      { href: "/reports", label: "Reporting", icon: BarChart3 },
-      { href: "/integrations", label: "Integrations", icon: Plug },
+      { href: "/reports", label: "Reporting", icon: BarChart3, permission: ["owners:report", "dashboard:view"] },
+      { href: "/integrations", label: "Integrations", icon: Plug, permission: "integrations:manage" },
     ],
   },
   {
     id: "admin",
     label: "Administration",
     items: [
-      { href: "/settings", label: "Settings", icon: Settings },
-      { href: "/launch", label: "Launch Readiness", icon: Rocket },
+      { href: "/settings", label: "Settings", icon: Settings, permission: "settings:manage" },
+      { href: "/launch", label: "Launch Readiness", icon: Rocket, permission: "settings:manage" },
     ],
   },
 ];
+
+function itemVisible(role: string, permission: Permission | Permission[]): boolean {
+  if (Array.isArray(permission)) {
+    return permission.some((p) => can(role, p));
+  }
+  return can(role, permission);
+}
 
 export function Sidebar({
   open,
@@ -83,6 +93,8 @@ export function Sidebar({
   onToggleCollapsed,
   userName,
   companyName,
+  userRole,
+  devBypassActive,
 }: {
   open: boolean;
   onClose: () => void;
@@ -90,6 +102,8 @@ export function Sidebar({
   onToggleCollapsed: () => void;
   userName: string;
   companyName: string;
+  userRole: string;
+  devBypassActive?: boolean;
 }) {
   const pathname = usePathname();
 
@@ -133,8 +147,17 @@ export function Sidebar({
           </button>
         </div>
 
+        {devBypassActive && !collapsed ? (
+          <div className="mx-2 mt-3 rounded-[var(--radius-md)] border border-amber-400/40 bg-amber-500/15 px-2.5 py-2 text-[11px] text-amber-100">
+            Development auth bypass active
+          </div>
+        ) : null}
+
         <nav className="flex-1 space-y-5 overflow-y-auto px-2 py-4">
-          {GROUPS.map((group) => (
+          {GROUPS.map((group) => {
+            const visibleItems = group.items.filter((item) => itemVisible(userRole, item.permission));
+            if (visibleItems.length === 0) return null;
+            return (
             <div key={group.id}>
               {!collapsed ? (
                 <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45">
@@ -144,7 +167,7 @@ export function Sidebar({
                 <p className="sr-only">{group.label}</p>
               )}
               <ul className="space-y-0.5">
-                {group.items.map((item) => {
+                {visibleItems.map((item) => {
                   const active =
                     pathname === item.href || pathname.startsWith(`${item.href}/`);
                   const Icon = item.icon;
@@ -172,7 +195,8 @@ export function Sidebar({
                 })}
               </ul>
             </div>
-          ))}
+          );
+          })}
         </nav>
 
         <div className="mt-auto border-t border-white/10 px-2 py-3">

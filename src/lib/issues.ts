@@ -1,6 +1,12 @@
 import { prisma } from "./db";
 import { writeAuditLog } from "./audit";
 import { parseJson } from "./json";
+import {
+  validatePropertyId,
+  validateQaInspectionId,
+  validateTurnoverId,
+  validateVendorId,
+} from "./tenant";
 
 export const ISSUE_STATUSES = [
   "OPEN",
@@ -391,15 +397,23 @@ export async function createIssue(input: {
   let propertyId = input.propertyId ?? null;
   let assigneeName: string | null = null;
 
-  if (input.turnoverId && !propertyId) {
+  propertyId = await validatePropertyId(input.companyId, propertyId);
+  const turnoverId = await validateTurnoverId(input.companyId, input.turnoverId ?? null);
+  const qaInspectionId = await validateQaInspectionId(
+    input.companyId,
+    input.qaInspectionId ?? null
+  );
+
+  if (turnoverId && !propertyId) {
     const turnover = await prisma.turnover.findFirst({
-      where: { id: input.turnoverId, companyId: input.companyId },
+      where: { id: turnoverId, companyId: input.companyId },
       select: { propertyId: true },
     });
     propertyId = turnover?.propertyId ?? null;
   }
 
   if (input.assigneeVendorId) {
+    await validateVendorId(input.companyId, input.assigneeVendorId);
     const vendor = await prisma.vendor.findFirst({
       where: { id: input.assigneeVendorId, companyId: input.companyId },
     });
@@ -417,8 +431,8 @@ export async function createIssue(input: {
     data: {
       companyId: input.companyId,
       propertyId,
-      turnoverId: input.turnoverId ?? null,
-      qaInspectionId: input.qaInspectionId ?? null,
+      turnoverId,
+      qaInspectionId,
       title: input.title.trim(),
       description: input.description.trim(),
       severity,
@@ -457,12 +471,11 @@ export async function createIssue(input: {
     });
   }
 
-  if (input.blocking && input.turnoverId) {
+  if (input.blocking && turnoverId) {
     const turnover = await prisma.turnover.findFirst({
-      where: { id: input.turnoverId, companyId: input.companyId },
+      where: { id: turnoverId, companyId: input.companyId },
     });
     if (turnover && !["COMPLETED", "BLOCKED"].includes(turnover.status)) {
-      // Soft signal: escalate turnover timestamp; don't force BLOCKED unless already blocked source
       await prisma.turnover.update({
         where: { id: turnover.id },
         data: { escalatedAt: turnover.escalatedAt ?? new Date() },
@@ -669,8 +682,8 @@ export async function escalateIssue(input: {
   });
 
   if (issue.turnoverId) {
-    await prisma.turnover.update({
-      where: { id: issue.turnoverId },
+    await prisma.turnover.updateMany({
+      where: { id: issue.turnoverId, companyId: input.companyId },
       data: { escalatedAt: new Date() },
     });
   }

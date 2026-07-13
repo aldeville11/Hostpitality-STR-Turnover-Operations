@@ -1,0 +1,33 @@
+File,Function or route,Required permission,Tenant-owned inputs,Source of companyId,Ownership validation,Relationship validation,Previous status,Final status,Test coverage
+src/lib/actions.ts,loginAction,none,email,N/A,N/A,N/A,safe,safe,tests/auth-bypass.test.ts
+src/lib/actions.ts,logoutAction,session,—,user.companyId,N/A,N/A,safe,safe,—
+src/lib/actions.ts,signupAction,none,email,creates company,N/A,N/A,safe,safe,tests/rate-limit.test.ts
+src/lib/issue-actions.ts,createIssueAction,issues:manage,propertyId/turnoverId/qaInspectionId,user.companyId,partial,partial,defect,fixed,tests/tenant-isolation.test.ts
+src/lib/issue-actions.ts,escalateIssueAction,issues:manage,issueId,user.companyId,yes,partial,defect,fixed,—
+src/lib/property-actions.ts,updatePropertySettingsAction,properties:manage,sopId/sowId/defaultVendorId,user.companyId,yes,partial,defect,fixed,—
+src/lib/settings-actions.ts,updateSystemSettingsAction,settings:manage,defaultSopId/defaultSowId,user.companyId,yes,yes,defect,fixed,—
+src/lib/settings-actions.ts,createUserAction,settings:manage,propertyIds[],user.companyId,N/A,partial,defect,fixed,—
+src/lib/settings-actions.ts,updateUserAction,settings:manage,propertyIds[],user.companyId,yes,partial,defect,fixed,—
+src/lib/settings.ts,updatePropertyAdminDefaults,settings:manage,propertyId,param,yes,partial,defect,fixed,—
+src/lib/settings.ts,updateSystemSettings,settings:manage,defaultSopId/defaultSowId,param,yes,yes,defect,fixed,—
+src/lib/settings.ts,createCompanyUser,settings:manage,propertyIds[],param,N/A,partial,defect,fixed,—
+src/lib/settings.ts,updateCompanyUser,settings:manage,propertyIds[],param,yes,partial,defect,fixed,—
+src/lib/issues.ts,createIssue,caller,propertyId/turnoverId/qaInspectionId,param,partial,partial,defect,fixed,tests/tenant-isolation.test.ts
+src/lib/issues.ts,escalateIssue,caller,issueId,param,yes,partial,defect,fixed,—
+src/lib/integrations.ts,attachStoredFile,integrations:manage,entityType/entityId,param,no,no,defect,fixed,—
+src/lib/integrations.ts,listFilesForEntity,caller,entityType/entityId,param,yes,yes,fixed-needed,fixed,—
+src/lib/jobs.ts,remindTurnover,internal,turnoverId,job.companyId,yes,yes,defect,fixed,—
+src/lib/jobs.ts,markOverdueTurnovers,internal,—,job.companyId,yes,N/A,defect,fixed,—
+src/lib/jobs.ts,processDueJobs,cron/internal,job ids,per-job,scoped,yes,defect,fixed,tests/security/jobs.test.ts
+src/app/api/jobs/process/route.ts,POST,CRON_SECRET,—,N/A,N/A,N/A,defect,fixed,tests/security/jobs.test.ts
+src/app/api/jobs/process/route.ts,GET,none,—,N/A,N/A,N/A,defect,fixed,tests/security/jobs.test.ts
+src/app/api/auth/bypass/route.ts,GET,dev-only,next path,demo user,N/A,N/A,safe,safe,tests/auth-bypass.test.ts
+src/lib/actions.ts,processJobsAction,settings:manage,—,session,removed,removed,defect,fixed,—
+src/app/(app)/inventory/page.tsx,InventoryPage,inventory:manage,filters,user.companyId,yes,N/A,defect,fixed,tests/rbac.test.ts
+src/app/(app)/owners/page.tsx,OwnersPage,owners:report,—,user.companyId,N/A,N/A,defect,fixed,tests/rbac.test.ts
+src/app/(onboarding)/layout.tsx,OnboardingLayout,onboarding:run,—,user.companyId,N/A,N/A,defect,fixed,tests/rbac.test.ts
+src/components/sidebar.tsx,navigation,role-based,—,user.role,N/A,N/A,defect,fixed,tests/rbac.test.ts
+src/lib/turnover-actions.ts,assignCleanerAction,assignments:manage,turnoverId/vendorId,user.companyId,yes,yes,safe,safe,—
+src/lib/qa-actions.ts,decideQaAction,qa:review,inspectionId,user.companyId,yes,yes,safe,safe,—
+src/lib/reports.ts,getReportDataset,owners:report,filters,param,yes,N/A,safe,safe,—
+src/lib/launch.ts,runSmokeTests,settings:manage,—,param,yes,N/A,safe,safe,scripts/smoke-core.ts

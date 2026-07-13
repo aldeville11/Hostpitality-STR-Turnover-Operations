@@ -4,6 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
+import {
+  validateSopId,
+  validateSowId,
+  validateVendorId,
+} from "@/lib/tenant";
 import { writeAuditLog } from "@/lib/audit";
 import {
   DEFAULT_PHOTO_REQUIREMENTS,
@@ -167,9 +172,12 @@ export async function updatePropertySettingsAction(formData: FormData) {
   });
   if (!property) return { error: "Property not found" };
 
-  const sopId = String(formData.get("sopId") || "") || null;
-  const sowId = String(formData.get("sowId") || "") || null;
-  const defaultVendorId = String(formData.get("defaultVendorId") || "") || null;
+  const sopId = await validateSopId(user.companyId, String(formData.get("sopId") || "") || null);
+  const sowId = await validateSowId(user.companyId, String(formData.get("sowId") || "") || null);
+  const defaultVendorId = await validateVendorId(
+    user.companyId,
+    String(formData.get("defaultVendorId") || "") || null
+  );
   const accessNotes = String(formData.get("accessNotes") || "").trim() || null;
   const turnoverBufferMins = Number(formData.get("turnoverBufferMins") || 60);
   const sameDayTurnover = String(formData.get("sameDayTurnover") || "true") === "true";
