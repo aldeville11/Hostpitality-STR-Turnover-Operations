@@ -22,7 +22,14 @@ export async function createCompany(prisma: PrismaClient, overrides?: Partial<{ 
 
 export async function createUser(
   prisma: PrismaClient,
-  input: { companyId: string; email?: string; role?: string; password?: string; name?: string }
+  input: {
+    companyId: string;
+    email?: string;
+    role?: string;
+    password?: string;
+    name?: string;
+    accessScopeJson?: string;
+  }
 ) {
   const email = input.email ?? `${uid("user")}@test.hostpitality.app`;
   const passwordHash = await bcrypt.hash(input.password ?? "testpass1234", 4);
@@ -34,6 +41,7 @@ export async function createUser(
       role: input.role ?? "OPS_MANAGER",
       passwordHash,
       active: true,
+      ...(input.accessScopeJson ? { accessScopeJson: input.accessScopeJson } : {}),
     },
   });
 }

@@ -12,16 +12,21 @@
 - Auth bypass requires `ALLOW_AUTH_BYPASS=true` in development only
 - `POST /api/jobs/process` requires `CRON_SECRET`; customer global job trigger removed
 - Redis rate limiting on login/signup (fail closed in production)
-- Tenant isolation fixes + `docs/audits/tenant-isolation.csv` (124 paths, 0 unresolved)
-- **accessScope (Option A):** property-level scope is parsed via Zod and enforced on reads/mutations after `companyId` (`src/lib/access-scope.ts`). Company-wide = `allProperties: true`. Empty/malformed/foreign IDs fail closed.
+- Tenant isolation fixes + `docs/audits/tenant-isolation.csv` (**82 paths**: 60 Verified safe, 16 Fixed, 6 Not tenant-owned, **0 Unresolved**)
+- **accessScope (Option A):** property-level scope via Zod + `composePropertyIdFilter` (never key-overwrite). Enforced on property-linked reads/mutations after `companyId`. Empty/malformed scopes fail closed.
+- Independent-review remediation: filter composition, calendar/turnover/QA/cleaner/settings scope gaps, job lease reclaim, TRUST_PROXY IP policy, demo-seed target guards, bypass-route HTTP tests
 - Permission-aware sidebar; RBAC page guards for inventory, owners, onboarding
-- Demo seed requires `ALLOW_DEMO_SEED=true` + `SEED_CONFIRM=DESTROY_AND_SEED`
+- Demo seed requires `ALLOW_DEMO_SEED=true` + `SEED_CONFIRM=DESTROY_AND_SEED` + local disposable PostgreSQL target
 - Vitest suite + `.github/workflows/ci.yml`
 - SQLite→PostgreSQL transfer excludes Session rows (re-auth required); verified via `scripts/verify-sqlite-transfer.ts`
+- Job claim lease (`JOB_LEASE_SECONDS`, default 900) reclaims stale `RUNNING` jobs via `startedAt`
+- Rate-limit IP identity: `TRUST_PROXY=none|vercel|single-hop` (`docs/ops/rate-limiting.md`)
 
 **Monitoring:** Provider-neutral interface (`src/lib/monitoring.ts`) with logger adapter only. External alerting is an accepted operational risk until an adapter is installed.
 
-**Verification (branch state):** `typecheck`, `lint`, `test:ci` (57/57), `test:security` (24/24), `smoke` (8/8), `build`, `verify` — all pass locally. GitHub Actions not remotely verified (no push).
+**F-L1 disposition:** `revokeSessionsOnPasswordChange` is documented as a future-hook helper — no password-change product path in v1; not fabricated.
+
+**Verification:** re-run after remediation commits (see PR #16).
 
 ---
 
