@@ -2,6 +2,7 @@ import { prisma } from "./db";
 import { writeAuditLog } from "./audit";
 import { parseJson } from "./json";
 import { captureError, log } from "./logger";
+import { getServerEnv } from "./env.server";
 
 export type JobType =
   | "turnover.remind"
@@ -11,14 +12,17 @@ export type JobType =
 export const MAX_JOB_ATTEMPTS = 3;
 
 export async function enqueueJob(input: {
-  companyId?: string | null;
+  companyId: string;
   type: JobType | string;
   payload?: Record<string, unknown>;
   runAt?: Date;
 }) {
+  if (!input.companyId) {
+    throw new Error("companyId is required for background jobs");
+  }
   return prisma.backgroundJob.create({
     data: {
-      companyId: input.companyId ?? null,
+      companyId: input.companyId,
       type: input.type,
       payloadJson: JSON.stringify(input.payload ?? {}),
       runAt: input.runAt ?? new Date(),
@@ -27,21 +31,42 @@ export async function enqueueJob(input: {
   });
 }
 
-export async function processDueJobs(limit = 20) {
+export async function processDueJobs(limit?: number) {
+  const batchSize = limit ?? getServerEnv().jobBatchSize;
   const now = new Date();
-  const jobs = await prisma.backgroundJob.findMany({
-    where: { status: "PENDING", runAt: { lte: now } },
-    orderBy: { runAt: "asc" },
-    take: limit,
+
+  const jobs = await prisma.$transaction(async (tx) => {
+    const pending = await tx.backgroundJob.findMany({
+      where: { status: "PENDING", runAt: { lte: now }, companyId: { not: null } },
+      orderBy: { runAt: "asc" },
+      take: batchSize,
+    });
+
+    for (const job of pending) {
+      await tx.backgroundJob.update({
+        where: { id: job.id },
+        data: { status: "RUNNING", startedAt: new Date(), attempts: { increment: 1 } },
+      });
+    }
+
+    return pending;
   });
 
   const results = [];
 
   for (const job of jobs) {
-    await prisma.backgroundJob.update({
-      where: { id: job.id },
-      data: { status: "RUNNING", startedAt: new Date(), attempts: { increment: 1 } },
-    });
+    if (!job.companyId) {
+      await prisma.backgroundJob.update({
+        where: { id: job.id },
+        data: {
+          status: "FAILED",
+          error: "Missing companyId",
+          completedAt: new Date(),
+        },
+      });
+      results.push({ id: job.id, ok: false as const, error: "Missing companyId" });
+      continue;
+    }
 
     try {
       const payload = parseJson<Record<string, unknown>>(job.payloadJson, {});
@@ -163,7 +188,7 @@ export async function getJobObservability(companyId: string) {
 async function handleJob(
   type: string,
   payload: Record<string, unknown>,
-  companyId: string | null
+  companyId: string
 ) {
   switch (type) {
     case "turnover.remind":
@@ -177,11 +202,11 @@ async function handleJob(
   }
 }
 
-async function remindTurnover(turnoverId: string, companyId: string | null) {
+async function remindTurnover(turnoverId: string, companyId: string) {
   if (!turnoverId) return { skipped: true, reason: "missing turnoverId" };
 
-  const turnover = await prisma.turnover.findUnique({
-    where: { id: turnoverId },
+  const turnover = await prisma.turnover.findFirst({
+    where: { id: turnoverId, companyId },
     include: { property: true },
   });
 
@@ -189,10 +214,9 @@ async function remindTurnover(turnoverId: string, companyId: string | null) {
     return { skipped: true };
   }
 
-  const cid = companyId ?? turnover.companyId;
   await prisma.notification.create({
     data: {
-      companyId: cid,
+      companyId,
       title: "Turnover reminder",
       body: `Reminder: ${turnover.property.name} turnover window starts soon.`,
       type: "reminder",
@@ -200,7 +224,7 @@ async function remindTurnover(turnoverId: string, companyId: string | null) {
   });
 
   await writeAuditLog({
-    companyId: cid,
+    companyId,
     action: "job.turnover.remind",
     entityType: "Turnover",
     entityId: turnoverId,
@@ -209,11 +233,11 @@ async function remindTurnover(turnoverId: string, companyId: string | null) {
   return { reminded: true };
 }
 
-async function markOverdueTurnovers(companyId: string | null) {
+async function markOverdueTurnovers(companyId: string) {
   const now = new Date();
   const due = await prisma.turnover.findMany({
     where: {
-      ...(companyId ? { companyId } : {}),
+      companyId,
       deadlineAt: { lt: now },
       status: { in: ["SCHEDULED", "ASSIGNED", "IN_PROGRESS"] },
     },
@@ -247,14 +271,21 @@ async function markOverdueTurnovers(companyId: string | null) {
 
 async function dispatchNotification(
   payload: Record<string, unknown>,
-  companyId: string | null
+  companyId: string
 ) {
-  if (!companyId) return { skipped: true, reason: "missing companyId" };
+  const userId = payload.userId ? String(payload.userId) : null;
+  if (userId) {
+    const user = await prisma.user.findFirst({
+      where: { id: userId, companyId },
+      select: { id: true },
+    });
+    if (!user) return { skipped: true, reason: "invalid userId" };
+  }
 
   const notification = await prisma.notification.create({
     data: {
       companyId,
-      userId: payload.userId ? String(payload.userId) : null,
+      userId,
       title: String(payload.title ?? "Notification"),
       body: String(payload.body ?? ""),
       type: String(payload.type ?? "info"),
