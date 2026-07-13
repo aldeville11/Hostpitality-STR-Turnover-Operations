@@ -136,7 +136,7 @@ Verified in code:
 - `README.md` lists only Phases 1–4; git history includes Phases 5–14 (docs drift).
 
 **Operational notes:**
-- SQLite + file DB (`file:./dev.db`) — not a multi-tenant production datastore without migration.
+- PostgreSQL is required for production; see `docs/ops/database.md` for migration and transfer procedures.
 - Smoke reports “1 failed remaining” background job after processing (`scripts/smoke-core.ts` output) while still passing all checks.
 - Inventory page does not enforce `inventory:manage` permission despite RBAC defining it.
 
