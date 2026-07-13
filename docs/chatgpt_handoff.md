@@ -14,7 +14,7 @@
 - Redis rate limiting on login/signup (fail closed in production)
 - **Source-derived** tenant audit: `docs/audits/tenant-isolation.csv` via `npm run audit:authorization` (**281 paths**: 248 Verified safe, 28 Fixed, 5 Not tenant-owned, **0 Unresolved**; 75 server actions)
 - **accessScope (Option A):** `composePropertyIdFilter` + SOP/SOW `assertPropertyIdsAuthorizedForLink` (atomic)
-- Job claim fencing: `claimToken` + `leaseExpiresAt`; terminal updates require matching claim
+- Job claim fencing: `claimToken` + `leaseExpiresAt`; terminal updates require matching claim. Fencing does **not** imply exactly-once side effects — `turnover.remind` / `notification.dispatch` are **at-least-once** with best-effort audit-key suppression; `turnover.overdue_check` is effectively-once for status. See `docs/ops/database.md`.
 - Demo seed: local disposable hosts only; RFC1918 requires exact allowlist + `SEED_CONFIRM_REMOTE`
 - Rate-limit IP identity: `TRUST_PROXY=none|vercel|single-hop` (`docs/ops/rate-limiting.md`)
 - Vitest + `.github/workflows/ci.yml` includes `audit:authorization`
@@ -141,6 +141,7 @@ Verified in code:
 
 **Operational notes:**
 - PostgreSQL is required for production; see `docs/ops/database.md` for migration and transfer procedures.
+- **Accepted (v1):** `turnover.remind` / `notification.dispatch` are at-least-once; audit keys are best-effort. A crash between the side effect and the audit-marker write can create a duplicate guest/vendor notification. Operators and providers should tolerate duplicates. Stronger guarantees need a transactional outbox or provider idempotency (not in v1). See `docs/ops/database.md`.
 - Smoke reports “1 failed remaining” background job after processing (`scripts/smoke-core.ts` output) while still passing all checks.
 - Inventory page does not enforce `inventory:manage` permission despite RBAC defining it.
 

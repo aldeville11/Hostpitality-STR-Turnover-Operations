@@ -376,7 +376,9 @@ async function remindTurnover(
 ) {
   if (!turnoverId) return { skipped: true, reason: "missing turnoverId" };
 
-  // Idempotent: one reminder audit per turnover (at-most-once across retries/duplicates)
+  // Best-effort duplicate suppression via audit key (at-least-once delivery).
+  // A crash after creating the notification but before this audit write can still
+  // produce a duplicate on reclaim/retry — not at-most-once / exactly-once.
   const prior = await prisma.auditLog.findFirst({
     where: {
       companyId,
@@ -437,7 +439,8 @@ async function markOverdueTurnovers(companyId: string, claim: JobClaimContext) {
     if (!(await ownsJobClaim(claim.jobId, claim.claimToken))) {
       return { marked, aborted: true, reason: "lost_claim" };
     }
-    // Conditional update — natural idempotency if already OVERDUE
+    // Conditional update — effectively-once for the turnover status transition
+    // when the row is still in an eligible status.
     const updated = await prisma.turnover.updateMany({
       where: {
         id: turnover.id,
@@ -484,7 +487,9 @@ async function dispatchNotification(
     if (!user) return { skipped: true, reason: "invalid userId" };
   }
 
-  // Deterministic idempotency via job-scoped audit key when reprocessed
+  // Best-effort duplicate suppression via job-scoped audit key (at-least-once).
+  // Crash between notification.create and this audit write can yield a duplicate
+  // after lease reclaim — claim fencing does not guarantee exactly-once side effects.
   const idempotencyKey = `job.notification.dispatch:${claim.jobId}`;
   const prior = await prisma.auditLog.findFirst({
     where: { companyId, action: idempotencyKey },
