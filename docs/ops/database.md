@@ -61,7 +61,10 @@ If PostgreSQL already contains the application schema from an earlier `db push`:
 2. Baseline with `prisma migrate resolve --applied <baseline_migration>` only after verifying schema parity.
 3. Apply remaining migrations with `npx prisma migrate deploy`.
 
-## Session contract migration (M4)
+## Session records during transfer
+
+Legacy SQLite `Session` rows store raw bearer tokens. The transfer script **excludes** the Session table entirely. After transfer, users must re-authenticate. Raw tokens are never copied into PostgreSQL.
+
 
 Migration `session_drop_raw_token_contract` removes the legacy `Session.token` column. **Application rollback is not safe** after this migration. Restore from backup if rollback is required.
 

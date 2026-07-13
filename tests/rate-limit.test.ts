@@ -25,12 +25,13 @@ describe("rate limiting", () => {
   });
 
   it("enforces login email limit", async () => {
-    const email = `ratelimit-${Date.now()}@test.hostpitality.app`;
+    const email = `ratelimit-${Date.now()}-${Math.random().toString(16).slice(2)}@test.hostpitality.app`;
+    const ip = `10.${Math.floor(Math.random() * 200) + 1}.${Math.floor(Math.random() * 200) + 1}.${Math.floor(Math.random() * 200) + 1}`;
     for (let i = 0; i < 5; i++) {
-      const result = await checkLoginRateLimits({ email, ip: "10.0.0.1" });
+      const result = await checkLoginRateLimits({ email, ip });
       expect(result.ok).toBe(true);
     }
-    const blocked = await checkLoginRateLimits({ email, ip: "10.0.0.1" });
+    const blocked = await checkLoginRateLimits({ email, ip });
     expect(blocked.ok).toBe(false);
     if (!blocked.ok) expect(blocked.reason).toBe("RATE_LIMITED");
   });
