@@ -13,6 +13,11 @@ import {
   type IssueSource,
   type IssueStatus,
 } from "@/lib/issues";
+import {
+  assertIssueInScope,
+  assertPropertyInScope,
+  assertTurnoverInScope,
+} from "@/lib/access-scope";
 
 function revalidateIssuePaths(issueId?: string, turnoverId?: string) {
   revalidatePath("/issues");
@@ -47,6 +52,10 @@ export async function createIssueAction(formData: FormData) {
   const redirectTo = String(formData.get("redirectTo") || "");
 
   try {
+    if (propertyId) await assertPropertyInScope(user.accessScope, propertyId);
+    if (turnoverId) {
+      await assertTurnoverInScope(user.companyId, user.accessScope, turnoverId);
+    }
     const issue = await createIssue({
       companyId: user.companyId,
       userId: user.id,
@@ -84,6 +93,7 @@ export async function updateIssueStatusAction(formData: FormData) {
   if (!issueId || !status) return { error: "Status required" };
 
   try {
+    await assertIssueInScope(user.companyId, user.accessScope, issueId);
     await updateIssueStatus({
       companyId: user.companyId,
       userId: user.id,
@@ -119,6 +129,7 @@ export async function assignIssueAction(formData: FormData) {
   if (!issueId) return { error: "Issue required" };
 
   try {
+    await assertIssueInScope(user.companyId, user.accessScope, issueId);
     await assignIssue({
       companyId: user.companyId,
       userId: user.id,
@@ -144,6 +155,7 @@ export async function escalateIssueAction(formData: FormData) {
   if (!issueId) return { error: "Issue required" };
 
   try {
+    await assertIssueInScope(user.companyId, user.accessScope, issueId);
     await escalateIssue({
       companyId: user.companyId,
       userId: user.id,
@@ -170,6 +182,7 @@ export async function addIssueCommentAction(formData: FormData) {
   if (!issueId || !body) return { error: "Comment required" };
 
   try {
+    await assertIssueInScope(user.companyId, user.accessScope, issueId);
     await addIssueComment({
       companyId: user.companyId,
       userId: user.id,
@@ -194,6 +207,9 @@ export async function createIssuesFromQaAction(formData: FormData) {
   if (!inspectionId) return { error: "Inspection required" };
 
   try {
+    if (turnoverId) {
+      await assertTurnoverInScope(user.companyId, user.accessScope, turnoverId);
+    }
     const ids = await createIssuesFromQaFailures({
       companyId: user.companyId,
       userId: user.id,

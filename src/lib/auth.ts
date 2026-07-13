@@ -15,6 +15,7 @@ import {
   SESSION_DAYS,
 } from "./session-crypto";
 import { checkLoginRateLimits } from "./rate-limit";
+import { parseAccessScope, type AccessScope } from "./access-scope";
 
 export type AuthUser = User & {
   company: {
@@ -23,6 +24,7 @@ export type AuthUser = User & {
     slug: string;
     onboardedAt: Date | null;
   } | null;
+  accessScope: AccessScope;
 };
 
 export async function hashPassword(password: string) {
@@ -40,7 +42,10 @@ export async function revokeAllSessionsForUser(userId: string) {
   });
 }
 
-export async function createSession(userId: string, opts?: { revokeOthers?: boolean }) {
+export async function createSessionRecord(
+  userId: string,
+  opts?: { revokeOthers?: boolean }
+) {
   if (opts?.revokeOthers ?? true) {
     await revokeAllSessionsForUser(userId);
   }
@@ -49,7 +54,7 @@ export async function createSession(userId: string, opts?: { revokeOthers?: bool
   const tokenHash = hashSessionToken(rawToken);
   const expiresAt = sessionExpiresAt();
 
-  await prisma.session.create({
+  const session = await prisma.session.create({
     data: {
       tokenHash,
       userId,
@@ -57,6 +62,12 @@ export async function createSession(userId: string, opts?: { revokeOthers?: bool
       rotatedAt: new Date(),
     },
   });
+
+  return { session, rawToken, expiresAt, tokenHash };
+}
+
+export async function createSession(userId: string, opts?: { revokeOthers?: boolean }) {
+  const { rawToken, expiresAt } = await createSessionRecord(userId, opts);
 
   const cookieStore = await cookies();
   cookieStore.set(getSessionCookieName(), rawToken, {
@@ -67,6 +78,19 @@ export async function createSession(userId: string, opts?: { revokeOthers?: bool
     maxAge: SESSION_DAYS * 24 * 60 * 60,
     expires: expiresAt,
   });
+
+  return rawToken;
+}
+
+export function sessionCookieOptions(expiresAt: Date) {
+  return {
+    httpOnly: true as const,
+    sameSite: "lax" as const,
+    secure: getServerEnv().isProduction,
+    path: "/",
+    maxAge: SESSION_DAYS * 24 * 60 * 60,
+    expires: expiresAt,
+  };
 }
 
 export async function destroySession() {
@@ -110,15 +134,21 @@ async function findActiveSession(rawToken: string) {
   return session;
 }
 
+export async function getUserBySessionToken(rawToken: string): Promise<AuthUser | null> {
+  if (!rawToken) return null;
+  const session = await findActiveSession(rawToken);
+  if (!session || !session.user.active) return null;
+  return {
+    ...session.user,
+    accessScope: parseAccessScope(session.user.accessScopeJson),
+  };
+}
+
 export async function getCurrentUser(): Promise<AuthUser | null> {
   const cookieStore = await cookies();
   const rawToken = cookieStore.get(getSessionCookieName())?.value;
   if (!rawToken) return null;
-
-  const session = await findActiveSession(rawToken);
-  if (!session || !session.user.active) return null;
-
-  return session.user;
+  return getUserBySessionToken(rawToken);
 }
 
 export async function requireUser(opts?: {

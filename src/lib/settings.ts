@@ -3,7 +3,6 @@ import { prisma } from "./db";
 import { writeAuditLog } from "./audit";
 import { parseJson } from "./json";
 import {
-  validatePropertyIds,
   validateSopId,
   validateSowId,
   tenantNotFound,
@@ -17,6 +16,16 @@ import {
   type Role,
   isRole,
 } from "./rbac";
+import {
+  COMPANY_WIDE_SCOPE,
+  parseAccessScope,
+  propertyScopeWhere,
+  sanitizeAccessScopeForCompany,
+  type AccessScope,
+} from "./access-scope";
+
+export type { AccessScope };
+export { parseAccessScope };
 
 export const SETTINGS_SECTIONS = [
   "company",
@@ -118,11 +127,6 @@ export type SystemSettings = {
   defaultSowId: string | null;
 };
 
-export type AccessScope = {
-  allProperties: boolean;
-  propertyIds: string[];
-};
-
 export const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {
   emailAssignments: true,
   emailQaOutcomes: true,
@@ -188,14 +192,6 @@ export function parseSystemSettings(json: string | null | undefined): SystemSett
       ...DEFAULT_SYSTEM_SETTINGS.featureFlags,
       ...(raw.featureFlags ?? {}),
     },
-  };
-}
-
-export function parseAccessScope(json: string | null | undefined): AccessScope {
-  const raw = parseJson<Partial<AccessScope>>(json, {});
-  return {
-    allProperties: raw.allProperties ?? true,
-    propertyIds: raw.propertyIds ?? [],
   };
 }
 
@@ -348,9 +344,12 @@ export async function updateBranding(input: {
   return updated;
 }
 
-export async function listSettingsProperties(companyId: string) {
+export async function listSettingsProperties(
+  companyId: string,
+  scope: AccessScope = COMPANY_WIDE_SCOPE
+) {
   return prisma.property.findMany({
-    where: { companyId },
+    where: { companyId, ...propertyScopeWhere(scope) },
     include: {
       sop: { select: { id: true, name: true } },
       sow: { select: { id: true, name: true, slaMinutes: true } },
@@ -449,14 +448,10 @@ export async function createCompanyUser(input: {
   if (existing) throw new Error("Email already in use");
 
   const passwordHash = await bcrypt.hash(input.password, 10);
-  const propertyIds = input.allProperties
-    ? []
-    : await validatePropertyIds(input.companyId, input.propertyIds ?? []);
-
-  const accessScope: AccessScope = {
+  const accessScope = await sanitizeAccessScopeForCompany(input.companyId, {
     allProperties: input.allProperties ?? true,
-    propertyIds,
-  };
+    propertyIds: input.propertyIds ?? [],
+  });
 
   const user = await prisma.user.create({
     data: {
@@ -509,14 +504,10 @@ export async function updateCompanyUser(input: {
     throw new Error("You cannot remove your own settings access");
   }
 
-  const propertyIds = input.allProperties
-    ? []
-    : await validatePropertyIds(input.companyId, input.propertyIds ?? []);
-
-  const accessScope: AccessScope = {
+  const accessScope = await sanitizeAccessScopeForCompany(input.companyId, {
     allProperties: input.allProperties ?? true,
-    propertyIds,
-  };
+    propertyIds: input.propertyIds ?? [],
+  });
 
   const updated = await prisma.user.update({
     where: { id: target.id },

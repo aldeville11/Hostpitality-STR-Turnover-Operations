@@ -1,5 +1,11 @@
 import { prisma } from "./db";
 import { parseJson } from "./json";
+import {
+  COMPANY_WIDE_SCOPE,
+  propertyScopeWhere,
+  scopedPropertyIdWhere,
+  type AccessScope,
+} from "./access-scope";
 
 export type PhotoRequirement = {
   label: string;
@@ -95,9 +101,12 @@ export function getTurnoverReadiness(property: {
   return { score, label, missing };
 }
 
-export async function listProperties(companyId: string) {
+export async function listProperties(
+  companyId: string,
+  scope: AccessScope = COMPANY_WIDE_SCOPE
+) {
   const properties = await prisma.property.findMany({
-    where: { companyId },
+    where: { companyId, ...propertyScopeWhere(scope) },
     include: {
       sop: true,
       sow: true,
@@ -121,9 +130,13 @@ export async function listProperties(companyId: string) {
   }));
 }
 
-export async function getPropertyDetail(companyId: string, propertyId: string) {
+export async function getPropertyDetail(
+  companyId: string,
+  propertyId: string,
+  scope: AccessScope = COMPANY_WIDE_SCOPE
+) {
   const property = await prisma.property.findFirst({
-    where: { id: propertyId, companyId },
+    where: { companyId, ...scopedPropertyIdWhere(scope, propertyId) },
     include: {
       sop: true,
       sow: true,

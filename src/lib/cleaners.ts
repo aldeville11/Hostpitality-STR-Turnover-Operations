@@ -3,6 +3,12 @@ import { writeAuditLog } from "./audit";
 import { parseJson } from "./json";
 import { recordAssignmentChange, recordStatusChange } from "./turnovers";
 import { endOfDay, startOfDay } from "./utils";
+import {
+  COMPANY_WIDE_SCOPE,
+  propertyIdScopeWhere,
+  propertyScopeWhere,
+  type AccessScope,
+} from "./access-scope";
 
 export const VENDOR_TYPES = ["CLEANER", "VENDOR", "COORDINATOR"] as const;
 export type VendorType = (typeof VENDOR_TYPES)[number];
@@ -236,7 +242,8 @@ export async function evaluateAssignmentConflicts(input: {
 
 export async function listCleaners(
   companyId: string,
-  filters?: { type?: string; availability?: string; q?: string }
+  filters?: { type?: string; availability?: string; q?: string },
+  scope: AccessScope = COMPANY_WIDE_SCOPE
 ) {
   const vendors = await prisma.vendor.findMany({
     where: {
@@ -255,12 +262,12 @@ export async function listCleaners(
     },
     include: {
       assignments: {
-        where: { status: { in: OPEN_STATUSES } },
+        where: { status: { in: OPEN_STATUSES }, ...propertyIdScopeWhere(scope) },
         include: { property: true },
         orderBy: { windowStart: "asc" },
       },
       defaultProperties: {
-        where: { active: true },
+        where: { active: true, ...propertyScopeWhere(scope) },
         select: { id: true, name: true, unitCode: true, city: true },
       },
       _count: {
@@ -683,11 +690,15 @@ export async function updateCleanerProfile(input: {
   return updated;
 }
 
-export async function getDispatchBoard(companyId: string) {
-  const cleaners = await listCleaners(companyId);
+export async function getDispatchBoard(
+  companyId: string,
+  scope: AccessScope = COMPANY_WIDE_SCOPE
+) {
+  const cleaners = await listCleaners(companyId, undefined, scope);
   const unassigned = await prisma.turnover.findMany({
     where: {
       companyId,
+      ...propertyIdScopeWhere(scope),
       vendorId: null,
       status: { in: ["DRAFT", "SCHEDULED", "BLOCKED", "OVERDUE"] },
       windowStart: { lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },

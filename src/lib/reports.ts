@@ -1,5 +1,12 @@
 import { prisma } from "./db";
 import { endOfDay, startOfDay } from "./utils";
+import {
+  COMPANY_WIDE_SCOPE,
+  issuePropertyScopeWhere,
+  propertyIdScopeWhere,
+  propertyScopeWhere,
+  type AccessScope,
+} from "./access-scope";
 
 export const REPORT_VIEWS = ["overview", "property", "qa", "cleaners"] as const;
 export type ReportView = (typeof REPORT_VIEWS)[number];
@@ -165,10 +172,13 @@ function isOnTime(turnover: {
   return doneAt.getTime() <= turnover.deadlineAt.getTime();
 }
 
-export async function getReportFilterOptions(companyId: string) {
+export async function getReportFilterOptions(
+  companyId: string,
+  scope: AccessScope = COMPANY_WIDE_SCOPE
+) {
   const [properties, cleaners] = await Promise.all([
     prisma.property.findMany({
-      where: { companyId, active: true },
+      where: { companyId, active: true, ...propertyScopeWhere(scope) },
       select: { id: true, name: true, unitCode: true },
       orderBy: { name: "asc" },
     }),
@@ -181,7 +191,11 @@ export async function getReportFilterOptions(companyId: string) {
   return { properties, cleaners };
 }
 
-async function loadReportSource(companyId: string, filters: ReportFilters) {
+async function loadReportSource(
+  companyId: string,
+  filters: ReportFilters,
+  scope: AccessScope = COMPANY_WIDE_SCOPE
+) {
   const { from, to } = resolveReportRange(filters);
 
   const ISSUE_STATUSES = new Set([
@@ -217,6 +231,7 @@ async function loadReportSource(companyId: string, filters: ReportFilters) {
 
   const turnoverWhere = {
     companyId,
+    ...propertyIdScopeWhere(scope),
     windowStart: { gte: from, lte: to },
     ...(filters.propertyId ? { propertyId: filters.propertyId } : {}),
     ...(filters.cleanerId ? { vendorId: filters.cleanerId } : {}),
@@ -262,10 +277,11 @@ async function loadReportSource(companyId: string, filters: ReportFilters) {
       where: {
         companyId,
         createdAt: { gte: from, lte: to },
-        ...(filters.propertyId
-          ? { turnover: { propertyId: filters.propertyId } }
-          : {}),
-        ...(filters.cleanerId ? { turnover: { vendorId: filters.cleanerId } } : {}),
+        turnover: {
+          ...propertyIdScopeWhere(scope),
+          ...(filters.propertyId ? { propertyId: filters.propertyId } : {}),
+          ...(filters.cleanerId ? { vendorId: filters.cleanerId } : {}),
+        },
       },
       include: {
         items: { select: { section: true, title: true, result: true } },
@@ -285,6 +301,7 @@ async function loadReportSource(companyId: string, filters: ReportFilters) {
     prisma.issue.findMany({
       where: {
         companyId,
+        ...issuePropertyScopeWhere(scope),
         createdAt: { gte: from, lte: to },
         ...(filters.propertyId ? { propertyId: filters.propertyId } : {}),
         ...(filters.cleanerId
@@ -306,6 +323,7 @@ async function loadReportSource(companyId: string, filters: ReportFilters) {
     prisma.inventoryItem.findMany({
       where: {
         companyId,
+        ...issuePropertyScopeWhere(scope),
         ...(filters.propertyId ? { propertyId: filters.propertyId } : {}),
       },
       select: {
@@ -360,10 +378,15 @@ function buildDailyTrend(
   }));
 }
 
-export async function getReportingDashboard(companyId: string, filters: ReportFilters) {
+export async function getReportingDashboard(
+  companyId: string,
+  filters: ReportFilters,
+  scope: AccessScope = COMPANY_WIDE_SCOPE
+) {
   const { from, to, turnovers, inspections, issues, vendors } = await loadReportSource(
     companyId,
-    filters
+    filters,
+    scope
   );
 
   const completed = turnovers.filter((t) => t.status === "COMPLETED");
@@ -472,10 +495,15 @@ export async function getReportingDashboard(companyId: string, filters: ReportFi
   };
 }
 
-export async function getPropertyReport(companyId: string, filters: ReportFilters) {
+export async function getPropertyReport(
+  companyId: string,
+  filters: ReportFilters,
+  scope: AccessScope = COMPANY_WIDE_SCOPE
+) {
   const { from, to, turnovers, inspections, issues, inventory } = await loadReportSource(
     companyId,
-    filters
+    filters,
+    scope
   );
 
   const propertyMap = new Map<
@@ -615,10 +643,15 @@ export async function getPropertyReport(companyId: string, filters: ReportFilter
   };
 }
 
-export async function getQaIssueReport(companyId: string, filters: ReportFilters) {
+export async function getQaIssueReport(
+  companyId: string,
+  filters: ReportFilters,
+  scope: AccessScope = COMPANY_WIDE_SCOPE
+) {
   const { from, to, turnovers, inspections, issues } = await loadReportSource(
     companyId,
-    filters
+    filters,
+    scope
   );
 
   const decided = inspections.filter((i) =>
@@ -725,8 +758,12 @@ export async function getQaIssueReport(companyId: string, filters: ReportFilters
   };
 }
 
-export async function getCleanerReport(companyId: string, filters: ReportFilters) {
-  const { from, to, turnovers, vendors } = await loadReportSource(companyId, filters);
+export async function getCleanerReport(
+  companyId: string,
+  filters: ReportFilters,
+  scope: AccessScope = COMPANY_WIDE_SCOPE
+) {
+  const { from, to, turnovers, vendors } = await loadReportSource(companyId, filters, scope);
 
   const rows = vendors.map((vendor) => {
     const assigned = turnovers.filter((t) => t.vendorId === vendor.id);
@@ -798,10 +835,11 @@ export async function getCleanerReport(companyId: string, filters: ReportFilters
 export async function getReportDataset(
   companyId: string,
   view: ReportView,
-  filters: ReportFilters
+  filters: ReportFilters,
+  scope: AccessScope = COMPANY_WIDE_SCOPE
 ) {
   if (view === "property") {
-    const data = await getPropertyReport(companyId, filters);
+    const data = await getPropertyReport(companyId, filters, scope);
     return {
       filename: `property-report-${filters.from}-${filters.to}.csv`,
       csv: toCsv(
@@ -836,7 +874,7 @@ export async function getReportDataset(
   }
 
   if (view === "qa") {
-    const data = await getQaIssueReport(companyId, filters);
+    const data = await getQaIssueReport(companyId, filters, scope);
     return {
       filename: `qa-issues-report-${filters.from}-${filters.to}.csv`,
       csv: toCsv(
@@ -861,7 +899,7 @@ export async function getReportDataset(
   }
 
   if (view === "cleaners") {
-    const data = await getCleanerReport(companyId, filters);
+    const data = await getCleanerReport(companyId, filters, scope);
     return {
       filename: `cleaner-report-${filters.from}-${filters.to}.csv`,
       csv: toCsv(
@@ -893,7 +931,7 @@ export async function getReportDataset(
     };
   }
 
-  const data = await getReportingDashboard(companyId, filters);
+  const data = await getReportingDashboard(companyId, filters, scope);
   return {
     filename: `operations-overview-${filters.from}-${filters.to}.csv`,
     csv: toCsv(

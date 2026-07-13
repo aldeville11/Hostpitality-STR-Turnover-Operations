@@ -13,6 +13,7 @@ import {
   recordStatusChange,
   syncTurnoversFromCalendars,
 } from "@/lib/turnovers";
+import { assertPropertyInScope, assertTurnoverInScope } from "@/lib/access-scope";
 
 function revalidateTurnoverPaths(id?: string) {
   revalidatePath("/turnovers");
@@ -43,6 +44,12 @@ export async function createTurnoverForPropertyAction(formData: FormData) {
   const priority = String(formData.get("priority") || "NORMAL");
   if (!propertyId) return { error: "Property required" };
 
+  try {
+    await assertPropertyInScope(user.accessScope, propertyId);
+  } catch {
+    return { error: "Not found" };
+  }
+
   const result = await createTurnoverFromBooking({
     companyId: user.companyId,
     userId: user.id,
@@ -69,6 +76,11 @@ export async function updateTurnoverStatusAction(formData: FormData) {
     include: { checklistItems: true },
   });
   if (!turnover) return { error: "Turnover not found" };
+  try {
+    await assertTurnoverInScope(user.companyId, user.accessScope, turnover.id);
+  } catch {
+    return { error: "Not found" };
+  }
   if (!canTransition(turnover.status, toStatus)) {
     return { error: `Cannot move from ${turnover.status} to ${toStatus}` };
   }

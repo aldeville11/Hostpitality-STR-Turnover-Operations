@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { issuePropertyScopeWhere, propertyScopeWhere } from "@/lib/access-scope";
 import { PageHeader } from "@/components/ui";
 import { InventoryList } from "@/components/inventory/inventory-list";
 
@@ -16,14 +17,14 @@ export default async function InventoryPage({
 
   const [items, properties] = await Promise.all([
     prisma.inventoryItem.findMany({
-      where: { companyId: user.companyId },
+      where: { companyId: user.companyId, ...issuePropertyScopeWhere(user.accessScope) },
       include: {
         property: { select: { id: true, name: true, unitCode: true } },
       },
       orderBy: [{ name: "asc" }],
     }),
     prisma.property.findMany({
-      where: { companyId: user.companyId, active: true },
+      where: { companyId: user.companyId, active: true, ...propertyScopeWhere(user.accessScope) },
       select: { id: true, name: true, unitCode: true },
       orderBy: { name: "asc" },
     }),

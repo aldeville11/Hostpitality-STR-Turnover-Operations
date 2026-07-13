@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { can } from "@/lib/rbac";
 import { listTurnovers } from "@/lib/turnovers";
 import { prisma } from "@/lib/db";
+import { propertyScopeWhere } from "@/lib/access-scope";
 import { PageHeader } from "@/components/ui";
 import { TurnoverList } from "@/components/turnovers/turnover-list";
 import { TurnoverToolbar } from "@/components/turnovers/turnover-toolbar";
@@ -20,13 +21,17 @@ export default async function TurnoversPage({
 
   const filters = await searchParams;
   const [turnovers, properties] = await Promise.all([
-    listTurnovers(user.companyId, {
-      status: filters.status || undefined,
-      propertyId: filters.propertyId || undefined,
-      q: filters.q || undefined,
-    }),
+    listTurnovers(
+      user.companyId,
+      {
+        status: filters.status || undefined,
+        propertyId: filters.propertyId || undefined,
+        q: filters.q || undefined,
+      },
+      user.accessScope
+    ),
     prisma.property.findMany({
-      where: { companyId: user.companyId, active: true },
+      where: { companyId: user.companyId, active: true, ...propertyScopeWhere(user.accessScope) },
       select: { id: true, name: true, unitCode: true },
       orderBy: { name: "asc" },
     }),

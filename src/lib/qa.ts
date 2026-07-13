@@ -3,6 +3,11 @@ import { writeAuditLog } from "./audit";
 import { parsePhotoRequirements } from "./properties";
 import { parseSowDocument } from "./sows";
 import { recordStatusChange } from "./turnovers";
+import {
+  COMPANY_WIDE_SCOPE,
+  propertyIdScopeWhere,
+  type AccessScope,
+} from "./access-scope";
 
 export const QA_STATUSES = ["PENDING", "APPROVED", "REJECTED", "NEEDS_REWORK"] as const;
 export type QaStatus = (typeof QA_STATUSES)[number];
@@ -65,7 +70,8 @@ export async function listQaQueue(
     propertyId?: string;
     inspectorId?: string;
     q?: string;
-  }
+  },
+  scope: AccessScope = COMPANY_WIDE_SCOPE
 ) {
   // Queue shows turnovers awaiting/in QA, plus recent closed QA for context when filtered
   const qaStatusFilter = filters?.status
@@ -87,6 +93,7 @@ export async function listQaQueue(
   const turnovers = await prisma.turnover.findMany({
     where: {
       companyId,
+      ...propertyIdScopeWhere(scope),
       ...qaStatusFilter,
       ...(filters?.propertyId ? { propertyId: filters.propertyId } : {}),
       ...(filters?.inspectorId
@@ -273,9 +280,18 @@ export async function ensureQaInspection(input: {
   return inspection;
 }
 
-export async function getQaDetail(companyId: string, turnoverId: string) {
+export async function getQaDetail(
+  companyId: string,
+  turnoverId: string,
+  scope: AccessScope = COMPANY_WIDE_SCOPE
+) {
   const turnover = await prisma.turnover.findFirst({
-    where: { id: turnoverId, companyId },
+    where: {
+      companyId,
+      ...(scope.allProperties
+        ? { id: turnoverId }
+        : { AND: [{ id: turnoverId }, propertyIdScopeWhere(scope)] }),
+    },
     include: {
       property: { include: { defaultVendor: true } },
       vendor: true,

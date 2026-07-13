@@ -9,6 +9,7 @@ import {
   validateSowId,
   validateVendorId,
 } from "@/lib/tenant";
+import { assertPropertyInScope } from "@/lib/access-scope";
 import { writeAuditLog } from "@/lib/audit";
 import {
   DEFAULT_PHOTO_REQUIREMENTS,
@@ -51,6 +52,10 @@ function parseLinesToRestock(raw: string): RestockDefault[] {
 export async function createPropertyAction(formData: FormData) {
   const user = await requireUser({ permission: "properties:manage" });
   if (!user.companyId) return { error: "No company" };
+  // Restricted property scopes cannot widen portfolio via create
+  if (!user.accessScope.allProperties) {
+    return { error: "Not found" };
+  }
 
   const name = String(formData.get("name") || "").trim();
   const unitCode = String(formData.get("unitCode") || "").trim();
@@ -109,6 +114,11 @@ export async function updatePropertyProfileAction(formData: FormData) {
     where: { id, companyId: user.companyId },
   });
   if (!property) return { error: "Property not found" };
+  try {
+    await assertPropertyInScope(user.accessScope, property.id);
+  } catch {
+    return { error: "Not found" };
+  }
 
   const name = String(formData.get("name") || "").trim();
   const unitCode = String(formData.get("unitCode") || "").trim();
@@ -171,6 +181,11 @@ export async function updatePropertySettingsAction(formData: FormData) {
     where: { id, companyId: user.companyId },
   });
   if (!property) return { error: "Property not found" };
+  try {
+    await assertPropertyInScope(user.accessScope, property.id);
+  } catch {
+    return { error: "Not found" };
+  }
 
   const sopId = await validateSopId(user.companyId, String(formData.get("sopId") || "") || null);
   const sowId = await validateSowId(user.companyId, String(formData.get("sowId") || "") || null);

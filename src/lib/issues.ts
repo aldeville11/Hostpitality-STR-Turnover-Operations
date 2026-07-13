@@ -7,6 +7,12 @@ import {
   validateTurnoverId,
   validateVendorId,
 } from "./tenant";
+import {
+  COMPANY_WIDE_SCOPE,
+  issuePropertyScopeWhere,
+  isPropertyInScope,
+  type AccessScope,
+} from "./access-scope";
 
 export const ISSUE_STATUSES = [
   "OPEN",
@@ -225,15 +231,21 @@ export async function listIssues(
     to?: string;
     q?: string;
     blocking?: boolean;
-  }
+  },
+  scope: AccessScope = COMPANY_WIDE_SCOPE
 ) {
   const fromDate = filters?.from ? new Date(filters.from) : undefined;
   const toDate = filters?.to ? new Date(filters.to) : undefined;
   if (toDate) toDate.setHours(23, 59, 59, 999);
 
+  if (filters?.propertyId && !isPropertyInScope(scope, filters.propertyId)) {
+    return [];
+  }
+
   const issues = await prisma.issue.findMany({
     where: {
       companyId,
+      ...issuePropertyScopeWhere(scope),
       ...(filters?.status ? { status: filters.status } : {}),
       ...(filters?.severity ? { severity: filters.severity } : {}),
       ...(filters?.propertyId ? { propertyId: filters.propertyId } : {}),
@@ -286,9 +298,18 @@ export async function listIssues(
   });
 }
 
-export async function getIssueDetail(companyId: string, issueId: string) {
+export async function getIssueDetail(
+  companyId: string,
+  issueId: string,
+  scope: AccessScope = COMPANY_WIDE_SCOPE
+) {
   const issue = await prisma.issue.findFirst({
-    where: { id: issueId, companyId },
+    where: {
+      companyId,
+      ...(scope.allProperties
+        ? { id: issueId }
+        : { AND: [{ id: issueId }, issuePropertyScopeWhere(scope)] }),
+    },
     include: {
       property: {
         include: {

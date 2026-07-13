@@ -19,12 +19,16 @@ export default async function CleanersPage({
 
   const filters = await searchParams;
   const [cleaners, board] = await Promise.all([
-    listCleaners(user.companyId, {
-      type: filters.type || undefined,
-      availability: filters.availability || undefined,
-      q: filters.q || undefined,
-    }),
-    getDispatchBoard(user.companyId),
+    listCleaners(
+      user.companyId,
+      {
+        type: filters.type || undefined,
+        availability: filters.availability || undefined,
+        q: filters.q || undefined,
+      },
+      user.accessScope
+    ),
+    getDispatchBoard(user.companyId, user.accessScope),
   ]);
 
   const boardConflicts = [

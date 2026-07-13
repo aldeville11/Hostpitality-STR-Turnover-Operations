@@ -10,6 +10,48 @@ import {
   updateQaPhotoResult,
   type QaItemResult,
 } from "@/lib/qa";
+import { assertTurnoverInScope, type AccessScope } from "@/lib/access-scope";
+import { prisma } from "@/lib/db";
+import { tenantNotFound } from "@/lib/tenant";
+
+async function assertInspectionInScope(
+  companyId: string,
+  scope: AccessScope,
+  inspectionId: string
+) {
+  const inspection = await prisma.qaInspection.findFirst({
+    where: { id: inspectionId, companyId },
+    select: { turnoverId: true },
+  });
+  if (!inspection) tenantNotFound();
+  await assertTurnoverInScope(companyId, scope, inspection.turnoverId);
+}
+
+async function assertQaItemInScope(
+  companyId: string,
+  scope: AccessScope,
+  itemId: string
+) {
+  const item = await prisma.qaInspectionItem.findUnique({
+    where: { id: itemId },
+    select: { inspection: { select: { companyId: true, turnoverId: true } } },
+  });
+  if (!item || item.inspection.companyId !== companyId) tenantNotFound();
+  await assertTurnoverInScope(companyId, scope, item.inspection.turnoverId);
+}
+
+async function assertQaPhotoInScope(
+  companyId: string,
+  scope: AccessScope,
+  photoId: string
+) {
+  const photo = await prisma.qaPhotoReview.findUnique({
+    where: { id: photoId },
+    select: { inspection: { select: { companyId: true, turnoverId: true } } },
+  });
+  if (!photo || photo.inspection.companyId !== companyId) tenantNotFound();
+  await assertTurnoverInScope(companyId, scope, photo.inspection.turnoverId);
+}
 
 function revalidateQaPaths(turnoverId?: string, inspectionId?: string) {
   revalidatePath("/qa");
@@ -30,6 +72,7 @@ export async function openQaInspectionAction(formData: FormData) {
   if (!turnoverId) return { error: "Turnover required" };
 
   try {
+    await assertTurnoverInScope(user.companyId, user.accessScope, turnoverId);
     await ensureQaInspection({
       companyId: user.companyId,
       turnoverId,
@@ -56,6 +99,7 @@ export async function reviewQaItemAction(formData: FormData) {
   if (!itemId || !result) return { error: "Item and result required" };
 
   try {
+    await assertQaItemInScope(user.companyId, user.accessScope, itemId);
     await updateQaItemResult({
       companyId: user.companyId,
       userId: user.id,
@@ -83,6 +127,7 @@ export async function reviewQaPhotoAction(formData: FormData) {
   if (!photoId || !result) return { error: "Photo and result required" };
 
   try {
+    await assertQaPhotoInScope(user.companyId, user.accessScope, photoId);
     await updateQaPhotoResult({
       companyId: user.companyId,
       userId: user.id,
@@ -117,6 +162,7 @@ export async function decideQaAction(formData: FormData) {
   }
 
   try {
+    await assertInspectionInScope(user.companyId, user.accessScope, inspectionId);
     await decideQaInspection({
       companyId: user.companyId,
       userId: user.id,
@@ -152,6 +198,7 @@ export async function setQaOverrideAction(formData: FormData) {
   if (!inspectionId) return { error: "Inspection required" };
 
   try {
+    await assertInspectionInScope(user.companyId, user.accessScope, inspectionId);
     await setQaOverride({
       companyId: user.companyId,
       userId: user.id,

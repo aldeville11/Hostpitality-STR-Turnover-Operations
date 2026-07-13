@@ -15,7 +15,7 @@ export default async function DashboardPage() {
   const user = await requireUser({ permission: "dashboard:view" });
   if (!user.companyId) redirect("/onboarding");
 
-  const data = await getDashboardData(user.companyId);
+  const data = await getDashboardData(user.companyId, user.accessScope);
 
   return (
     <div className="space-y-6">

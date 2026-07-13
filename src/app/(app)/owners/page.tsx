@@ -25,7 +25,7 @@ export default async function OwnersPage() {
   const canDashboard = can(user.role, "dashboard:view");
 
   const ownerNotifications = canDashboard
-    ? (await getDashboardData(user.companyId)).ownerNotifications
+    ? (await getDashboardData(user.companyId, user.accessScope)).ownerNotifications
     : null;
 
   return (

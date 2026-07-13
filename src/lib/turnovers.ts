@@ -5,6 +5,20 @@ import {
   parseRestockDefaults,
 } from "./properties";
 import { flattenSopSteps, parseSopDocument } from "./sops";
+import {
+  COMPANY_WIDE_SCOPE,
+  propertyIdScopeWhere,
+  type AccessScope,
+} from "./access-scope";
+
+function scopedTurnoverWhere(scope: AccessScope, turnoverId: string) {
+  if (scope.allProperties) {
+    return { id: turnoverId };
+  }
+  return {
+    AND: [{ id: turnoverId }, propertyIdScopeWhere(scope)],
+  };
+}
 
 export const TURNOVER_STATUSES = [
   "DRAFT",
@@ -76,11 +90,13 @@ export function buildChecklistFromSop(contentJson: string | null | undefined) {
 
 export async function listTurnovers(
   companyId: string,
-  filters?: { status?: string; propertyId?: string; q?: string }
+  filters?: { status?: string; propertyId?: string; q?: string },
+  scope: AccessScope = COMPANY_WIDE_SCOPE
 ) {
   const turnovers = await prisma.turnover.findMany({
     where: {
       companyId,
+      ...propertyIdScopeWhere(scope),
       ...(filters?.status ? { status: filters.status } : {}),
       ...(filters?.propertyId ? { propertyId: filters.propertyId } : {}),
       ...(filters?.q
@@ -117,9 +133,13 @@ export async function listTurnovers(
   });
 }
 
-export async function getTurnoverDetail(companyId: string, turnoverId: string) {
+export async function getTurnoverDetail(
+  companyId: string,
+  turnoverId: string,
+  scope: AccessScope = COMPANY_WIDE_SCOPE
+) {
   const turnover = await prisma.turnover.findFirst({
-    where: { id: turnoverId, companyId },
+    where: { companyId, ...scopedTurnoverWhere(scope, turnoverId) },
     include: {
       property: {
         include: { defaultVendor: true },

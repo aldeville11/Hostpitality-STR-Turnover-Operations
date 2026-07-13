@@ -16,7 +16,7 @@ export default async function QaDetailPage({
   if (!user.companyId) redirect("/onboarding");
 
   // Auto-open inspection for queue statuses so inspectors can start immediately
-  const existing = await getQaDetail(user.companyId, id);
+  const existing = await getQaDetail(user.companyId, id, user.accessScope);
   if (!existing) notFound();
 
   if (
@@ -32,7 +32,7 @@ export default async function QaDetailPage({
     });
   }
 
-  const data = await getQaDetail(user.companyId, id);
+  const data = await getQaDetail(user.companyId, id, user.accessScope);
   if (!data) notFound();
 
   return (

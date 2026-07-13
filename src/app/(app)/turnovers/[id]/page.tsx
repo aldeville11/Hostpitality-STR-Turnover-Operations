@@ -18,7 +18,7 @@ export default async function TurnoverDetailPage({
     redirect("/dashboard");
   }
 
-  const data = await getTurnoverDetail(user.companyId, id);
+  const data = await getTurnoverDetail(user.companyId, id, user.accessScope);
   if (!data) notFound();
 
   return (
