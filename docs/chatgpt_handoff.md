@@ -4,29 +4,26 @@
 
 **Branch:** `cursor/production-foundation-v1`
 
-**Database:** PostgreSQL via Prisma migrations (`baseline_postgresql`, `query_indexes`, `session_hmac_additive`, `session_drop_raw_token_contract`). SQLite is not a production runtime.
+**Database:** PostgreSQL via Prisma migrations (`baseline_postgresql`, `query_indexes`, `session_hmac_additive`, `session_drop_raw_token_contract`, `job_claim_fencing`). SQLite is not a production runtime.
 
 **Security hardening:**
-- `src/lib/env.server.ts` — lazy validation, fail-closed production
+- `src/lib/env.server.ts` — lazy validation, fail-closed production; `JOB_LEASE_SECONDS` bounded 60–3600 (default 900)
 - Session HMAC-SHA-256 (`SESSION_PEPPER`), no raw token storage
-- Auth bypass requires `ALLOW_AUTH_BYPASS=true` in development only
+- Auth bypass requires `ALLOW_AUTH_BYPASS=true` in development only; bypass 404 does not disclose demo email
 - `POST /api/jobs/process` requires `CRON_SECRET`; customer global job trigger removed
 - Redis rate limiting on login/signup (fail closed in production)
-- Tenant isolation fixes + `docs/audits/tenant-isolation.csv` (**82 paths**: 60 Verified safe, 16 Fixed, 6 Not tenant-owned, **0 Unresolved**)
-- **accessScope (Option A):** property-level scope via Zod + `composePropertyIdFilter` (never key-overwrite). Enforced on property-linked reads/mutations after `companyId`. Empty/malformed scopes fail closed.
-- Independent-review remediation: filter composition, calendar/turnover/QA/cleaner/settings scope gaps, job lease reclaim, TRUST_PROXY IP policy, demo-seed target guards, bypass-route HTTP tests
-- Permission-aware sidebar; RBAC page guards for inventory, owners, onboarding
-- Demo seed requires `ALLOW_DEMO_SEED=true` + `SEED_CONFIRM=DESTROY_AND_SEED` + local disposable PostgreSQL target
-- Vitest suite + `.github/workflows/ci.yml`
-- SQLite→PostgreSQL transfer excludes Session rows (re-auth required); verified via `scripts/verify-sqlite-transfer.ts`
-- Job claim lease (`JOB_LEASE_SECONDS`, default 900) reclaims stale `RUNNING` jobs via `startedAt`
+- **Source-derived** tenant audit: `docs/audits/tenant-isolation.csv` via `npm run audit:authorization` (**281 paths**: 248 Verified safe, 28 Fixed, 5 Not tenant-owned, **0 Unresolved**; 75 server actions)
+- **accessScope (Option A):** `composePropertyIdFilter` + SOP/SOW `assertPropertyIdsAuthorizedForLink` (atomic)
+- Job claim fencing: `claimToken` + `leaseExpiresAt`; terminal updates require matching claim
+- Demo seed: local disposable hosts only; RFC1918 requires exact allowlist + `SEED_CONFIRM_REMOTE`
 - Rate-limit IP identity: `TRUST_PROXY=none|vercel|single-hop` (`docs/ops/rate-limiting.md`)
+- Vitest + `.github/workflows/ci.yml` includes `audit:authorization`
 
-**Monitoring:** Provider-neutral interface (`src/lib/monitoring.ts`) with logger adapter only. External alerting is an accepted operational risk until an adapter is installed.
+**Monitoring:** Provider-neutral logger adapter only. External alerting is an accepted operational risk.
 
-**F-L1 disposition:** `revokeSessionsOnPasswordChange` is documented as a future-hook helper — no password-change product path in v1; not fabricated.
+**F-L1 disposition:** `revokeSessionsOnPasswordChange` is a documented future-hook helper — no password-change product path in v1.
 
-**Verification:** re-run after remediation commits (see PR #16).
+**Verification:** see PR #16 CI and local `npm run verify`.
 
 ---
 

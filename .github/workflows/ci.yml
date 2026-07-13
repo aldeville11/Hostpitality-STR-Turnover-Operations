@@ -64,6 +64,9 @@ jobs:
       - name: Prisma migrate deploy
         run: npx prisma migrate deploy
 
+      - name: Authorization audit inventory
+        run: npm run audit:authorization
+
       - name: Typecheck
         run: npm run typecheck
 

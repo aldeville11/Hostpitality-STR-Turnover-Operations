@@ -30,12 +30,26 @@ Rules (`src/lib/access-scope.ts`):
 4. Foreign or unknown property IDs are rejected when saving scope (`sanitizeAccessScopeForCompany`).
 5. Empty restricted scope returns no property-linked records.
 6. Filter composition uses `composePropertyIdFilter` / `composePropertyPrimaryIdFilter` — never duplicate object-key overwrite.
-7. Company-level resources (SOP/SOW templates, integrations catalog, vendor identity) remain company-scoped; property-linked workloads on those surfaces are still accessScope-filtered.
+7. SOP/SOW property linking uses `assertPropertyIdsAuthorizedForLink` (atomic reject) and only unlinks in-scope properties.
+8. Company-level resources (SOP/SOW templates themselves, integrations catalog, vendor identity) remain company-scoped; property-linked workloads and Property FK mutations remain accessScope-filtered.
 
 ### Covered surfaces
 
 Reads: properties, turnovers, issues, QA queue/detail, inventory, dashboard, reports/exports, cleaners list/detail assignments, settings property lists, detail picklists.
 
-Mutations: property profile/settings/calendar, property defaults, turnover create/status/assign/checklist, calendar sync, issue CRUD paths, QA actions, cleaner assignment from cleaners board.
+Mutations: property profile/settings/calendar, property defaults, turnover create/status/assign/checklist, calendar sync, issue CRUD paths, QA actions, cleaner assignment, **SOP/SOW property link/unlink**.
 
-Audit: `docs/audits/tenant-isolation.csv` — unresolved must remain 0.
+## Source-derived authorization audit
+
+Inventory is generated from the repository source (not hand-maintained totals):
+
+```bash
+npm run audit:authorization:build   # regenerate CSV + classifications JSON
+npm run audit:authorization         # fail CI if discovery ≠ audit
+```
+
+Discovery uses TypeScript-aware export regexes (`scripts/authorization/discover.ts`). Limitations: no re-export resolution; does not prove behavioral correctness — only inventory coverage. Human classification + security tests prove behavior.
+
+Authoritative file: `docs/audits/tenant-isolation.csv`
+
+Merge readiness requires **zero Unresolved** rows after mechanical recount from that CSV.
