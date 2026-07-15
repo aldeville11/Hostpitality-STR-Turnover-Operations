@@ -1,71 +1,191 @@
-import SectionLabel from '../components/SectionLabel';
-import ScrollReveal from '../components/ScrollReveal';
+import { useEffect, useRef } from 'react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SECTION_WRAP } from '../lib/cta';
 
-const leaks = [
+gsap.registerPlugin(ScrollTrigger);
+
+const findings = [
   {
-    title: 'Slow first response',
-    result: 'Buyers book with whoever answers first.',
-    impact: 'Hours of delay = lost appointments',
+    id: 'L-01',
+    title: 'Slow Response',
+    impact: 'Buyer books competitor first.',
+    bookingEffect: 'First-contact advantage transfers to whoever replies faster.',
+    estimate: '10–18%',
+    estimateLabel: 'booking loss',
   },
   {
-    title: 'Missed calls after hours',
-    result: 'Urgent jobs never make it onto your calendar.',
-    impact: 'Nights & weekends silently leak revenue',
+    id: 'L-02',
+    title: 'Missed After-Hours Calls',
+    impact: 'Urgent jobs never hit the calendar.',
+    bookingEffect: 'Peak-intent inquiries expire overnight with no capture path.',
+    estimate: '8–15%',
+    estimateLabel: 'booking loss',
   },
   {
-    title: 'Weak follow-up',
-    result: 'Warm leads go cold after one attempt.',
-    impact: 'Most closes need structured nurture',
+    id: 'L-03',
+    title: 'Weak Follow-Up',
+    impact: 'Warm leads go cold after one attempt.',
+    bookingEffect: 'Multi-touch closes never start — one miss ends the pipeline.',
+    estimate: '12–20%',
+    estimateLabel: 'booking loss',
   },
   {
-    title: 'Unclear next step',
-    result: 'Prospects leave without booking.',
-    impact: 'Confusion kills conversion',
+    id: 'L-04',
+    title: 'Unclear Next Step',
+    impact: 'Prospects leave without booking.',
+    bookingEffect: 'Interest stalls at “we’ll call you back” instead of a confirmed slot.',
+    estimate: '7–14%',
+    estimateLabel: 'booking loss',
   },
   {
-    title: 'No source visibility',
-    result: 'You fund channels that do not convert.',
-    impact: 'Higher cost per booked job',
+    id: 'L-05',
+    title: 'No Source Visibility',
+    impact: 'You fund channels that do not convert.',
+    bookingEffect: 'Spend scales inquiries — not appointments — and masks true CAC.',
+    estimate: '15–25%',
+    estimateLabel: 'wasted acquisition',
   },
   {
-    title: 'Staff overload',
-    result: 'Busy days mean missed inquiries.',
-    impact: 'Peak demand becomes peak leakage',
+    id: 'L-06',
+    title: 'Staff Overload',
+    impact: 'Busy days become peak leakage.',
+    bookingEffect: 'Highest inquiry volume coincides with lowest booking capacity.',
+    estimate: '9–16%',
+    estimateLabel: 'booking loss',
   },
-];
+] as const;
 
 export default function WhyLoseCustomers() {
-  return (
-    <section id="why-lose" className="bg-background border-t border-[#1C1C1C]">
-      <div className={`${SECTION_WRAP} py-20 md:py-28`}>
-        <ScrollReveal className="max-w-[680px] mb-12 md:mb-16">
-          <SectionLabel text="WHY BUSINESSES LOSE CUSTOMERS" />
-          <h2 className="text-[clamp(1.75rem,3.5vw,2.75rem)] font-semibold text-[#F5F0E8] leading-[1.15] tracking-[-0.015em]">
-            The leak is rarely the ad.
-            <br />
-            It is what happens after.
-          </h2>
-          <p className="mt-4 text-[#A8A29E] leading-relaxed">
-            These six points show up again and again in owner-operated service businesses between $500K and $10M.
-          </p>
-        </ScrollReveal>
+  const sectionRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
 
-        <ScrollReveal className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5" stagger={0.06}>
-          {leaks.map((leak, i) => (
+  useEffect(() => {
+    if (!sectionRef.current) return;
+
+    const ctx = gsap.context(() => {
+      if (headerRef.current) {
+        gsap.fromTo(
+          headerRef.current.children,
+          { opacity: 0, y: 22 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.6,
+            stagger: 0.1,
+            ease: 'power3.out',
+            scrollTrigger: {
+              trigger: headerRef.current,
+              start: 'top 80%',
+              once: true,
+            },
+          }
+        );
+      }
+
+      if (gridRef.current) {
+        const cards = gridRef.current.querySelectorAll('[data-finding]');
+        gsap.fromTo(
+          cards,
+          { opacity: 0, y: 28 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.55,
+            stagger: 0.07,
+            ease: 'power3.out',
+            scrollTrigger: {
+              trigger: gridRef.current,
+              start: 'top 78%',
+              once: true,
+            },
+          }
+        );
+      }
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, []);
+
+  return (
+    <section
+      id="why-lose"
+      ref={sectionRef}
+      className="relative border-t border-[#1C1C1C] bg-[#0A0A0A]"
+      aria-labelledby="leaks-headline"
+    >
+      <div className={`relative ${SECTION_WRAP} py-24 md:py-32 lg:py-36`}>
+        <div ref={headerRef} className="mx-auto max-w-[680px] text-center md:mx-0 md:text-left">
+          <p className="mb-5 text-[11px] font-medium uppercase tracking-[0.2em] text-primary sm:text-xs">
+            Diagnostic Findings
+          </p>
+          <h2
+            id="leaks-headline"
+            className="text-balance text-[clamp(1.75rem,4vw,2.75rem)] font-semibold leading-[1.12] tracking-[-0.02em] text-[#F5F0E8]"
+          >
+            Six leaks that cut booking rate.
+          </h2>
+          <p className="mt-5 max-w-[34rem] text-base leading-relaxed text-[#A8A29E] md:mx-0 md:text-[17px]">
+            Recurring findings across owner-operated service businesses — measured by impact on appointments, not activity.
+          </p>
+        </div>
+
+        <div
+          ref={gridRef}
+          className="mt-14 grid grid-cols-1 gap-3 sm:mt-16 sm:grid-cols-2 sm:gap-4 lg:mt-20 lg:grid-cols-3 lg:gap-5"
+        >
+          {findings.map((finding) => (
             <article
-              key={leak.title}
-              className="rounded-xl border border-[#262626] bg-card p-6 md:p-7"
+              key={finding.id}
+              data-finding
+              className="flex flex-col border border-[#222] bg-[#0E0E0E] px-6 py-7 sm:px-7 sm:py-8"
             >
-              <p className="text-xs font-mono text-primary mb-3">0{i + 1}</p>
-              <h3 className="text-lg font-semibold text-[#F5F0E8]">{leak.title}</h3>
-              <p className="mt-2 text-[#A8A29E] leading-relaxed">{leak.result}</p>
-              <p className="mt-4 text-sm text-[#6B6560] border-t border-[#1C1C1C] pt-4">
-                {leak.impact}
+              {/* Finding meta — audit header */}
+              <div className="flex items-center justify-between gap-3 border-b border-[#1C1C1C] pb-4">
+                <span className="font-mono text-[11px] tracking-[0.12em] text-primary">
+                  {finding.id}
+                </span>
+                <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#4A4540]">
+                  Finding
+                </span>
+              </div>
+
+              {/* Leak title */}
+              <h3 className="mt-5 text-[1.2rem] font-semibold leading-snug tracking-[-0.015em] text-[#F5F0E8] sm:text-[1.3rem]">
+                {finding.title}
+              </h3>
+
+              {/* Business impact */}
+              <p className="mt-3 text-[15px] leading-relaxed text-[#A8A29E]">
+                {finding.impact}
               </p>
+
+              {/* How it affects booking rate */}
+              <div className="mt-6 flex-1">
+                <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#4A4540]">
+                  Booking effect
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-[#7A736C]">
+                  {finding.bookingEffect}
+                </p>
+              </div>
+
+              {/* Estimated cost — dominant KPI footer */}
+              <div className="mt-7 border-t border-[#1C1C1C] pt-5">
+                <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#4A4540]">
+                  Estimated impact
+                </p>
+                <p className="mt-2 flex items-baseline gap-2">
+                  <span className="font-display text-[1.85rem] font-semibold italic leading-none tracking-[-0.02em] text-[#F5F0E8] tabular-nums">
+                    {finding.estimate}
+                  </span>
+                  <span className="text-sm text-primary">{finding.estimateLabel}</span>
+                </p>
+              </div>
             </article>
           ))}
-        </ScrollReveal>
+        </div>
       </div>
     </section>
   );
