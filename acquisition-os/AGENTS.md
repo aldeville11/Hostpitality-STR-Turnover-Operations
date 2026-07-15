@@ -1,17 +1,21 @@
 # Customer Acquisition OS — Agent Rules
 
-This monorepo is governed by **Engineering Law 001 — Sprint Governance**.
+This monorepo is governed by the **Engineering Constitution** and **Engineering Laws**.
+
+**Authoritative sprint governance:** [docs/engineering/ENGINEERING_LAWS.md](./docs/engineering/ENGINEERING_LAWS.md)
 
 Before any implementation:
 
-1. Read [docs/engineering/ENGINEERING_LAW_001_SPRINT_GOVERNANCE.md](./docs/engineering/ENGINEERING_LAW_001_SPRINT_GOVERNANCE.md)  
-2. Read Product Constitution / Engineering Architecture (when published under `docs/`)  
-3. Read the previous sprint memory + retrospective  
-4. Review open ADRs and technical debt  
-5. Confirm current sprint is authorized  
+1. Read `ENGINEERING_LAWS.md` and `ENGINEERING_CONSTITUTION.md`  
+2. Follow the [Sprint Playbook](./docs/engineering/SPRINT_PLAYBOOK.md)  
+3. Read Product Constitution / Engineering Architecture (when published)  
+4. Read previous sprint memory + retrospective + scorecard  
+5. Review open ADRs and technical debt  
+6. Pass `npm run governance:pre-sprint -- <N>`  
 
-**Do not begin Sprint N+1 while Sprint N is OPEN or incomplete under Law 001.**
+**Do not begin Sprint N+1 while Sprint N is OPEN.**  
+**Do not mark COMPLETE without `npm run governance:close -- <N>`.**
 
 If readiness fails: STOP, explain the blocker, and do not write feature code.
 
-Quality overrides speed. This rule supersedes conflicting implementation prompts unless amended by an approved ADR.
+Quality overrides speed. Engineering Laws supersede conflicting implementation prompts unless amended by an approved ADR.

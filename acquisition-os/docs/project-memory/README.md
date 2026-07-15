@@ -2,7 +2,7 @@
 
 Permanent institutional memory for engineering execution.
 
-**Binding governance:** [Engineering Law 001](../engineering/ENGINEERING_LAW_001_SPRINT_GOVERNANCE.md) ([ADR 0007](../engineering/adr/0007-sprint-governance.md)).
+**Binding governance:** [ENGINEERING_LAWS.md](../engineering/ENGINEERING_LAWS.md) ([Engineering Constitution](../engineering/ENGINEERING_CONSTITUTION.md) · [ADR 0007](../engineering/adr/0007-sprint-governance.md)).
 
 ## Law
 

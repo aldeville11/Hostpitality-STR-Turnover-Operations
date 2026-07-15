@@ -74,10 +74,10 @@ if (updated.includes(marker)) {
   updated = `${updated.trimEnd()}\n${row}\n`;
 }
 updated = updated.replace(
-  /## Next required read\n\nBefore Sprint \d+ begins:.*/,
-  `## Next required read\n\nBefore the next sprint begins: complete and publish **${fileName}**, then set INDEX status to Complete.`
+  /## Next required read\n\n[\s\S]*$/,
+  `## Next required read\n\nBefore the next sprint begins: complete Law 001 closure for **${fileName}** (Status COMPLETE), then obtain PM + CTO authorization.\n`
 );
 fs.writeFileSync(indexPath, updated, "utf8");
 
 console.log(`Created ${path.relative(root, outPath)}`);
-console.log("Fill all 17 sections before sprint close. Set INDEX status to Complete when done.");
+console.log("Fill all sections + Law 001 checklist. Status stays OPEN until merge approved; COMPLETE only under Law 001.");

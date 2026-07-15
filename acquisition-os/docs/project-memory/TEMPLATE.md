@@ -9,7 +9,7 @@
 **Memory author:** Technical Writer  
 **Contributors:**  
 
-> Status **COMPLETE** is forbidden until [Engineering Law 001](../../engineering/ENGINEERING_LAW_001_SPRINT_GOVERNANCE.md) closure requirements are all met (including merge approved). Otherwise use **OPEN**.
+> Status **COMPLETE** is forbidden until [ENGINEERING_LAWS.md](../../engineering/ENGINEERING_LAWS.md) (Law 001) closure requirements are all met — including a successful `npm run governance:close -- <N>`. Otherwise use **OPEN**.
 
 ---
 

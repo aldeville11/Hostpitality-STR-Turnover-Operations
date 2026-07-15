@@ -14,4 +14,4 @@
 
 Open ADRs before implementing the dependent Sprint (see Execution Plan).
 
-Governance supersession: only an approved ADR may amend [Engineering Law 001](../ENGINEERING_LAW_001_SPRINT_GOVERNANCE.md).
+Governance supersession: only an approved ADR may amend [ENGINEERING_LAWS.md](../ENGINEERING_LAWS.md).

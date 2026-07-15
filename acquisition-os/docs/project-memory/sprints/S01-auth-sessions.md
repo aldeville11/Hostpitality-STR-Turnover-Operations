@@ -7,7 +7,7 @@
 **Memory author:** Technical Writer  
 **Contributors:** Frontend Lead · Backend Lead · QA Lead · Security Engineer · Technical Architect · Engineering Review Board  
 
-> **OPEN under Engineering Law 001** — implementation and ERB review occurred; merge not approved; closure checklist incomplete. Must not be marked COMPLETE until Law 001 requirements are met.
+> **OPEN under ENGINEERING_LAWS.md (Law 001)** — implementation and ERB review occurred; merge not approved; `npm run governance:close -- 1` fails until close checklist is complete. Must not be marked COMPLETE until Law 001 requirements are met.
 
 ---
 

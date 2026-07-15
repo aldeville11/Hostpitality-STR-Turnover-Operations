@@ -2,9 +2,14 @@
 
 Monorepo for **Acquisition OS** (Customer Acquisition Operating System).
 
-**Governance:** [Engineering Law 001](./docs/engineering/ENGINEERING_LAW_001_SPRINT_GOVERNANCE.md) ([ADR 0007](./docs/engineering/adr/0007-sprint-governance.md)) — mandatory sprint lifecycle; quality over velocity.
+**Governance:** [ENGINEERING_LAWS.md](./docs/engineering/ENGINEERING_LAWS.md) ([Engineering Constitution](./docs/engineering/ENGINEERING_CONSTITUTION.md) · [Sprint Playbook](./docs/engineering/SPRINT_PLAYBOOK.md) · [ADR 0007](./docs/engineering/adr/0007-sprint-governance.md)) — mandatory sprint lifecycle; quality over velocity.
 
 Sprint **1 (Authentication)** is **OPEN** (implementation delivered; merge/closure pending Law 001). **Sprint 2 is not authorized.**
+
+```bash
+npm run governance:pre-sprint -- <N>   # required before implementation
+npm run governance:close -- <N>        # required before Status=COMPLETE
+```
 
 ## Packages
 
@@ -33,7 +38,9 @@ Demo login (non-production seed): `demo@acquisition-os.local` / `ChangeMe-Demo-O
 
 ## Documentation
 
-- `docs/engineering/ENGINEERING_LAW_001_SPRINT_GOVERNANCE.md` — **binding sprint governance**
+- `docs/engineering/ENGINEERING_LAWS.md` — **authoritative sprint governance**
+- `docs/engineering/ENGINEERING_CONSTITUTION.md` — Engineering Constitution
+- `docs/engineering/SPRINT_PLAYBOOK.md` — sprint operator playbook
 - `docs/engineering/ORGANIZATION.md` — roles
 - `docs/engineering/GATE_A.md` — strategy lock
 - `docs/engineering/AUTH.md` — session auth notes

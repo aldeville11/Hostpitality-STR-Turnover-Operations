@@ -2,7 +2,7 @@
 
 Chronological institutional memory. Newest last.
 
-**Governance:** [Engineering Law 001](../engineering/ENGINEERING_LAW_001_SPRINT_GOVERNANCE.md) — a sprint may not show COMPLETE until Law 001 closure (including merge) is satisfied.
+**Governance:** [ENGINEERING_LAWS.md](../engineering/ENGINEERING_LAWS.md) — a sprint may not show COMPLETE until Law 001 closure is satisfied **and** `npm run governance:close -- <N>` passes.
 
 | Sprint | File | Status | Summary |
 |---|---|---|---|

@@ -1,7 +1,7 @@
 # Sprint 1 Review — Authentication
 
 **Date:** 2026-07-15  
-**Status:** **OPEN** under [Engineering Law 001](./ENGINEERING_LAW_001_SPRINT_GOVERNANCE.md)  
+**Status:** **OPEN** under [ENGINEERING_LAWS.md](./ENGINEERING_LAWS.md) (Law 001)  
 **ERB verdict:** APPROVE WITH REQUIRED CHANGES (PR #18)  
 **Acceptance (Execution Plan):** User can authenticate to empty shell — **Met (implementation)**  
 **Closure:** Incomplete — merge not approved; packaging / CI hygiene required  

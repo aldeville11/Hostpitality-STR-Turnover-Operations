@@ -16,7 +16,10 @@
     "verify": "npm run typecheck && npm run lint && npm run test && npm run build",
     "dev:api": "npm run dev -w @acquisition-os/api",
     "dev:web": "npm run dev -w @acquisition-os/web-app",
-    "memory:new": "node ./scripts/new-sprint-memory.mjs"
+    "memory:new": "node ./scripts/new-sprint-memory.mjs",
+    "governance:checklist:init": "node ./scripts/validate-sprint-governance.mjs init",
+    "governance:pre-sprint": "node ./scripts/validate-sprint-governance.mjs pre-sprint",
+    "governance:close": "node ./scripts/validate-sprint-governance.mjs close"
   },
   "engines": {
     "node": ">=20.9.0 <23"
