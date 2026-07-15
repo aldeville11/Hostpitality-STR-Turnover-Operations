@@ -12,7 +12,7 @@
     "build": "npm run build:packages && npm run build -w @acquisition-os/api && npm run build -w @acquisition-os/web-app && npm run build -w @acquisition-os/web-marketing",
     "lint": "npm run lint -w @acquisition-os/api && npm run lint -w @acquisition-os/web-app && npm run lint -w @acquisition-os/web-marketing",
     "typecheck": "npm run build:packages && npm run typecheck -w @acquisition-os/api && npm run typecheck -w @acquisition-os/web-app && npm run typecheck -w @acquisition-os/web-marketing",
-    "test": "npm run build -w @acquisition-os/design-tokens && npm run test -w @acquisition-os/design-tokens && npm run build -w @acquisition-os/ui && npm run test -w @acquisition-os/ui && npm run test -w @acquisition-os/api",
+    "test": "npm run build -w @acquisition-os/design-tokens && npm run test -w @acquisition-os/design-tokens && npm run build -w @acquisition-os/ui && npm run test -w @acquisition-os/ui && npm run test -w @acquisition-os/api && npm run test:isolation -w @acquisition-os/api",
     "verify": "npm run typecheck && npm run lint && npm run test && npm run build",
     "dev:api": "npm run dev -w @acquisition-os/api",
     "dev:web": "npm run dev -w @acquisition-os/web-app",
@@ -23,5 +23,10 @@
   },
   "engines": {
     "node": ">=20.9.0 <23"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.4",
+    "@types/pg": "^8.20.0",
+    "pg": "^8.22.0"
   }
 }

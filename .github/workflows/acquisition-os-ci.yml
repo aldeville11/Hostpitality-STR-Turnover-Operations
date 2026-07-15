@@ -27,3 +27,8 @@ jobs:
         run: npm install
       - name: Verify
         run: npm run verify
+      - name: Tenant Isolation Suite (mandatory)
+        run: npm run test:isolation -w @acquisition-os/api
+      - name: Coverage report
+        run: npm run test:coverage -w @acquisition-os/api
+        continue-on-error: false

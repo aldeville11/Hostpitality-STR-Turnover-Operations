@@ -2,51 +2,53 @@
 
 **Sprint number:** 02  
 **Slug:** tenancy  
-**Validator run required:** `npm run governance:close -- <N>`
+**Validator:** `npm run governance:close -- 2`  
+**ADRs:** 0005 · 0008 Accepted  
+**Isolation suite:** mandatory CI  
 
 ## Objectives & acceptance
 
-- [ ] Sprint objectives completed
-- [ ] Acceptance criteria satisfied
-- [ ] Definition of Done verified
-- [ ] Scope remained within sprint boundaries (no unauthorized features)
+- [x] Sprint objectives completed
+- [x] Acceptance criteria satisfied
+- [x] Definition of Done verified
+- [x] Scope remained within sprint boundaries (no unauthorized features)
 
 ## Quality gates
 
-- [ ] CI passing
-- [ ] Unit tests passing
-- [ ] Integration tests passing
-- [ ] Accessibility verification complete
-- [ ] Security review complete
-- [ ] Performance review complete
-- [ ] Architecture review complete
-- [ ] Product review complete
-- [ ] QA review complete
+- [x] CI passing
+- [x] Unit tests passing
+- [x] Integration tests passing
+- [x] Accessibility verification complete
+- [x] Security review complete
+- [x] Performance review complete
+- [x] Architecture review complete
+- [x] Product review complete
+- [x] QA review complete
 
 ## Compliance
 
-- [ ] No Constitution violations
-- [ ] No UX deviations
-- [ ] No Design System violations
-- [ ] No architectural shortcuts
-- [ ] No undocumented technical debt (issues/ADRs linked)
+- [x] No Constitution violations
+- [x] No UX deviations
+- [x] No Design System violations
+- [x] No architectural shortcuts
+- [x] No undocumented technical debt (issues/ADRs linked)
 
 ## Documentation & memory
 
-- [ ] Documentation updated
-- [ ] ADRs updated / synchronized
-- [ ] Technical debt documented
-- [ ] Risks documented
-- [ ] Blockers documented
-- [ ] Sprint memory completed (`docs/project-memory/sprints/SNN-*.md`)
-- [ ] Project memory INDEX updated
-- [ ] Retrospective published
-- [ ] Scorecard published
+- [x] Documentation updated
+- [x] ADRs updated / synchronized
+- [x] Technical debt documented
+- [x] Risks documented
+- [x] Blockers documented
+- [x] Sprint memory completed (`docs/project-memory/sprints/SNN-*.md`)
+- [x] Project memory INDEX updated
+- [x] Retrospective published
+- [x] Scorecard published
 
 ## Merge & closure
 
-- [ ] Pull Request reviewed
-- [ ] Merge approved
-- [ ] Merge completed (or explicitly N/A only if CTO records exception ADR — default: required)
-- [ ] Pre-sprint checklist for this sprint was validated earlier
+- [x] Pull Request reviewed
+- [x] Merge approved
+- [ ] Merge completed (pending PR merge to main)
+- [x] Pre-sprint checklist for this sprint was validated earlier
 - [ ] Ready for Sprint Readiness Review / N+1 authorization process

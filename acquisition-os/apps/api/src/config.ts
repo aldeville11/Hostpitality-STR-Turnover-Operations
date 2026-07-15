@@ -11,6 +11,7 @@ export type ApiConfig = {
   sessionTtlMs: number;
   cookieSecure: boolean;
   corsOrigin: string;
+  databaseUrl: string | null;
 };
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
@@ -41,5 +42,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
     sessionTtlMs: Math.floor(sessionTtlHours * 60 * 60 * 1000),
     cookieSecure: nodeEnv === "production",
     corsOrigin: env.CORS_ORIGIN ?? env.APP_URL ?? "http://localhost:5173",
+    databaseUrl: env.DATABASE_URL?.trim() || null,
   };
 }

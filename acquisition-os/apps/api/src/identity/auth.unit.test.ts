@@ -65,7 +65,25 @@ describe("rbac hooks", () => {
     expect(CONSTITUTION_ROLE_KEYS).toContain("administrator");
   });
 
-  it("builds AuthContext with null tenancy until Sprint 2", () => {
+  it("builds AuthContext with membership tenancy when provided", () => {
+    const ctx = toAuthContext({
+      userId: "usr_1",
+      email: "a@b.c",
+      status: "active",
+      sessionId: "ses_1",
+      organizationId: "org_1",
+      workspaceId: "wks_1",
+      role: "owner",
+      locationScope: ["loc_1"],
+    });
+    expect(ctx.organizationId).toBe("org_1");
+    expect(ctx.workspaceId).toBe("wks_1");
+    expect(ctx.role).toBe("owner");
+    expect(ctx.locationScope).toEqual(["loc_1"]);
+    expect(isAuthenticated(ctx)).toBe(true);
+  });
+
+  it("builds AuthContext with null tenancy when membership absent", () => {
     const ctx = toAuthContext({
       userId: "usr_1",
       email: "a@b.c",
@@ -76,7 +94,6 @@ describe("rbac hooks", () => {
     expect(ctx.workspaceId).toBeNull();
     expect(ctx.role).toBeNull();
     expect(ctx.locationScope).toEqual([]);
-    expect(isAuthenticated(ctx)).toBe(true);
   });
 
   it("assertPermission fails closed until Sprint 3", () => {

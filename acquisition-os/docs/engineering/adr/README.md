@@ -8,9 +8,10 @@
 | 0002 | Authentication mechanism (session vs JWT) | **Accepted** | Backend Lead |
 | 0003 | Queue technology | Proposed | Platform Engineer |
 | 0004 | Web application framework | Proposed | Frontend Lead |
-| 0005 | Workspace ↔ Location default model | Proposed | Backend Lead |
+| 0005 | Workspace ↔ Location default model | **Accepted** | Backend Lead |
 | 0006 | Message body storage & encryption | Proposed | Security Engineer |
 | 0007 | Mandatory sprint governance (Engineering Law 001) | **Accepted** | CTO |
+| 0008 | Durable SQL store for Identity + Tenancy | **Accepted** | Backend Lead |
 
 Open ADRs before implementing the dependent Sprint (see Execution Plan).
 

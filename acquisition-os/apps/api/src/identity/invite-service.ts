@@ -1,15 +1,14 @@
 import { AuthError } from "./auth-service.js";
 import type { AuthContext } from "./types.js";
-import type { IdentityStore } from "./store.js";
+import type { PlatformStore } from "../platform/types.js";
 import { newId } from "./tokens.js";
 
 /**
- * Invite user stub — Sprint 1.
- * Creates an invited User without Membership / Workspace (Sprint 2).
- * Does not send email (notifications module later).
+ * Invite user stub — creates invited User without Membership.
+ * Membership assignment is Sprint 2 tenancy API.
  */
 export class InviteService {
-  constructor(private readonly store: IdentityStore) {}
+  constructor(private readonly store: PlatformStore) {}
 
   async inviteUser(input: {
     email: string;

@@ -30,23 +30,28 @@ export class RbacNotReadyError extends Error {
 }
 
 /**
- * Placeholder for AuthContext assembly after session validation.
- * Tenancy fields remain null until Organization/Workspace Membership (Sprint 2).
+ * AuthContext assembly after session validation.
+ * Sprint 2: populate tenancy fields from active Membership when present.
+ * RBAC enforcement remains Sprint 3 (assertPermission still throws).
  */
 export function toAuthContext(input: {
   userId: string;
   email: string;
   status: AuthContext["status"];
   sessionId: string;
+  organizationId?: string | null;
+  workspaceId?: string | null;
+  role?: string | null;
+  locationScope?: string[];
 }): AuthContext {
   return {
     userId: input.userId,
     email: input.email,
     status: input.status,
-    organizationId: null,
-    workspaceId: null,
-    role: null,
-    locationScope: [],
+    organizationId: input.organizationId ?? null,
+    workspaceId: input.workspaceId ?? null,
+    role: input.role ?? null,
+    locationScope: input.locationScope ?? [],
     sessionId: input.sessionId,
   };
 }

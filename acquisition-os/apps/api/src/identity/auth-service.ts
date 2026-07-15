@@ -7,7 +7,7 @@ import {
 } from "./cookies.js";
 import { hashPassword, verifyPassword } from "./password.js";
 import { toAuthContext } from "./rbac.js";
-import type { IdentityStore } from "./store.js";
+import type { PlatformStore } from "../platform/types.js";
 import { generateSessionToken, hashSessionToken, newId } from "./tokens.js";
 import type { AuthContext, PublicUser, UserRecord } from "./types.js";
 
@@ -26,7 +26,7 @@ export class AuthError extends Error {
 
 export class AuthService {
   constructor(
-    private readonly store: IdentityStore,
+    private readonly store: PlatformStore,
     private readonly config: ApiConfig
   ) {}
 
@@ -56,6 +56,20 @@ export class AuthService {
       name: user.name,
       status: user.status,
     };
+  }
+
+  private async buildAuthContext(user: UserRecord, sessionId: string): Promise<AuthContext> {
+    const membership = await this.store.findActiveMembershipForUser(user.id);
+    return toAuthContext({
+      userId: user.id,
+      email: user.email,
+      status: user.status,
+      sessionId,
+      organizationId: membership?.organizationId ?? null,
+      workspaceId: membership?.workspaceId ?? null,
+      role: membership?.roleKey ?? null,
+      locationScope: membership?.locationScope ?? [],
+    });
   }
 
   async login(
@@ -90,12 +104,7 @@ export class AuthService {
     };
     await this.store.updateUser(updated);
 
-    const auth = toAuthContext({
-      userId: user.id,
-      email: user.email,
-      status: user.status,
-      sessionId: session.id,
-    });
+    const auth = await this.buildAuthContext(updated, session.id);
 
     return {
       user: this.toPublicUser(updated),
@@ -131,12 +140,7 @@ export class AuthService {
     const user = await this.store.findUserById(session.userId);
     if (!user || user.status === "deactivated") return null;
 
-    return toAuthContext({
-      userId: user.id,
-      email: user.email,
-      status: user.status,
-      sessionId: session.id,
-    });
+    return this.buildAuthContext(user, session.id);
   }
 
   async me(cookieHeader: string | undefined): Promise<{ user: PublicUser; auth: AuthContext }> {
