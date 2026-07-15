@@ -15,7 +15,9 @@
 
 ## 1. Sprint Summary
 
-(2–5 sentences: what this sprint delivered and why it mattered.)
+_(Draft — planning only. Implementation not started.)_
+
+Sprint 2 targets Tenancy per Execution Plan: Organization, Location, Workspace, Membership CRUD; Postgres persistence; tenant boundaries; minimal domain events. See [SPRINT_2_PLAN.md](../../engineering/SPRINT_2_PLAN.md). **Awaiting implementation approval.**
 
 ## 2. Objectives Completed
 
