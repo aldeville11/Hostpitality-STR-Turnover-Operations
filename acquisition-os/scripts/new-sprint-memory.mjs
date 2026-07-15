@@ -53,8 +53,8 @@ template = template
   .replaceAll("**Codename / slug:** _(slug)_", `**Codename / slug:** ${slug}`)
   .replaceAll("**Status:** Draft | OPEN | COMPLETE", "**Status:** Draft")
   .replace(
-    /> Status \*\*COMPLETE\*\* is forbidden until.*\n\n---\n\n/,
-    "---\n\n"
+    /> Status \*\*COMPLETE\*\* is forbidden until \[Engineering Law 001\]\([^)]+\) closure requirements are all met \(including merge approved\)\. Otherwise use \*\*OPEN\*\*\.\n\n/,
+    ""
   )
   .replace(
     "> Copy this template to `sprints/SNN-slug.md`. Fill every section. Use `N/A` only when truly not applicable — never leave blank.\n\n",
