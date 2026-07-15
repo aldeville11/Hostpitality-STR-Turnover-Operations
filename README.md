@@ -79,3 +79,7 @@ See `.env.example`. Required in production:
 - `JOB_BATCH_SIZE`
 
 `AUTH_SECRET` is deprecated and unused.
+
+## Related: Acquisition OS
+
+Customer Acquisition OS now lives in a separate repository: https://github.com/aldeville11/acquisition-os
