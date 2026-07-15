@@ -5,9 +5,11 @@
 **Sprint:** NN  
 **Codename / slug:** _(slug)_  
 **Dates:**  
-**Status:** Draft | Complete  
+**Status:** Draft | OPEN | COMPLETE  
 **Memory author:** Technical Writer  
 **Contributors:**  
+
+> Status **COMPLETE** is forbidden until [Engineering Law 001](../../engineering/ENGINEERING_LAW_001_SPRINT_GOVERNANCE.md) closure requirements are all met (including merge approved). Otherwise use **OPEN**.
 
 ---
 
@@ -116,4 +118,44 @@
 **Sprint ID:**  
 **Primary objective:**  
 **Prerequisites / ADR blockers:**  
-**Must read before start:** this file + Constitution § relevant parts  
+**Must read before start:** this file + Constitution § relevant parts + Law 001 readiness checklist  
+
+## 18. Law 001 Closure Checklist
+
+| Requirement | Met? |
+|---|---|
+| Sprint objectives completed | |
+| Acceptance criteria satisfied | |
+| Definition of Done verified | |
+| CI passing | |
+| Unit tests passing | |
+| Integration tests passing | |
+| Accessibility verification complete | |
+| Security review complete | |
+| Performance review complete | |
+| Documentation updated | |
+| ADRs updated | |
+| Technical debt documented (with issue links) | |
+| Risks documented | |
+| Blockers documented | |
+| Sprint memory completed | |
+| Pull Request reviewed | |
+| Merge approved | |
+| Retrospective published | |
+| Scorecard published | |
+
+## 19. Retrospective & Scorecard
+
+- Retrospective path:  
+- Scorecard path:  
+- Overall score:  
+
+## 20. Next Sprint Authorization
+
+| Gate | Met? |
+|---|---|
+| This sprint COMPLETE | |
+| PM authorizes N+1 | |
+| CTO authorizes N+1 | |
+
+If any gate fails: **STOP — do not implement Sprint N+1.**

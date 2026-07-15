@@ -2,7 +2,9 @@
 
 Monorepo for **Acquisition OS** (Customer Acquisition Operating System).
 
-Sprint **1** authentication is in place (cookie sessions). Tenancy follows in Sprint 2.
+**Governance:** [Engineering Law 001](./docs/engineering/ENGINEERING_LAW_001_SPRINT_GOVERNANCE.md) ([ADR 0007](./docs/engineering/adr/0007-sprint-governance.md)) — mandatory sprint lifecycle; quality over velocity.
+
+Sprint **1 (Authentication)** is **OPEN** (implementation delivered; merge/closure pending Law 001). **Sprint 2 is not authorized.**
 
 ## Packages
 
@@ -31,6 +33,7 @@ Demo login (non-production seed): `demo@acquisition-os.local` / `ChangeMe-Demo-O
 
 ## Documentation
 
+- `docs/engineering/ENGINEERING_LAW_001_SPRINT_GOVERNANCE.md` — **binding sprint governance**
 - `docs/engineering/ORGANIZATION.md` — roles
 - `docs/engineering/GATE_A.md` — strategy lock
 - `docs/engineering/AUTH.md` — session auth notes

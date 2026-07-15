@@ -51,7 +51,11 @@ template = template
   .replaceAll("# Sprint NN — Title", `# Sprint ${padded} — ${slug}`)
   .replaceAll("**Sprint:** NN", `**Sprint:** ${padded}`)
   .replaceAll("**Codename / slug:** _(slug)_", `**Codename / slug:** ${slug}`)
-  .replaceAll("**Status:** Draft | Complete", "**Status:** Draft")
+  .replaceAll("**Status:** Draft | OPEN | COMPLETE", "**Status:** Draft")
+  .replace(
+    /> Status \*\*COMPLETE\*\* is forbidden until.*\n\n---\n\n/,
+    "---\n\n"
+  )
   .replace(
     "> Copy this template to `sprints/SNN-slug.md`. Fill every section. Use `N/A` only when truly not applicable — never leave blank.\n\n",
     ""

@@ -2,24 +2,36 @@
 
 Permanent institutional memory for engineering execution.
 
+**Binding governance:** [Engineering Law 001](../engineering/ENGINEERING_LAW_001_SPRINT_GOVERNANCE.md) ([ADR 0007](../engineering/adr/0007-sprint-governance.md)).
+
 ## Law
 
-1. Every completed sprint **must** produce a memory file under `sprints/`.
-2. Every new sprint **must** review the previous sprint memory before implementation begins.
-3. Memory records **what happened** — it does not change the Product Constitution or reinvent strategy.
-4. Speculative plans do not belong here; only decisions and outcomes after work lands.
+1. Every sprint must produce a memory file under `sprints/` before closure.  
+2. Status is `Draft` | `OPEN` | `COMPLETE` — **COMPLETE** only when Law 001 closure (including merge) is satisfied.  
+3. Every new sprint must review previous memory + retrospective + scorecard before implementation.  
+4. Sprint N+1 is forbidden until prior sprint COMPLETE and PM + CTO authorize.  
+5. Memory records **what happened** — it does not change the Product Constitution or reinvent strategy.  
+6. Speculative plans do not belong here; only decisions and outcomes after work lands.  
+7. Technical debt requires tracking links (issues/ADRs) — undocumented debt fails the merge gate.
 
 ## Layout
 
 ```
 docs/project-memory/
-  README.md                 # this file
-  WORKFLOW.md               # engineering integration
-  TEMPLATE.md               # required fields
-  INDEX.md                  # chronologic index
+  README.md
+  WORKFLOW.md
+  TEMPLATE.md
+  INDEX.md
   sprints/
-    S00-foundation.md       # Sprint 0
-    SNN-….md
+    S00-foundation.md
+    S01-auth-sessions.md
+```
+
+Companion Law 001 artifacts:
+
+```
+docs/engineering/retrospectives/SNN-retrospective.md
+docs/engineering/scorecards/SNN-scorecard.md
 ```
 
 ## Who writes memory
@@ -29,15 +41,19 @@ docs/project-memory/
 | **Technical Writer** | Owns final memory file quality |
 | **TPM / EM** | Ensures memory exists before sprint close |
 | **Sprint Owner leads** | Supply Files / ADRs / Tests / Risks |
-| **CTO** | Approves ADRs section accuracy |
+| **CTO** | Approves ADRs section accuracy; Law 001 merge + N+1 auth |
 
-## Review gate
+## Review gate (Definition of Ready for N+1)
 
-Sprint N+1 Definition of Ready includes:
-
-- [ ] Read `sprints/` latest memory  
+- [ ] Prior sprint Status = COMPLETE  
+- [ ] Read prior memory + retrospective + scorecard  
 - [ ] Open blockers reviewed  
-- [ ] Tech debt items considered in backlog  
+- [ ] Tech debt prioritized  
+- [ ] Open ADRs reviewed  
+- [ ] PM authorizes N+1  
+- [ ] CTO authorizes N+1  
+
+If any box is unchecked: **STOP. Do not implement.**
 
 ## Creating a new sprint memory
 
@@ -46,4 +62,4 @@ cd acquisition-os
 npm run memory:new -- 1 "auth-sessions"
 ```
 
-Then fill every section. Incomplete memory = sprint not closed.
+Then fill every section including Law 001 closure checklist. Incomplete memory = sprint remains OPEN.

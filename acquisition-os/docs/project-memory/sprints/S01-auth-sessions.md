@@ -3,9 +3,11 @@
 **Sprint:** 01  
 **Codename / slug:** auth-sessions  
 **Dates:** 2026-07-15  
-**Status:** Complete  
+**Status:** OPEN  
 **Memory author:** Technical Writer  
-**Contributors:** Frontend Lead · Backend Lead · QA Lead · Security Engineer · Technical Architect  
+**Contributors:** Frontend Lead · Backend Lead · QA Lead · Security Engineer · Technical Architect · Engineering Review Board  
+
+> **OPEN under Engineering Law 001** — implementation and ERB review occurred; merge not approved; closure checklist incomplete. Must not be marked COMPLETE until Law 001 requirements are met.
 
 ---
 
@@ -75,14 +77,15 @@ Sprint 1 delivered Authentication (AuthN) for Acquisition OS: cookie-based sessi
 
 ## 8. Technical Debt Introduced
 
-| Item | Why incurred | Paydown trigger |
-|---|---|---|
-| In-memory IdentityStore | Ship AuthN without blocking on Postgres operator setup | Sprint 2 tenancy + managed Postgres |
-| No CSRF token double-submit | SameSite=Lax covers browser navigations; full CSRF story not in S1 AC | Before cross-site form posts / public embed |
-| No auth rate limiting | Not in Execution Plan S1 deliverables | Sprint 3+ hardening or abuse signal |
-| No AuditEvent on login | Audit writers = Sprint 3 | Sprint 3 AuthZ + Audit |
-| Demo credentials in seed | Local login demonstration | Remove/guard before shared staging |
-| Constitution/Architecture/Execution Plan still chat-originated | Not persisted as repo docs in prior phases | Persist canonical copies under `docs/` when product owner directs |
+| Item | Why incurred | Paydown trigger | Tracking |
+|---|---|---|---|
+| In-memory IdentityStore | Ship AuthN without blocking on Postgres | Sprint 2 tenancy + managed Postgres | S01 memory |
+| No CSRF token double-submit | SameSite=Lax interim; not S1 AC | Before cross-site mutating API exposure | [#19](https://github.com/aldeville11/Hostpitality-STR-Turnover-Operations/issues/19) |
+| No auth rate limiting | Not Execution Plan S1 | Hardening / abuse signal | [#20](https://github.com/aldeville11/Hostpitality-STR-Turnover-Operations/issues/20) |
+| No AuditEvent on login | Audit writers = Sprint 3 | Sprint 3 AuthZ + Audit | [#21](https://github.com/aldeville11/Hostpitality-STR-Turnover-Operations/issues/21) |
+| Incomplete session lifecycle | Absolute TTL only in S1 | Idle/revoke-all/durable store | [#22](https://github.com/aldeville11/Hostpitality-STR-Turnover-Operations/issues/22) |
+| Demo credentials in seed / UI prefills | Local login demonstration | Remove/guard before shared staging | S01 memory |
+| Constitution/Architecture/Execution Plan still chat-originated | Not persisted as repo docs | Persist under `docs/` | S01 blockers |
 
 ## 9. Risks Identified
 
@@ -108,7 +111,7 @@ Sprint 1 delivered Authentication (AuthN) for Acquisition OS: cookie-based sessi
 | `npm run lint` | Pass | Includes API eslint |
 | `npm run test` | Pass | 12 API tests + package smokes |
 | `npm run build` | Pass | api + web-app + web-marketing |
-| CI workflow | Pass locally via verify | Same script as `acquisition-os-ci.yml` |
+| CI workflow | Mixed | Acquisition OS CI **pass**; root Hostpitality CI **fail** (`vinton-adler` pollution on PR #18) |
 | Other | Pass | login→me→logout; bad password; invite; rbac probe |
 
 ## 12. Performance Impact
@@ -139,27 +142,69 @@ Negligible: bcrypt cost 12 in production (CPU on login only); session lookup O(1
 
 | DoD item (Execution Plan) | Met? |
 |---|---|
-| Code reviewed + CI green | Yes (verify green; PR for human review) |
+| Code reviewed + CI green | Partial — ERB reviewed; Acquisition OS CI green; root CI red on PR packaging |
 | Tenant isolation (if data-touching) | N/A — no tenancy data (invite User only) |
 | Unit/integration as applicable | Yes |
 | Events/projections as applicable | N/A — no outbox in S1 |
 | RBAC server-side as applicable | Hooks only (intentionally not enforced) |
 | Observability as applicable | Health endpoints + structured startup log |
-| A11y as applicable | Login form labels + alert role on errors |
-| Docs updated | Yes |
+| A11y as applicable | Login form labels + alert role; full a11y suite not run |
+| Docs updated | Yes (Law 001 artifacts added) |
 | Staging/local verify | Local verify + login shell AC |
-| Product acceptance | Login shell demo ready — pending reviewer |
-| Constitution compliant | Yes (vocabulary + lifecycle; no Synonym drift) |
+| Product acceptance | Login shell AC met; formal product sign-off pending COMPLETE |
+| Constitution compliant | Yes (vocabulary + lifecycle; no synonym drift) |
 
 ## 16. Lessons Learned
 
 - Persisting Constitution / Architecture / Execution Plan as files would reduce “required read” risk for future agents.  
 - Accepting ADR 0002 before implementation unblocked clean merge criteria.  
-- Architecture epic bundling ≠ sprint rows — always prefer Execution Plan for timebox.
+- Architecture epic bundling ≠ sprint rows — always prefer Execution Plan for timebox.  
+- Engineering Law 001 now forbids marking COMPLETE without merge + retrospective + scorecard.
 
 ## 17. Recommended Next Sprint
 
 **Sprint ID:** 02  
 **Primary objective:** Tenancy — Organization, Location, Workspace, Membership CRUD  
-**Prerequisites / ADR blockers:** Prefer Accept ADR 0005 (Workspace ↔ Location); wire Postgres IdentityStore  
-**Must read before start:** this file + Constitution Identity/Tenancy + Architecture tenancy § + GATE_A.md  
+**Prerequisites / ADR blockers:** Sprint 1 COMPLETE under Law 001; prefer Accept ADR 0005; wire Postgres IdentityStore  
+**Must read before start:** this file + S01 retrospective + scorecard + Constitution Identity/Tenancy + Architecture tenancy § + GATE_A.md + Law 001  
+**Authorization:** **DENIED** until Sprint 1 COMPLETE and PM + CTO authorize  
+
+## 18. Law 001 Closure Checklist
+
+| Requirement | Met? |
+|---|---|
+| Sprint objectives completed | Yes (implementation) |
+| Acceptance criteria satisfied | Yes (empty shell auth) |
+| Definition of Done verified | Partial |
+| CI passing | Partial (Acquisition OS yes / root PR no) |
+| Unit tests passing | Yes |
+| Integration tests passing | Yes |
+| Accessibility verification complete | Partial (basic only) |
+| Security review complete | Yes (ERB; gaps tracked) |
+| Performance review complete | Yes (ERB) |
+| Documentation updated | Yes |
+| ADRs updated | Yes (0002; 0007 governance) |
+| Technical debt documented (with issue links) | Yes (#19–#22) |
+| Risks documented | Yes |
+| Blockers documented | Yes |
+| Sprint memory completed | Yes (this file) |
+| Pull Request reviewed | Yes (ERB) |
+| Merge approved | **No** |
+| Retrospective published | Yes (`retrospectives/S01-retrospective.md`) |
+| Scorecard published | Yes (`scorecards/S01-scorecard.md`) |
+
+## 19. Retrospective & Scorecard
+
+- Retrospective path: `docs/engineering/retrospectives/S01-retrospective.md`  
+- Scorecard path: `docs/engineering/scorecards/S01-scorecard.md`  
+- Overall score: **7.5**  
+
+## 20. Next Sprint Authorization
+
+| Gate | Met? |
+|---|---|
+| This sprint COMPLETE | **No — OPEN** |
+| PM authorizes N+1 | No |
+| CTO authorizes N+1 | No |
+
+**STOP — do not implement Sprint 2.**

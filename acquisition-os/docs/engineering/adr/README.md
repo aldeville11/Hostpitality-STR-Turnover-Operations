@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-## Backlog (Sprint 0)
+## Backlog
 
 | ADR | Title | Status | Owner |
 |---|---|---|---|
@@ -10,5 +10,8 @@
 | 0004 | Web application framework | Proposed | Frontend Lead |
 | 0005 | Workspace ↔ Location default model | Proposed | Backend Lead |
 | 0006 | Message body storage & encryption | Proposed | Security Engineer |
+| 0007 | Mandatory sprint governance (Engineering Law 001) | **Accepted** | CTO |
 
 Open ADRs before implementing the dependent Sprint (see Execution Plan).
+
+Governance supersession: only an approved ADR may amend [Engineering Law 001](../ENGINEERING_LAW_001_SPRINT_GOVERNANCE.md).
