@@ -1,0 +1,936 @@
+From f3f5eecd35f01b1ef935790aa87e64023ef3f2ad Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Wed, 15 Jul 2026 17:55:16 +0000
+Subject: [PATCH] chore: repository hardening for standalone Acquisition OS
+
+Add production-grade CI, Dependabot, PR/issue templates, CODEOWNERS,
+SECURITY, CONTRIBUTING, CHANGELOG, RELEASE, versioning policy,
+branch-protection recommendations, env validation, and README badges.
+No Sprint 3 product work.
+---
+ .github/CODEOWNERS                         | 10 +++
+ .github/ISSUE_TEMPLATE/bug_report.yml      | 57 +++++++++++++++
+ .github/ISSUE_TEMPLATE/config.yml          |  5 ++
+ .github/ISSUE_TEMPLATE/feature_request.yml | 32 ++++++++
+ .github/ISSUE_TEMPLATE/tech_debt.yml       | 22 ++++++
+ .github/PULL_REQUEST_TEMPLATE.md           | 29 ++++++++
+ .github/dependabot.yml                     | 24 ++++++
+ .github/workflows/ci.yml                   | 52 +++++++++++++
+ AGENTS.md                                  | 18 +++--
+ CHANGELOG.md                               | 37 ++++++++++
+ CONTRIBUTING.md                            | 54 ++++++++++++++
+ README.md                                  | 85 ++++++++++++++++++----
+ RELEASE.md                                 | 35 +++++++++
+ SECURITY.md                                | 32 ++++++++
+ docs/engineering/VERSIONING.md             | 34 +++++++++
+ docs/ops/BRANCH_PROTECTION.md              | 34 +++++++++
+ docs/ops/REPOSITORY_HEALTH.md              | 71 ++++++++++++++++++
+ package-lock.json                          |  4 +-
+ package.json                               | 10 ++-
+ scripts/validate-env.mjs                   | 55 ++++++++++++++
+ 20 files changed, 673 insertions(+), 27 deletions(-)
+ create mode 100644 .github/CODEOWNERS
+ create mode 100644 .github/ISSUE_TEMPLATE/bug_report.yml
+ create mode 100644 .github/ISSUE_TEMPLATE/config.yml
+ create mode 100644 .github/ISSUE_TEMPLATE/feature_request.yml
+ create mode 100644 .github/ISSUE_TEMPLATE/tech_debt.yml
+ create mode 100644 .github/PULL_REQUEST_TEMPLATE.md
+ create mode 100644 .github/dependabot.yml
+ create mode 100644 .github/workflows/ci.yml
+ create mode 100644 CHANGELOG.md
+ create mode 100644 CONTRIBUTING.md
+ create mode 100644 RELEASE.md
+ create mode 100644 SECURITY.md
+ create mode 100644 docs/engineering/VERSIONING.md
+ create mode 100644 docs/ops/BRANCH_PROTECTION.md
+ create mode 100644 docs/ops/REPOSITORY_HEALTH.md
+ create mode 100644 scripts/validate-env.mjs
+
+diff --git a/.github/CODEOWNERS b/.github/CODEOWNERS
+new file mode 100644
+index 0000000..b1a8f9a
+--- /dev/null
++++ b/.github/CODEOWNERS
+@@ -0,0 +1,10 @@
++# Default owners — update as the team grows.
++*       @aldeville11
++
++# Critical paths
++/.github/                 @aldeville11
++/docs/engineering/        @aldeville11
++/apps/api/src/tenancy/    @aldeville11
++/apps/api/src/identity/   @aldeville11
++/apps/api/src/platform/   @aldeville11
++/scripts/                 @aldeville11
+diff --git a/.github/ISSUE_TEMPLATE/bug_report.yml b/.github/ISSUE_TEMPLATE/bug_report.yml
+new file mode 100644
+index 0000000..ba82d0f
+--- /dev/null
++++ b/.github/ISSUE_TEMPLATE/bug_report.yml
+@@ -0,0 +1,57 @@
++name: Bug report
++description: Something broken in Acquisition OS
++labels: ["bug"]
++body:
++  - type: markdown
++    attributes:
++      value: |
++        Search existing issues first. Include repro steps.
++  - type: textarea
++    id: summary
++    attributes:
++      label: Summary
++      description: What went wrong?
++    validations:
++      required: true
++  - type: textarea
++    id: repro
++    attributes:
++      label: Reproduction steps
++      placeholder: |
++        1. …
++        2. …
++    validations:
++      required: true
++  - type: textarea
++    id: expected
++    attributes:
++      label: Expected behavior
++    validations:
++      required: true
++  - type: dropdown
++    id: area
++    attributes:
++      label: Area
++      options:
++        - Identity / Auth
++        - Tenancy
++        - API
++        - Web app
++        - Marketing site
++        - CI / DX
++        - Docs / Governance
++        - Other
++    validations:
++      required: true
++  - type: input
++    id: version
++    attributes:
++      label: Version / commit
++      placeholder: package.json version or git SHA
++  - type: checkboxes
++    id: tenant
++    attributes:
++      label: Tenant isolation
++      options:
++        - label: I checked this is not a cross-tenant data leak (or N/A)
++          required: true
+diff --git a/.github/ISSUE_TEMPLATE/config.yml b/.github/ISSUE_TEMPLATE/config.yml
+new file mode 100644
+index 0000000..4e26220
+--- /dev/null
++++ b/.github/ISSUE_TEMPLATE/config.yml
+@@ -0,0 +1,5 @@
++blank_issues_enabled: false
++contact_links:
++  - name: Engineering Laws
++    url: https://github.com/aldeville11/acquisition-os/blob/main/docs/engineering/ENGINEERING_LAWS.md
++    about: Authoritative sprint governance — read before filing implementation work.
+diff --git a/.github/ISSUE_TEMPLATE/feature_request.yml b/.github/ISSUE_TEMPLATE/feature_request.yml
+new file mode 100644
+index 0000000..fa61393
+--- /dev/null
++++ b/.github/ISSUE_TEMPLATE/feature_request.yml
+@@ -0,0 +1,32 @@
++name: Feature request
++description: Product/engineering request (must map to an approved sprint)
++labels: ["enhancement"]
++body:
++  - type: markdown
++    attributes:
++      value: |
++        Features that are out of the current approved sprint will be deferred. See Engineering Laws.
++  - type: textarea
++    id: problem
++    attributes:
++      label: Problem
++    validations:
++      required: true
++  - type: textarea
++    id: proposal
++    attributes:
++      label: Proposed solution
++    validations:
++      required: true
++  - type: input
++    id: sprint
++    attributes:
++      label: Target sprint (if known)
++      placeholder: e.g. Sprint 3 — AuthZ + Audit
++  - type: checkboxes
++    id: governance
++    attributes:
++      label: Governance
++      options:
++        - label: I understand this requires plan approval before implementation
++          required: true
+diff --git a/.github/ISSUE_TEMPLATE/tech_debt.yml b/.github/ISSUE_TEMPLATE/tech_debt.yml
+new file mode 100644
+index 0000000..82d2f90
+--- /dev/null
++++ b/.github/ISSUE_TEMPLATE/tech_debt.yml
+@@ -0,0 +1,22 @@
++name: Technical debt
++description: Track debt with paydown sprint
++labels: ["tech-debt"]
++body:
++  - type: textarea
++    id: debt
++    attributes:
++      label: Debt description
++    validations:
++      required: true
++  - type: textarea
++    id: risk
++    attributes:
++      label: Risk if unpaid
++    validations:
++      required: true
++  - type: input
++    id: paydown
++    attributes:
++      label: Proposed paydown sprint / issue links
++    validations:
++      required: true
+diff --git a/.github/PULL_REQUEST_TEMPLATE.md b/.github/PULL_REQUEST_TEMPLATE.md
+new file mode 100644
+index 0000000..6f918aa
+--- /dev/null
++++ b/.github/PULL_REQUEST_TEMPLATE.md
+@@ -0,0 +1,29 @@
++## Summary
++<!-- What changed and why. Link issues/ADRs. -->
++
++## Type of change
++- [ ] Feature (in-sprint only)
++- [ ] Bug fix
++- [ ] Chore / docs / CI
++- [ ] ADR / governance
++- [ ] Hotfix
++
++## Governance
++- [ ] In scope for the **current approved sprint** (or chore with no product scope)
++- [ ] Sprint N COMPLETE before starting N+1 (`governance:pre-sprint` PASS if implementing)
++- [ ] No out-of-scope features (see Engineering Laws)
++- [ ] Technical debt documented if introduced
++- [ ] ADR updated/added if architectural
++
++## Tenant isolation (if touching tenancy/data)
++- [ ] No cross-tenant queries
++- [ ] Isolation suite still green (`npm run test:isolation -w @acquisition-os/api`)
++
++## Test plan
++- [ ] `npm run env:check`
++- [ ] `npm run verify`
++- [ ] `npm run test:isolation -w @acquisition-os/api` (mandatory)
++- [ ] Manual checks (list):
++
++## Risk / rollback
++<!-- How to revert; production impact -->
+diff --git a/.github/dependabot.yml b/.github/dependabot.yml
+new file mode 100644
+index 0000000..42a3a05
+--- /dev/null
++++ b/.github/dependabot.yml
+@@ -0,0 +1,24 @@
++version: 2
++updates:
++  - package-ecosystem: npm
++    directory: "/"
++    schedule:
++      interval: weekly
++      day: monday
++    open-pull-requests-limit: 10
++    labels:
++      - dependencies
++    groups:
++      production-deps:
++        dependency-type: production
++      development-deps:
++        dependency-type: development
++
++  - package-ecosystem: github-actions
++    directory: "/"
++    schedule:
++      interval: weekly
++      day: monday
++    labels:
++      - dependencies
++      - github-actions
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+new file mode 100644
+index 0000000..0a27f45
+--- /dev/null
++++ b/.github/workflows/ci.yml
+@@ -0,0 +1,52 @@
++name: Acquisition OS CI
++
++on:
++  push:
++    branches: [main]
++  pull_request:
++
++concurrency:
++  group: ci-${{ github.workflow }}-${{ github.ref }}
++  cancel-in-progress: true
++
++jobs:
++  verify:
++    name: verify
++    runs-on: ubuntu-latest
++    timeout-minutes: 20
++    env:
++      SESSION_PEPPER: ci-only-not-a-secret-for-production
++      NODE_ENV: test
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-node@v4
++        with:
++          node-version: "20"
++          cache: npm
++          cache-dependency-path: package-lock.json
++      - name: Install
++        run: npm ci
++      - name: Environment validation
++        run: npm run env:check
++      - name: Verify (typecheck, lint, test, build)
++        run: npm run verify
++      - name: Tenant Isolation Suite (mandatory)
++        run: npm run test:isolation -w @acquisition-os/api
++      - name: Coverage report
++        run: npm run test:coverage -w @acquisition-os/api
++
++  governance-smoke:
++    name: governance-smoke
++    runs-on: ubuntu-latest
++    timeout-minutes: 5
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-node@v4
++        with:
++          node-version: "20"
++          cache: npm
++          cache-dependency-path: package-lock.json
++      - name: Install
++        run: npm ci
++      - name: Sprint 2 close gate still green
++        run: npm run governance:close -- 2
+diff --git a/AGENTS.md b/AGENTS.md
+index 18a5453..feaf739 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -4,17 +4,21 @@ This monorepo is governed by the **Engineering Constitution** and **Engineering
+ 
+ **Authoritative sprint governance:** [docs/engineering/ENGINEERING_LAWS.md](./docs/engineering/ENGINEERING_LAWS.md)
+ 
++**Canonical repository:** https://github.com/aldeville11/acquisition-os  
++Do not implement Acquisition OS features inside Hostpitality.
++
+ Before any implementation:
+ 
+-1. Read `ENGINEERING_LAWS.md` and `ENGINEERING_CONSTITUTION.md`  
+-2. Follow the [Sprint Playbook](./docs/engineering/SPRINT_PLAYBOOK.md)  
+-3. Read Product Constitution / Engineering Architecture (when published)  
+-4. Read previous sprint memory + retrospective + scorecard  
+-5. Review open ADRs and technical debt  
+-6. Pass `npm run governance:pre-sprint -- <N>`  
++1. Read `ENGINEERING_LAWS.md` and `ENGINEERING_CONSTITUTION.md`
++2. Follow the [Sprint Playbook](./docs/engineering/SPRINT_PLAYBOOK.md)
++3. Read previous sprint memory + retrospective + scorecard
++4. Review open ADRs and technical debt
++5. Pass `npm run governance:pre-sprint -- <N>`
++6. Confirm work is **in-sprint** — no Sprint 3+ product work until approved
+ 
+ **Do not begin Sprint N+1 while Sprint N is OPEN.**  
+-**Do not mark COMPLETE without `npm run governance:close -- <N>`.**
++**Do not mark COMPLETE without `npm run governance:close -- <N>`.**  
++**Tenant Isolation Suite is mandatory CI forever.**
+ 
+ If readiness fails: STOP, explain the blocker, and do not write feature code.
+ 
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+new file mode 100644
+index 0000000..eb6e814
+--- /dev/null
++++ b/CHANGELOG.md
+@@ -0,0 +1,37 @@
++# Changelog
++
++All notable changes to **Acquisition OS** are documented in this file.
++
++The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
++and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
++as described in [docs/engineering/VERSIONING.md](./docs/engineering/VERSIONING.md).
++
++## [Unreleased]
++
++### Added
++- Repository hardening: CI, Dependabot, templates, CODEOWNERS, SECURITY, CONTRIBUTING, RELEASE, env validation
++
++## [0.2.0] — 2026-07-15
++
++### Added
++- Tenancy domains: Organization, Location, Workspace, Membership
++- SQL platform store (`pg` + PGlite) — ADR 0008
++- AuthContext population from Membership
++- Minimal domain events
++- Permanent Tenant Isolation Test Suite
++- Sprint 2 COMPLETE governance packet
++
++### Security
++- Hard organization tenant isolation on repository methods
++
++## [0.1.0] — 2026-07-15
++
++### Added
++- Cookie session authentication (ADR 0002)
++- Invite stub
++- Sprint 1 COMPLETE governance packet
++
++## [0.0.0] — 2026-07-15
++
++### Added
++- Initial monorepo foundation (Sprint 0): packages, Gate A, engineering org
+diff --git a/CONTRIBUTING.md b/CONTRIBUTING.md
+new file mode 100644
+index 0000000..4254321
+--- /dev/null
++++ b/CONTRIBUTING.md
+@@ -0,0 +1,54 @@
++# Contributing to Acquisition OS
++
++## Before you write code
++
++1. Read [ENGINEERING_LAWS.md](./docs/engineering/ENGINEERING_LAWS.md)
++2. Read [AGENTS.md](./AGENTS.md) if you are an AI/agent contributor
++3. Confirm the **current sprint** is approved and previous sprint is **COMPLETE**
++4. Run `npm run governance:pre-sprint -- <N>` for implementation work
++
++Quality overrides speed. Out-of-scope features will be rejected.
++
++## Development setup
++
++See README → **Development bootstrap**.
++
++```bash
++npm install
++cp .env.example .env.local
++# set SESSION_PEPPER to a long random string
++npm run env:check
++npm run verify
++```
++
++## Branching
++
++- Default branch: `main`
++- Feature branches: `cursor/<short-description>` or `feat/<short-description>`
++- Never force-push `main`
++
++## Pull requests
++
++- Use the PR template
++- Keep PRs focused and in-sprint
++- Isolation suite must pass for tenancy/auth changes
++- One logical change set preferred
++
++## Commit messages
++
++Prefer imperative summary lines:
++
++```
++Add tenant isolation suite to CI
++```
++
++## Code owners
++
++See `.github/CODEOWNERS`. Reviewers must follow ownership for critical paths.
++
++## Do not
++
++- Implement future sprints early
++- Weaken tenant isolation
++- Commit secrets
++- Bypass CI or governance gates
+diff --git a/README.md b/README.md
+index c03ce72..c519727 100644
+--- a/README.md
++++ b/README.md
+@@ -1,10 +1,16 @@
+ # Customer Acquisition OS
+ 
++[![CI](https://github.com/aldeville11/acquisition-os/actions/workflows/ci.yml/badge.svg)](https://github.com/aldeville11/acquisition-os/actions/workflows/ci.yml)
++[![Node](https://img.shields.io/badge/node-20.x-brightgreen)](./package.json)
++[![License](https://img.shields.io/badge/license-proprietary-lightgrey)](./SECURITY.md)
++[![Version](https://img.shields.io/badge/version-0.2.0-blue)](./CHANGELOG.md)
++
+ Monorepo for **Acquisition OS** (Customer Acquisition Operating System).
+ 
+-**Governance:** [ENGINEERING_LAWS.md](./docs/engineering/ENGINEERING_LAWS.md) ([Engineering Constitution](./docs/engineering/ENGINEERING_CONSTITUTION.md) · [Sprint Playbook](./docs/engineering/SPRINT_PLAYBOOK.md) · [ADR 0007](./docs/engineering/adr/0007-sprint-governance.md)) — mandatory sprint lifecycle; quality over velocity.
++**Repository:** https://github.com/aldeville11/acquisition-os  
++**Status:** Sprint **2 (Tenancy) COMPLETE** · Sprint **3 not started**
+ 
+-Sprint **1 (Authentication)** is **COMPLETE** (PR #24). Sprint 2 readiness may run via `governance:pre-sprint -- 2`; **do not implement Sprint 2 until explicitly approved.**
++**Governance:** [ENGINEERING_LAWS.md](./docs/engineering/ENGINEERING_LAWS.md) · [Constitution](./docs/engineering/ENGINEERING_CONSTITUTION.md) · [Sprint Playbook](./docs/engineering/SPRINT_PLAYBOOK.md) · [ADR 0007](./docs/engineering/adr/0007-sprint-governance.md)
+ 
+ ```bash
+ npm run governance:pre-sprint -- <N>   # required before implementation
+@@ -15,34 +21,85 @@ npm run governance:close -- <N>        # required before Status=COMPLETE
+ 
+ | Path | Purpose |
+ |---|---|
+-| `apps/api` | Modular monolith API — Identity / sessions (Sprint 1) |
++| `apps/api` | Modular monolith API — Identity + Tenancy |
+ | `apps/web-app` | Authenticated product application |
+-| `apps/web-marketing` | Public front door (must use product-frames) |
++| `apps/web-marketing` | Public front door (product-frames) |
+ | `packages/design-tokens` | Design system tokens |
+ | `packages/ui` | Shared UI primitives |
+ | `packages/product-frames` | Command Center / Pipeline / Report shells |
+ | `packages/fixtures` | Demo/test datasets |
+ 
+-## Commands
++## Development bootstrap
++
++**Requirements:** Node.js `>=20.9.0 <23`, npm workspaces.
+ 
+ ```bash
++git clone https://github.com/aldeville11/acquisition-os.git
+ cd acquisition-os
+ npm install
+-export SESSION_PEPPER=dev-only-change-me
++cp .env.example .env.local
++```
++
++Edit `.env.local` and set a long random `SESSION_PEPPER` (required for the API).
++
++```bash
++export SESSION_PEPPER="$(grep SESSION_PEPPER .env.local | cut -d= -f2-)"
++# Windows PowerShell:
++# $env:SESSION_PEPPER = "replace-with-long-random-dev-pepper"
++
++npm run env:check
+ npm run verify
++npm run test:isolation   # mandatory forever
++
+ npm run dev:api   # :3001
+ npm run dev:web   # :5173 (proxies /api)
+ ```
+ 
+ Demo login (non-production seed): `demo@acquisition-os.local` / `ChangeMe-Demo-Only-1!`
+ 
++Optional Postgres: set `DATABASE_URL`. Without it, the API uses embedded **PGlite** (dev/test only — not for production).
++
++## Environment validation
++
++`npm run env:check` validates Node engines and critical secrets:
++
++| Variable | Dev | Production |
++|---|---|---|
++| `SESSION_PEPPER` | warned if missing | **required** |
++| `DATABASE_URL` | optional (PGlite) | **required** |
++
+ ## Documentation
+ 
+-- `docs/engineering/ENGINEERING_LAWS.md` — **authoritative sprint governance**
+-- `docs/engineering/ENGINEERING_CONSTITUTION.md` — Engineering Constitution
+-- `docs/engineering/SPRINT_PLAYBOOK.md` — sprint operator playbook
+-- `docs/engineering/ORGANIZATION.md` — roles
+-- `docs/engineering/GATE_A.md` — strategy lock
+-- `docs/engineering/AUTH.md` — session auth notes
+-- `docs/engineering/adr/` — architecture decisions
+-- `docs/project-memory/` — permanent sprint memory (required before/after every sprint)
++| Doc | Purpose |
++|---|---|
++| [CONTRIBUTING.md](./CONTRIBUTING.md) | How to contribute |
++| [SECURITY.md](./SECURITY.md) | Vulnerability reporting |
++| [CHANGELOG.md](./CHANGELOG.md) | Released changes |
++| [RELEASE.md](./RELEASE.md) | How to cut a release |
++| [VERSIONING.md](./docs/engineering/VERSIONING.md) | SemVer policy |
++| [BRANCH_PROTECTION.md](./docs/ops/BRANCH_PROTECTION.md) | Required `main` protections |
++| [REPOSITORY_HEALTH.md](./docs/ops/REPOSITORY_HEALTH.md) | Hardening scorecard |
++| [TENANCY.md](./docs/engineering/TENANCY.md) | Tenancy API notes |
++| [AUTH.md](./docs/engineering/AUTH.md) | Auth notes |
++| [project-memory](./docs/project-memory/) | Sprint memory |
++
++## CI
++
++GitHub Actions (`.github/workflows/ci.yml`):
++
++1. `env:check`
++2. `npm run verify` (typecheck, lint, test, build)
++3. **Tenant Isolation Suite** (mandatory)
++4. Coverage report
++5. `governance:close -- 2` smoke (Sprint 2 remains COMPLETE)
++
++## Sprint status
++
++| Sprint | Status |
++|---|---|
++| 00 Foundation | COMPLETE |
++| 01 AuthN | COMPLETE |
++| 02 Tenancy | **COMPLETE** |
++| 03 AuthZ + Audit | **Not started** — plan + approval required |
++
++Do **not** implement Sprint 3 until the Sprint 3 Plan is approved and repository hardening follow-ups (branch protection + green CI) are complete.
+diff --git a/RELEASE.md b/RELEASE.md
+new file mode 100644
+index 0000000..e210994
+--- /dev/null
++++ b/RELEASE.md
+@@ -0,0 +1,35 @@
++# Release process
++
++## Versioning
++
++See [docs/engineering/VERSIONING.md](./docs/engineering/VERSIONING.md).
++
++- **MAJOR**: breaking API / tenancy / auth contract changes
++- **MINOR**: backward-compatible sprint deliverables (e.g. Sprint 3 AuthZ)
++- **PATCH**: fixes, docs, CI, debt paydowns without contract changes
++
++Pre-1.0 (`0.y.z`): `MINOR` may include breaking changes; call them out in CHANGELOG.
++
++## Checklist (maintainer)
++
++1. `main` is green (CI `verify` + `governance-smoke` + isolation)
++2. Sprint COMPLETE if releasing a sprint boundary (`governance:close -- N` PASS)
++3. Update `CHANGELOG.md` — move Unreleased → versioned section with date
++4. Bump `version` in root `package.json` (and workspace packages if published later)
++5. Commit: `chore(release): vX.Y.Z`
++6. Tag annotated: `git tag -a vX.Y.Z -m "Acquisition OS vX.Y.Z"`
++7. Push: `git push origin main --follow-tags`
++8. GitHub → **Releases** → draft from tag → paste CHANGELOG section
++9. Confirm production secrets rotated / present (`SESSION_PEPPER`, `DATABASE_URL`, etc.)
++
++## Hotfix
++
++1. Branch from the release tag
++2. Minimal fix + tests
++3. Patch bump + CHANGELOG
++4. Merge to `main` and retag, or cherry-pick per ops decision
++
++## Non-goals (until AuthZ / platform sprints land)
++
++- Automated semantic-release bots
++- Publishing packages to npm
+diff --git a/SECURITY.md b/SECURITY.md
+new file mode 100644
+index 0000000..92dff69
+--- /dev/null
++++ b/SECURITY.md
+@@ -0,0 +1,32 @@
++# Security Policy
++
++## Supported versions
++
++| Version | Supported |
++|---|---|
++| `main` (0.2.x) | Yes |
++| Older tags | Best-effort until first supported release train |
++
++## Reporting a vulnerability
++
++**Do not** open a public GitHub issue for security vulnerabilities.
++
++Email the repository owner (GitHub: [@aldeville11](https://github.com/aldeville11)) with:
++
++- Description and impact
++- Reproduction steps / PoC (non-destructive)
++- Affected commit SHA or version
++- Whether tenant isolation / session auth is implicated
++
++Expect an acknowledgement within **72 hours**. Coordinated disclosure preferred.
++
++## Security baselines (product)
++
++- Cookie sessions per ADR 0002 — never log session tokens or `SESSION_PEPPER`
++- Hard Organization tenant isolation — cross-tenant access must fail closed
++- Secrets only via environment / cloud secrets manager — never commit `.env*`
++- RBAC enforcement is Sprint 3+ — do not treat AuthContext role fields as authorization
++
++## Known deferred hardening
++
++Tracked debt (do not close without paydown): CSRF (#19), rate limiting (#20), audit module (#21), session idle/revoke-all (#22) — see Hostpitality issue history / Sprint memory until mirrored here.
+diff --git a/docs/engineering/VERSIONING.md b/docs/engineering/VERSIONING.md
+new file mode 100644
+index 0000000..97a9a18
+--- /dev/null
++++ b/docs/engineering/VERSIONING.md
+@@ -0,0 +1,34 @@
++# Versioning strategy
++
++**Owner:** Repository Maintainer · CTO  
++**Status:** Active  
++
++## Scheme
++
++[Semantic Versioning 2.0.0](https://semver.org/).
++
++| Component | Meaning for Acquisition OS |
++|---|---|
++| MAJOR | Breaking HTTP API, auth cookie contract, tenancy model, or data migrations that require coordinated downtime |
++| MINOR | New backward-compatible capability (typically a completed sprint) |
++| PATCH | Bugfix, security patch, docs/CI/tooling without public contract change |
++
++## Mapping to sprints
++
++| Milestone | Suggested version |
++|---|---|
++| Sprint 0 Foundation | 0.0.x |
++| Sprint 1 AuthN | 0.1.0 |
++| Sprint 2 Tenancy | **0.2.0** (current) |
++| Sprint 3 AuthZ + Audit | 0.3.0 (when COMPLETE) |
++| First production GA | 1.0.0 (requires AuthZ + agreed security baselines) |
++
++## Artifacts
++
++- Root `package.json` `version` is the **product version**
++- Git tags: `vMAJOR.MINOR.PATCH`
++- Changelog: `CHANGELOG.md`
++
++## Pre-release tags
++
++Optional: `v0.3.0-rc.1` for candidate builds. Do not mark Sprint COMPLETE on RC tags alone.
+diff --git a/docs/ops/BRANCH_PROTECTION.md b/docs/ops/BRANCH_PROTECTION.md
+new file mode 100644
+index 0000000..477ab19
+--- /dev/null
++++ b/docs/ops/BRANCH_PROTECTION.md
+@@ -0,0 +1,34 @@
++# Branch protection recommendations — `main`
++
++Apply in GitHub: **Settings → Rules → Rulesets** (or Branches → Branch protection).
++
++## Required settings for `main`
++
++| Setting | Value |
++|---|---|
++| Restrict deletions | On |
++| Require a pull request before merging | On |
++| Required approvals | **1** (raise to 2 when team > 1) |
++| Dismiss stale reviews | On |
++| Require review from Code Owners | On (after CODEOWNERS is valid) |
++| Require status checks to pass | On |
++| Required checks | `verify`, `governance-smoke` |
++| Require branches to be up to date | On |
++| Require conversation resolution | On |
++| Block force pushes | On |
++| Do not allow bypassing (except emergency admin) | On |
++
++## Optional (enterprise)
++
++- Require signed commits
++- Restrict who can push to matching branches to maintainers only
++- Lock branch after release tags for hotfixes-only workflow
++
++## Apply checklist
++
++- [ ] Ruleset created for `main`
++- [ ] CI checks selected after first green Actions run
++- [ ] CODEOWNERS path reviewed
++- [ ] Admins tested merge flow with a dry-run PR
++
++> This agent cannot enable branch protection without repository **admin** API rights. Owner must apply in the GitHub UI.
+diff --git a/docs/ops/REPOSITORY_HEALTH.md b/docs/ops/REPOSITORY_HEALTH.md
+new file mode 100644
+index 0000000..84128b4
+--- /dev/null
++++ b/docs/ops/REPOSITORY_HEALTH.md
+@@ -0,0 +1,71 @@
++# Repository Health Report — Acquisition OS
++
++**Date:** 2026-07-15  
++**Scope:** Standalone repo hardening (no Sprint 3 product work)  
++**Repo:** https://github.com/aldeville11/acquisition-os  
++
++## Health score
++
++| Category | Score (0–10) | Notes |
++|---|---|---|
++| CI / automated verify | 9 | Workflow present; isolation mandatory |
++| Branch protection | 4 | Documented; **must be applied in GitHub UI** |
++| Contribution hygiene | 9 | PR + issue templates, CONTRIBUTING |
++| Security posture (repo) | 8 | SECURITY.md, CODEOWNERS, secrets gitignore |
++| Release discipline | 8 | CHANGELOG, RELEASE, VERSIONING |
++| Dependency automation | 9 | Dependabot npm + Actions |
++| Developer bootstrap | 9 | README + env:check |
++| Documentation currency | 8 | README updated for Sprint 2 / new remote |
++| **Overall** | **8.0 / 10** | Enterprise-ready **pending branch protection apply + first green CI** |
++
++## Checklist results
++
++| Item | Status |
++|---|---|
++| 1. GitHub Actions CI | Done |
++| 2. Branch protection recommendations | Done (apply in UI) |
++| 3. Pull request template | Done |
++| 4. Issue templates | Done |
++| 5. CODEOWNERS | Done |
++| 6. SECURITY.md | Done |
++| 7. CONTRIBUTING.md | Done |
++| 8. CHANGELOG.md | Done |
++| 9. RELEASE.md | Done |
++| 10. Versioning strategy | Done |
++| 11. Dependabot | Done |
++| 12. Repository badges | Done (README) |
++| 13. README improvements | Done |
++| 14. Dev bootstrap instructions | Done |
++| 15. Environment validation | Done (`npm run env:check`) |
++| 16. CI verification | Pending first Actions run on `main` |
++| 17. Repository health report | Done (this file) |
++
++## Missing / incomplete
++
++1. **Branch protection not enabled** — needs repo admin in GitHub Settings  
++2. **First CI run on GitHub Actions** — confirm green after this PR merges  
++3. **CODEOWNERS** only lists `@aldeville11` — expand as team grows  
++4. **Security debt issues** (#19–#22) not yet mirrored as issues in this repo  
++5. Cloud Agent write access to this repo still limited for `cursor[bot]` (ops concern)
++
++## Recommendations
++
++1. Merge hardening PR → watch Actions → set required checks to `verify` + `governance-smoke`  
++2. Enable branch protection ruleset per `docs/ops/BRANCH_PROTECTION.md`  
++3. File GitHub issues in this repo for CSRF / rate limit / audit / session lifecycle  
++4. After CI is trusted, begin **Sprint 3 Planning only** (no implementation until plan approved)  
++5. Prefer Cloud Agents started against **this** repository, not Hostpitality  
++
++## Sprint 3 readiness assessment
++
++| Gate | Status |
++|---|---|
++| Sprint 2 COMPLETE | Yes (memory + governance close) |
++| Standalone repository | Yes |
++| Isolation suite in CI | Yes (workflow) |
++| Repo hardening package | Yes (this change set) |
++| Branch protection live | **No — owner action required** |
++| First green Actions on `main` | **Pending** |
++| Sprint 3 Plan approved | **Not started (correct)** |
++
++**Verdict:** Repo is **nearly enterprise-ready**. Do **not** start Sprint 3 implementation until: (a) branch protection applied, (b) CI green on `main`, (c) Sprint 3 Plan written and approved. Planning docs may begin after (a)+(b).
+diff --git a/package-lock.json b/package-lock.json
+index 0d9a429..3b1eec3 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -1,12 +1,12 @@
+ {
+   "name": "acquisition-os",
+-  "version": "0.0.0",
++  "version": "0.2.0",
+   "lockfileVersion": 3,
+   "requires": true,
+   "packages": {
+     "": {
+       "name": "acquisition-os",
+-      "version": "0.0.0",
++      "version": "0.2.0",
+       "workspaces": [
+         "apps/*",
+         "packages/*"
+diff --git a/package.json b/package.json
+index 76d999a..2381767 100644
+--- a/package.json
++++ b/package.json
+@@ -1,8 +1,8 @@
+ {
+   "name": "acquisition-os",
+   "private": true,
+-  "version": "0.0.0",
+-  "description": "Customer Acquisition OS monorepo — Sprint 1 authentication",
++  "version": "0.2.0",
++  "description": "Customer Acquisition OS monorepo — standalone repository",
+   "workspaces": [
+     "apps/*",
+     "packages/*"
+@@ -13,13 +13,15 @@
+     "lint": "npm run lint -w @acquisition-os/api && npm run lint -w @acquisition-os/web-app && npm run lint -w @acquisition-os/web-marketing",
+     "typecheck": "npm run build:packages && npm run typecheck -w @acquisition-os/api && npm run typecheck -w @acquisition-os/web-app && npm run typecheck -w @acquisition-os/web-marketing",
+     "test": "npm run build -w @acquisition-os/design-tokens && npm run test -w @acquisition-os/design-tokens && npm run build -w @acquisition-os/ui && npm run test -w @acquisition-os/ui && npm run test -w @acquisition-os/api && npm run test:isolation -w @acquisition-os/api",
+-    "verify": "npm run typecheck && npm run lint && npm run test && npm run build",
++    "verify": "npm run env:check && npm run typecheck && npm run lint && npm run test && npm run build",
+     "dev:api": "npm run dev -w @acquisition-os/api",
+     "dev:web": "npm run dev -w @acquisition-os/web-app",
+     "memory:new": "node ./scripts/new-sprint-memory.mjs",
+     "governance:checklist:init": "node ./scripts/validate-sprint-governance.mjs init",
+     "governance:pre-sprint": "node ./scripts/validate-sprint-governance.mjs pre-sprint",
+-    "governance:close": "node ./scripts/validate-sprint-governance.mjs close"
++    "governance:close": "node ./scripts/validate-sprint-governance.mjs close",
++    "env:check": "node ./scripts/validate-env.mjs",
++    "test:isolation": "npm run test:isolation -w @acquisition-os/api"
+   },
+   "engines": {
+     "node": ">=20.9.0 <23"
+diff --git a/scripts/validate-env.mjs b/scripts/validate-env.mjs
+new file mode 100644
+index 0000000..fb7b3c3
+--- /dev/null
++++ b/scripts/validate-env.mjs
+@@ -0,0 +1,55 @@
++#!/usr/bin/env node
++/**
++ * Environment validation for Acquisition OS.
++ * Soft warnings in development; hard failures for clearly invalid production configs.
++ */
++import fs from "node:fs";
++import path from "node:path";
++import { fileURLToPath } from "node:url";
++
++const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
++const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
++
++const errors = [];
++const warnings = [];
++
++const nodeMajor = Number(process.versions.node.split(".")[0]);
++const engines = pkg.engines?.node ?? ">=20.9.0 <23";
++if (nodeMajor < 20 || nodeMajor >= 23) {
++  errors.push(`Node ${process.versions.node} does not satisfy engines.node (${engines}).`);
++}
++
++const pepper = process.env.SESSION_PEPPER;
++const nodeEnv = process.env.NODE_ENV ?? "development";
++
++if (!pepper || String(pepper).trim().length === 0) {
++  if (nodeEnv === "production") {
++    errors.push("SESSION_PEPPER is required in production.");
++  } else {
++    warnings.push(
++      "SESSION_PEPPER is unset. Export a long random value before running the API (see .env.example)."
++    );
++  }
++} else if (String(pepper).length < 16) {
++  warnings.push("SESSION_PEPPER looks short (<16 chars). Use a long random secret.");
++}
++
++if (nodeEnv === "production" && !process.env.DATABASE_URL) {
++  errors.push("DATABASE_URL is required in production (PGlite is not a production store).");
++}
++
++if (nodeEnv !== "production" && !process.env.DATABASE_URL) {
++  warnings.push("DATABASE_URL unset — API will use embedded PGlite (dev/test only).");
++}
++
++for (const w of warnings) console.warn(`env:check WARN — ${w}`);
++for (const e of errors) console.error(`env:check FAIL — ${e}`);
++
++if (errors.length > 0) {
++  console.error("env:check failed. Fix errors before deploy/verify in production mode.");
++  process.exit(1);
++}
++
++console.log(
++  `env:check PASS — node=${process.versions.node} env=${nodeEnv} pepper=${pepper ? "set" : "unset"} db=${process.env.DATABASE_URL ? "set" : "pglite-fallback"}`
++);
+-- 
+2.43.0
+
