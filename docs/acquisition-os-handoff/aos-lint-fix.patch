@@ -1,0 +1,40 @@
+From ab04d7eb1d5459f775e72f4d0535d9a6d349d9ef Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Wed, 15 Jul 2026 18:06:06 +0000
+Subject: [PATCH] fix(api): attach error cause for preserve-caught-error lint
+
+Satisfy ESLint preserve-caught-error when wrapping unique
+constraint conflicts as EMAIL_TAKEN / MEMBERSHIP_EXISTS.
+---
+ apps/api/src/platform/sql-store.ts | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/apps/api/src/platform/sql-store.ts b/apps/api/src/platform/sql-store.ts
+index 5301f88..c49428e 100644
+--- a/apps/api/src/platform/sql-store.ts
++++ b/apps/api/src/platform/sql-store.ts
+@@ -44,7 +44,9 @@ export class SqlPlatformStore implements PlatformStore {
+       );
+     } catch (err) {
+       const msg = String(err);
+-      if (msg.includes("unique") || msg.includes("UNIQUE")) throw new Error("EMAIL_TAKEN");
++      if (msg.includes("unique") || msg.includes("UNIQUE")) {
++        throw new Error("EMAIL_TAKEN", { cause: err });
++      }
+       throw err;
+     }
+     return user;
+@@ -271,7 +273,9 @@ export class SqlPlatformStore implements PlatformStore {
+       );
+     } catch (err) {
+       const msg = String(err);
+-      if (msg.includes("unique") || msg.includes("UNIQUE")) throw new Error("MEMBERSHIP_EXISTS");
++      if (msg.includes("unique") || msg.includes("UNIQUE")) {
++        throw new Error("MEMBERSHIP_EXISTS", { cause: err });
++      }
+       throw err;
+     }
+     return membership;
+-- 
+2.43.0
+
