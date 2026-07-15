@@ -3,9 +3,10 @@
 **Sprint number:** 01  
 **Slug:** auth-sessions  
 **Validator:** `npm run governance:close -- 1`  
-**Packaging:** Clean branch `cursor/sprint-1-complete-74ae` from `main` — Acquisition OS only (no `vinton-adler/`).  
+**Packaging:** Merged via PR #24 (`cursor/sprint-1-complete-74ae`) — Acquisition OS only.  
 **Follow-up debt:** [#19](https://github.com/aldeville11/Hostpitality-STR-Turnover-Operations/issues/19) CSRF · [#20](https://github.com/aldeville11/Hostpitality-STR-Turnover-Operations/issues/20) rate limit · [#21](https://github.com/aldeville11/Hostpitality-STR-Turnover-Operations/issues/21) audit · [#22](https://github.com/aldeville11/Hostpitality-STR-Turnover-Operations/issues/22) session lifecycle  
-**ADR:** [0002](../../adr/0002-authentication.md) Accepted · [0007](../../adr/0007-sprint-governance.md) Accepted
+**ADR:** [0002](../../adr/0002-authentication.md) Accepted · [0007](../../adr/0007-sprint-governance.md) Accepted  
+**Merge:** https://github.com/aldeville11/Hostpitality-STR-Turnover-Operations/pull/24 (merged 2026-07-15)
 
 ## Objectives & acceptance
 
@@ -50,6 +51,6 @@
 
 - [x] Pull Request reviewed
 - [x] Merge approved
-- [ ] Merge completed (pending merge of packaging PR to `main`)
+- [x] Merge completed (or explicitly N/A only if CTO records exception ADR — default: required)
 - [x] Pre-sprint checklist for this sprint was validated earlier
-- [ ] Ready for Sprint Readiness Review / N+1 authorization process
+- [x] Ready for Sprint Readiness Review / N+1 authorization process

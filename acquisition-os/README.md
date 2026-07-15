@@ -4,7 +4,7 @@ Monorepo for **Acquisition OS** (Customer Acquisition Operating System).
 
 **Governance:** [ENGINEERING_LAWS.md](./docs/engineering/ENGINEERING_LAWS.md) ([Engineering Constitution](./docs/engineering/ENGINEERING_CONSTITUTION.md) · [Sprint Playbook](./docs/engineering/SPRINT_PLAYBOOK.md) · [ADR 0007](./docs/engineering/adr/0007-sprint-governance.md)) — mandatory sprint lifecycle; quality over velocity.
 
-Sprint **1 (Authentication)** is **OPEN** (implementation delivered; merge/closure pending Law 001). **Sprint 2 is not authorized.**
+Sprint **1 (Authentication)** is **COMPLETE** (PR #24). Sprint 2 readiness may run via `governance:pre-sprint -- 2`; **do not implement Sprint 2 until explicitly approved.**
 
 ```bash
 npm run governance:pre-sprint -- <N>   # required before implementation
