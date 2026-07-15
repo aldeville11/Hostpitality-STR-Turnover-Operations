@@ -1,35 +1,26 @@
-# @acquisition-os/api — Identity / session auth (Sprint 1)
+# @acquisition-os/api
 
-Modular monolith API surface (Hono — Fastify-style). Owns session create/revoke/validate per ADR 0002.
+Sprint 2: Identity (ADR 0002) + Tenancy (ADR 0005/0008).
 
-## Endpoints (`/api/v1`)
-
-| Method | Path | Auth | Purpose |
-|---|---|---|---|
-| GET | `/health` | public | Liveness |
-| POST | `/auth/login` | public | Email/password → `aos_session` cookie |
-| POST | `/auth/logout` | cookie | Revoke session + clear cookie |
-| GET | `/auth/me` | cookie | Current user + AuthContext placeholders |
-| POST | `/auth/invites` | cookie | Invite stub (creates `invited` user; no Membership) |
-| GET | `/auth/rbac/probe` | cookie | Confirms RBAC not enforced until Sprint 3 |
-
-## Cookie (`aos_session`)
-
-- HttpOnly, SameSite=Lax, Path=/
-- Secure in production
-- Server stores HMAC-SHA-256(token, SESSION_PEPPER) only
-
-## Local run
+## Commands
 
 ```bash
-cd acquisition-os
-cp .env.example .env.local   # set SESSION_PEPPER
 export SESSION_PEPPER=dev-only-change-me
+# optional production Postgres:
+# export DATABASE_URL=postgresql://...
+
+npm run migrate -w @acquisition-os/api
 npm run dev -w @acquisition-os/api
+npm run test -w @acquisition-os/api
+npm run test:isolation -w @acquisition-os/api   # mandatory suite
+npm run test:coverage -w @acquisition-os/api
 ```
 
-Demo user (non-production seed): `demo@acquisition-os.local` / `ChangeMe-Demo-Only-1!`
+## Modules
 
-## Persistence
+- `identity/` — sessions, login/logout, invite stub
+- `tenancy/` — Organization, Location, Workspace, Membership
+- `platform/sql-store.ts` — Postgres/PGlite store with required `TenantContext`
+- `db/migrations/` — Sprint 2 schema
 
-Sprint 1 uses an in-memory IdentityStore for local/CI. Production target remains Managed Postgres (Architecture); swap store in Sprint 2 with tenancy tables.
+See `docs/engineering/TENANCY.md` and `docs/engineering/AUTH.md`.

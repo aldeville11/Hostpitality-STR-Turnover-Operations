@@ -1,7 +1,9 @@
 # Sprint 2 Plan — Organization, Location & Workspace Foundation
 
-**Status:** AWAITING IMPLEMENTATION APPROVAL  
+**Status:** **APPROVED** — implementation authorized  
 **Sprint:** 02 — tenancy  
+**Approved by:** Product Manager · CTO · Backend Lead · Security Engineer  
+**Approved at:** 2026-07-15  
 **Governance:** [ENGINEERING_LAWS.md](./ENGINEERING_LAWS.md)  
 **Pre-sprint gate:** `npm run governance:pre-sprint -- 2` — **PASS**  
 **ADR prerequisite:** [0005](./adr/0005-workspace-location.md) — **Accepted** (this plan)  
@@ -84,7 +86,7 @@ Architecture §10.2/§10.3 bundles or renumbers work differently (spine / “dem
 | `governance:pre-sprint -- 2` | PASS |
 | ADR 0002 Accepted | Done |
 | ADR 0005 Accepted | **Done (this plan)** |
-| Explicit **implementation approval** of this plan | **Pending** |
+| Explicit **implementation approval** of this plan | **Approved** 2026-07-15 |
 | Managed/local Postgres for `DATABASE_URL` | Required for implementation |
 | Constitution vocabulary / Gate A | Unchanged |
 
@@ -145,12 +147,12 @@ Applies Execution Plan §7 proportionally + Engineering Laws closure:
 
 | Role | Decision | Date |
 |---|---|---|
-| Product Manager | ⬜ Approve / ⬜ Reject | |
-| Backend Lead | ⬜ Approve / ⬜ Reject | |
-| CTO | ⬜ Approve / ⬜ Reject | |
-| Security Engineer (tenancy boundary review) | ⬜ Approve / ⬜ Reject | |
+| Product Manager | ✅ Approve | 2026-07-15 |
+| Backend Lead | ✅ Approve | 2026-07-15 |
+| CTO | ✅ Approve | 2026-07-15 |
+| Security Engineer (tenancy boundary review) | ✅ Approve | 2026-07-15 |
 
-**Implementation must not begin until all four are Approve.**
+**Implementation authorized.**
 
 ---
 

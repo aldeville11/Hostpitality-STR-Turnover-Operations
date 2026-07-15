@@ -1,8 +1,8 @@
-# Authentication API notes (Sprint 1)
+# Authentication API notes (Sprint 1–2)
 
 **Owner:** Backend Lead  
 **Reviewers:** Security Engineer · Frontend Lead  
-**ADR:** [0002-authentication.md](./adr/0002-authentication.md)
+**ADR:** [0002-authentication.md](./adr/0002-authentication.md) · Tenancy: [TENANCY.md](./TENANCY.md)
 
 ## Surface
 
@@ -12,7 +12,7 @@ Cookie session contract is fixed by ADR 0002 (`aos_session`, HttpOnly, SameSite=
 
 ## AuthContext (RBAC hooks)
 
-Responses include AuthContext placeholders:
+Login / `/auth/me` return AuthContext:
 
 ```json
 {
@@ -24,7 +24,12 @@ Responses include AuthContext placeholders:
 }
 ```
 
-Tenancy fields remain null until Sprint 2. `assertPermission` throws `RBAC_NOT_READY` until Sprint 3 (`GET /api/v1/auth/rbac/probe`).
+| Field | Sprint 2 behavior |
+|---|---|
+| `organizationId` / `workspaceId` / `role` / `locationScope` | Populated from the user's **latest active Membership** when present; else null / `[]` |
+| Role / permission **enforcement** | Still Sprint 3 — `assertPermission` throws `RBAC_NOT_READY` (`GET /api/v1/auth/rbac/probe`) |
+
+AuthContext never mixes tenants: membership rows are org-scoped; isolation suite asserts `/me` does not expose foreign org data.
 
 ## Invite stub
 
