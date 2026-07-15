@@ -7,13 +7,9 @@ Chronological institutional memory. Newest last.
 | Sprint | File | Status | Summary |
 |---|---|---|---|
 | 00 Foundation | [S00-foundation.md](./sprints/S00-foundation.md) | COMPLETE | Eng org, Gate A, monorepo, CI, empty apps |
-| 01 auth-sessions | [S01-auth-sessions.md](./sprints/S01-auth-sessions.md) | **OPEN** | AuthN delivered; ERB approve-with-changes; merge pending |
+| 01 auth-sessions | [S01-auth-sessions.md](./sprints/S01-auth-sessions.md) | COMPLETE | Cookie sessions; PR #24 merge; debt #19–#22 |
+| 02 tenancy | [S02-tenancy.md](./sprints/S02-tenancy.md) | Draft | Readiness authorized; **implementation not started** |
 
 ## Next required read
 
-Before **any** Sprint 2 work: Sprint 1 must be **COMPLETE** under Law 001. Until then:
-
-- Read `S01-auth-sessions.md`  
-- Read [S01 retrospective](../engineering/retrospectives/S01-retrospective.md)  
-- Read [S01 scorecard](../engineering/scorecards/S01-scorecard.md)  
-- **STOP** — Sprint 2 is **not authorized**
+Sprint 2 **readiness** may pass `governance:pre-sprint -- 2`. **Do not implement Sprint 2** until explicit implementation approval after that gate.

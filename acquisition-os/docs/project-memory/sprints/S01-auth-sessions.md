@@ -3,11 +3,11 @@
 **Sprint:** 01  
 **Codename / slug:** auth-sessions  
 **Dates:** 2026-07-15  
-**Status:** OPEN  
+**Status:** COMPLETE  
 **Memory author:** Technical Writer  
-**Contributors:** Frontend Lead · Backend Lead · QA Lead · Security Engineer · Technical Architect · Engineering Review Board  
+**Contributors:** Frontend Lead · Backend Lead · QA Lead · Security Engineer · Technical Architect · CTO · Engineering Manager · Product Manager  
 
-> **OPEN under ENGINEERING_LAWS.md (Law 001)** — implementation and ERB review occurred; merge not approved; `npm run governance:close -- 1` fails until close checklist is complete. Must not be marked COMPLETE until Law 001 requirements are met.
+> **COMPLETE under ENGINEERING_LAWS.md** — PR #24 merged to `main`; `governance:close -- 1` passed; debt #19–#22 linked.
 
 ---
 
@@ -102,6 +102,7 @@ Sprint 1 delivered Authentication (AuthN) for Acquisition OS: cookie-based sessi
 | ADR 0002 Proposed blocked Auth merge | Backend Lead · Security Engineer | Resolved — Accepted |
 | ADR 0004 web framework still Proposed | Frontend Lead · CTO | Open — Vite provisional OK for shell |
 | Canonical Constitution/Architecture/Plan files missing from repo | Technical Architect | Open — chat + memory remain interim source |
+| PR #18 packaging / root CI (`vinton-adler`) | Platform Engineer · CTO | Resolved — PR #24 clean merge |
 
 ## 11. Test Results
 
@@ -111,8 +112,8 @@ Sprint 1 delivered Authentication (AuthN) for Acquisition OS: cookie-based sessi
 | `npm run lint` | Pass | Includes API eslint |
 | `npm run test` | Pass | 12 API tests + package smokes |
 | `npm run build` | Pass | api + web-app + web-marketing |
-| CI workflow | Mixed | Acquisition OS CI **pass**; root Hostpitality CI **fail** (`vinton-adler` pollution on PR #18) |
-| Other | Pass | login→me→logout; bad password; invite; rbac probe |
+| CI workflow | Pass | Acquisition OS CI + root CI (after tsconfig exclude) on PR #24 |
+| Other | Pass | login→me→logout; bad password; invite; rbac probe; a11y shell verify |
 
 ## 12. Performance Impact
 
@@ -142,17 +143,17 @@ Negligible: bcrypt cost 12 in production (CPU on login only); session lookup O(1
 
 | DoD item (Execution Plan) | Met? |
 |---|---|
-| Code reviewed + CI green | Partial — ERB reviewed; Acquisition OS CI green; root CI red on PR packaging |
+| Code reviewed + CI green | Yes — PR #24 merged; Acq OS + root CI green |
 | Tenant isolation (if data-touching) | N/A — no tenancy data (invite User only) |
 | Unit/integration as applicable | Yes |
 | Events/projections as applicable | N/A — no outbox in S1 |
 | RBAC server-side as applicable | Hooks only (intentionally not enforced) |
 | Observability as applicable | Health endpoints + structured startup log |
-| A11y as applicable | Login form labels + alert role; full a11y suite not run |
-| Docs updated | Yes (Law 001 artifacts added) |
-| Staging/local verify | Local verify + login shell AC |
-| Product acceptance | Login shell AC met; formal product sign-off pending COMPLETE |
-| Constitution compliant | Yes (vocabulary + lifecycle; no synonym drift) |
+| A11y as applicable | Yes — `SPRINT_1_A11Y.md` shell verification |
+| Docs updated | Yes |
+| Staging/local verify | Yes |
+| Product acceptance | Yes — empty-shell AC |
+| Constitution compliant | Yes |
 
 ## 16. Lessons Learned
 
@@ -167,44 +168,47 @@ Negligible: bcrypt cost 12 in production (CPU on login only); session lookup O(1
 **Primary objective:** Tenancy — Organization, Location, Workspace, Membership CRUD  
 **Prerequisites / ADR blockers:** Sprint 1 COMPLETE under Law 001; prefer Accept ADR 0005; wire Postgres IdentityStore  
 **Must read before start:** this file + S01 retrospective + scorecard + Constitution Identity/Tenancy + Architecture tenancy § + GATE_A.md + Law 001  
-**Authorization:** **DENIED** until Sprint 1 COMPLETE and PM + CTO authorize  
+**Authorization:** Readiness via `governance:pre-sprint -- 2` after COMPLETE; **implementation waits for explicit approval**  
 
 ## 18. Law 001 Closure Checklist
 
 | Requirement | Met? |
 |---|---|
-| Sprint objectives completed | Yes (implementation) |
-| Acceptance criteria satisfied | Yes (empty shell auth) |
-| Definition of Done verified | Partial |
-| CI passing | Partial (Acquisition OS yes / root PR no) |
+| Sprint objectives completed | Yes |
+| Acceptance criteria satisfied | Yes |
+| Definition of Done verified | Yes |
+| CI passing | Yes (PR #24) |
 | Unit tests passing | Yes |
 | Integration tests passing | Yes |
-| Accessibility verification complete | Partial (basic only) |
-| Security review complete | Yes (ERB; gaps tracked) |
-| Performance review complete | Yes (ERB) |
+| Accessibility verification complete | Yes (`SPRINT_1_A11Y.md`) |
+| Security review complete | Yes |
+| Performance review complete | Yes |
 | Documentation updated | Yes |
-| ADRs updated | Yes (0002; 0007 governance) |
+| ADRs updated | Yes (0002; 0007) |
 | Technical debt documented (with issue links) | Yes (#19–#22) |
 | Risks documented | Yes |
 | Blockers documented | Yes |
-| Sprint memory completed | Yes (this file) |
-| Pull Request reviewed | Yes (ERB) |
-| Merge approved | **No** |
-| Retrospective published | Yes (`retrospectives/S01-retrospective.md`) |
-| Scorecard published | Yes (`scorecards/S01-scorecard.md`) |
+| Sprint memory completed | Yes |
+| Pull Request reviewed | Yes |
+| Merge approved | Yes (CTO) |
+| Merge completed | Yes (PR #24) |
+| Retrospective published | Yes |
+| Scorecard published | Yes |
+| `npm run governance:close -- 1` | Yes |
 
 ## 19. Retrospective & Scorecard
 
 - Retrospective path: `docs/engineering/retrospectives/S01-retrospective.md`  
 - Scorecard path: `docs/engineering/scorecards/S01-scorecard.md`  
-- Overall score: **7.5**  
+- Release summary: `docs/engineering/SPRINT_1_RELEASE_SUMMARY.md`  
+- Overall score: **8.0**  
 
 ## 20. Next Sprint Authorization
 
 | Gate | Met? |
 |---|---|
-| This sprint COMPLETE | **No — OPEN** |
-| PM authorizes N+1 | No |
-| CTO authorizes N+1 | No |
+| This sprint COMPLETE | **Yes** |
+| PM authorizes N+1 (readiness) | **Yes** (`governance:pre-sprint -- 2`) |
+| CTO authorizes N+1 (readiness) | **Yes** (`governance:pre-sprint -- 2`) |
 
-**STOP — do not implement Sprint 2.**
+**STOP — do not implement Sprint 2 until explicit implementation approval is given (readiness ≠ permission to code).**

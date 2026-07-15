@@ -222,5 +222,5 @@ Marking a sprint **COMPLETE** in INDEX/memory **without** a successful `governan
 ## Application snapshot
 
 - **Sprint 0:** COMPLETE (foundation).  
-- **Sprint 1 (Authentication):** **OPEN** — implementation delivered; merge/closure incomplete.  
-- **Sprint 2+:** **NOT AUTHORIZED** until Sprint 1 COMPLETE under this law.
+- **Sprint 1 (Authentication):** **COMPLETE** — PR #24 merged 2026-07-15; debt #19–#22 open.  
+- **Sprint 2+:** Readiness may proceed via `governance:pre-sprint`; **implementation requires explicit approval after readiness.**
