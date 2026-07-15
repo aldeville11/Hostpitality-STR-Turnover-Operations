@@ -4,7 +4,7 @@
 **Sprint:** 02 — tenancy  
 **Date:** 2026-07-15  
 **Plan:** [SPRINT_2_PLAN.md](./SPRINT_2_PLAN.md) (**APPROVED** by PM · CTO · Backend Lead · Security Engineer)  
-**Status:** Implementation complete — PR merge required for memory COMPLETE / N+1
+**Status:** **COMPLETE** — merged PR [#27](https://github.com/aldeville11/Hostpitality-STR-Turnover-Operations/pull/27); `governance:close -- 2` PASS
 
 ## What shipped
 
@@ -102,7 +102,7 @@ See [SPRINT_2_COVERAGE.md](./SPRINT_2_COVERAGE.md) — ~81.4% statements / lines
 | Docs (TENANCY, AUTH, release, retro, scorecard, memory) | Yes |
 | Technical debt documented | Yes |
 | No prohibited scope (RBAC engine, UI redesign, billing, …) | Yes |
-| Merge to `main` + `governance:close -- 2` | Pending PR merge |
+| Merge to `main` + `governance:close -- 2` | Yes — PR #27 |
 
 ## Demo
 
@@ -118,3 +118,13 @@ npm run dev:api
 - [S02-retrospective.md](./retrospectives/S02-retrospective.md)
 - [S02-scorecard.md](./scorecards/S02-scorecard.md)
 - [S02-tenancy.md](../project-memory/sprints/S02-tenancy.md)
+
+## governance:close results
+
+```
+governance: PASS — Sprint-close checklist S02 complete (32/32)
+governance: PASS — Memory present: S02-tenancy.md
+governance: PASS — Retrospective present
+governance: PASS — Scorecard present
+governance: PASS — Sprint 02 close gate clear
+```

@@ -5,6 +5,7 @@
 **Validator:** `npm run governance:close -- 2`  
 **ADRs:** 0005 · 0008 Accepted  
 **Isolation suite:** mandatory CI  
+**Merge:** https://github.com/aldeville11/Hostpitality-STR-Turnover-Operations/pull/27 (merged 2026-07-15)  
 
 ## Objectives & acceptance
 
@@ -49,6 +50,6 @@
 
 - [x] Pull Request reviewed
 - [x] Merge approved
-- [ ] Merge completed (pending PR merge to main)
+- [x] Merge completed (or explicitly N/A only if CTO records exception ADR — default: required)
 - [x] Pre-sprint checklist for this sprint was validated earlier
-- [ ] Ready for Sprint Readiness Review / N+1 authorization process
+- [x] Ready for Sprint Readiness Review / N+1 authorization process

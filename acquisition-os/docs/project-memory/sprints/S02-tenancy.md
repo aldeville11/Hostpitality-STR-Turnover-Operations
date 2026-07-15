@@ -3,11 +3,11 @@
 **Sprint:** 02  
 **Codename / slug:** tenancy  
 **Dates:** 2026-07-15  
-**Status:** OPEN  
+**Status:** COMPLETE  
 **Memory author:** Technical Writer  
 **Contributors:** CTO · Backend Lead · Frontend Lead · Product Manager · Security Engineer · QA Lead  
 
-> Implementation complete per approved [SPRINT_2_PLAN.md](../../engineering/SPRINT_2_PLAN.md). Status remains OPEN until merge to `main` + `governance:close -- 2` PASS. **Do not start Sprint 3.**
+> Closed via PR [#27](https://github.com/aldeville11/Hostpitality-STR-Turnover-Operations/pull/27). `governance:close -- 2` PASS.
 
 ---
 
@@ -27,6 +27,7 @@ Sprint 2 delivered Tenancy foundations: Organization, Location, Workspace, and M
 - [x] Minimal domain events  
 - [x] Unit + integration tests + coverage  
 - [x] Documentation + memory  
+- [x] Merge + `governance:close -- 2`
 
 ## 3. Files Created
 
@@ -93,7 +94,7 @@ Sprint 2 delivered Tenancy foundations: Organization, Location, Workspace, and M
 |---|---|
 | Plan approval | Resolved |
 | ADR 0005 | Resolved — Accepted |
-| Merge to main | Open — blocks COMPLETE |
+| Merge to main | Resolved — PR #27 |
 
 ## 11. Test Results
 
@@ -102,7 +103,7 @@ Sprint 2 delivered Tenancy foundations: Organization, Location, Workspace, and M
 | Unit/integration | 23 passed |
 | Tenant Isolation Suite | 9 passed (mandatory) |
 | Coverage | ~81.4% statements |
-| `npm run verify` | Pass locally |
+| `npm run verify` | Pass (local + Acquisition OS CI) |
 
 ## 12. Performance Impact
 
@@ -120,7 +121,7 @@ TENANCY.md, AUTH.md, ADR 0008, release/coverage/retro/scorecard.
 
 | DoD item | Met? |
 |---|---|
-| CI + review | Pending merge CI |
+| CI + review | Yes — PR #27 |
 | Tenant isolation | Yes — suite |
 | Unit/integration | Yes |
 | Events | Yes — minimal |
@@ -137,8 +138,8 @@ TENANCY.md, AUTH.md, ADR 0008, release/coverage/retro/scorecard.
 ## 17. Recommended Next Sprint
 
 **Sprint 03 — AuthZ + Audit** (RBAC middleware, deny-by-default, AuditEvent, cross-tenant CI expansion).  
-**Must not start until S2 COMPLETE + governance:pre-sprint -- 3.**
+**May start only after `governance:pre-sprint -- 3` PASS + plan approval.**
 
 ## 18–20. Law 001
 
-See close checklist; merge pending; N+1 **not** authorized until COMPLETE.
+Sprint 2 COMPLETE. Isolation suite mandatory forever. Sprint 3 not started.
