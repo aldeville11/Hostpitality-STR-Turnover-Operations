@@ -28,3 +28,4 @@ npm run verify
 - `docs/engineering/ORGANIZATION.md` — roles
 - `docs/engineering/GATE_A.md` — strategy lock
 - `docs/engineering/adr/` — architecture decisions
+- `docs/project-memory/` — permanent sprint memory (required before/after every sprint)

@@ -25,6 +25,17 @@ Every PR must declare:
 - **Dependencies**
 - **Definition of Done** (Execution Plan §7)
 
+## Project memory (required)
+
+Institutional memory lives in `docs/project-memory/`.
+
+1. **Before Sprint N+1 starts:** review the latest file under `docs/project-memory/sprints/` (see `INDEX.md`).
+2. **Before Sprint N closes:** publish `docs/project-memory/sprints/SNN-*.md` with all 17 sections filled and update `INDEX.md`.
+3. Sprint-close PRs must link the memory file.
+4. Scaffold: `npm run memory:new -- <number> <slug>`
+
+See `docs/project-memory/WORKFLOW.md`. Memory does not change product scope — amend the Constitution for that.
+
 ## Assignment for Sprint 0
 
 | Workstream | Owner | Reviewer |

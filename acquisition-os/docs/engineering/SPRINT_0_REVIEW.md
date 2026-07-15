@@ -23,6 +23,12 @@
 - **Dependencies:** Gate A (ratified)  
 - **Definition of Done:** verify green; docs present; no prod secrets  
 
+## Project memory
+
+Permanent record: `docs/project-memory/sprints/S00-foundation.md`  
+Index: `docs/project-memory/INDEX.md`
+
 ## Next
 
-Sprint 1 — AuthN (requires ADR 0002 decision before merge of session implementation).
+Sprint 1 — AuthN (requires ADR 0002 decision before merge of session implementation).  
+**Required read before Sprint 1:** `docs/project-memory/sprints/S00-foundation.md`.

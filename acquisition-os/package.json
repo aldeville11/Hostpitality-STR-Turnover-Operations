@@ -13,7 +13,8 @@
     "lint": "npm run lint -w @acquisition-os/web-app && npm run lint -w @acquisition-os/web-marketing",
     "typecheck": "npm run build:packages && npm run typecheck -w @acquisition-os/web-app && npm run typecheck -w @acquisition-os/web-marketing",
     "test": "npm run build -w @acquisition-os/design-tokens && npm run test -w @acquisition-os/design-tokens && npm run build -w @acquisition-os/ui && npm run test -w @acquisition-os/ui",
-    "verify": "npm run typecheck && npm run lint && npm run test && npm run build"
+    "verify": "npm run typecheck && npm run lint && npm run test && npm run build",
+    "memory:new": "node ./scripts/new-sprint-memory.mjs"
   },
   "engines": {
     "node": ">=20.9.0 <23"
