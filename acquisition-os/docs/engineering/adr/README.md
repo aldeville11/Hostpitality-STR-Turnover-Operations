@@ -5,7 +5,7 @@
 | ADR | Title | Status | Owner |
 |---|---|---|---|
 | 0001 | Modular monolith + workers | Accepted | CTO |
-| 0002 | Authentication mechanism (session vs JWT) | Proposed | Backend Lead |
+| 0002 | Authentication mechanism (session vs JWT) | **Accepted** | Backend Lead |
 | 0003 | Queue technology | Proposed | Platform Engineer |
 | 0004 | Web application framework | Proposed | Frontend Lead |
 | 0005 | Workspace ↔ Location default model | Proposed | Backend Lead |

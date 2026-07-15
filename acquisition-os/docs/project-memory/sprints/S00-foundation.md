@@ -94,7 +94,7 @@ Sprint 0 established the Customer Acquisition OS engineering organization and mo
 
 | Blocker | Owner | Status |
 |---|---|---|
-| ADR 0002 authentication decision | Backend Lead + Security Engineer | Open — blocks Sprint 1 merge |
+| ADR 0002 authentication decision | Backend Lead + Security Engineer | Resolved — Accepted 2026-07-15 |
 | ADR 0004 framework final sign-off | Frontend Lead + CTO | Open — Vite stub provisional |
 | Dedicated git remote for Acquisition OS | CTO / Platform | Open — operational constraint |
 
