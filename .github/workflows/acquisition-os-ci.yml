@@ -1,0 +1,29 @@
+name: Acquisition OS CI
+
+on:
+  push:
+    paths:
+      - "acquisition-os/**"
+      - ".github/workflows/acquisition-os-ci.yml"
+  pull_request:
+    paths:
+      - "acquisition-os/**"
+      - ".github/workflows/acquisition-os-ci.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: acquisition-os
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: acquisition-os/package-lock.json
+      - name: Install
+        run: npm install
+      - name: Verify
+        run: npm run verify
